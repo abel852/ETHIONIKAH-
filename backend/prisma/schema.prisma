@@ -1,0 +1,461 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum MaritalStatus {
+  single
+  divorced
+  widowed
+}
+
+enum MatchStatus {
+  pending
+  accepted
+  rejected
+}
+
+enum VerificationStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ReportStatus {
+  open
+  investigating
+  resolved
+  dismissed
+}
+
+model User {
+  id              String   @id @default(uuid()) @db.Uuid
+  email           String   @unique
+  phone           String   @unique
+  passwordHash    String   @map("password_hash")
+  firstName       String   @map("first_name")
+  lastName        String   @map("last_name")
+  gender          Gender
+  dateOfBirth     DateTime @map("date_of_birth")
+  role            Role     @default(user)
+  isVerified      Boolean  @default(false) @map("is_verified")
+  isActive        Boolean  @default(true) @map("is_active")
+  isPhoneVerified Boolean  @default(false) @map("is_phone_verified")
+  isEmailVerified Boolean  @default(false) @map("is_email_verified")
+  adminRole       String?  @map("admin_role") // "super_admin" | "admin"
+  googleAuthSecret        String?   @map("google_auth_secret")
+  twoFactorEnabled        Boolean   @default(false) @map("two_factor_enabled")
+  twoFactorFailedAttempts Int       @default(0) @map("two_factor_failed_attempts")
+  twoFactorLockedUntil    DateTime? @map("two_factor_locked_until")
+  twoFactorPermanentlyLocked Boolean @default(false) @map("two_factor_permanently_locked")
+  backupCodes             String?   @map("backup_codes")
+  usedBackupCodes         String?   @map("used_backup_codes")
+  tokenVersion            Int       @default(0) @map("token_version")
+  lastLoginAt             DateTime? @map("last_login_at")
+  resetToken      String?   @map("reset_token")
+  resetTokenExpiry DateTime? @map("reset_token_expiry")
+  phoneOtp        String?   @map("phone_otp")
+  phoneOtpExpiry  DateTime? @map("phone_otp_expiry")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  profile       Profile?
+  verification  Verification?
+  sentMatches   Match[]      @relation("SentMatches")
+  receivedMatches Match[]    @relation("ReceivedMatches")
+  sentMessages  Message[]    @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications Notification[]
+  reports         Report[]     @relation("Reporter")
+  reported        Report[]     @relation("ReportedUser")
+  subscriptions   Subscription[]
+  payments        Payment[]
+  complaints      Complaint[]
+  adminVerifications Verification[] @relation("AdminVerification")
+  adminComplaints    Complaint[]   @relation("AdminComplaint")
+  favorites       Favorite[]
+  restrictions    UserRestriction[]
+  adminRestrictions UserRestriction[] @relation("AdminRestrictions")
+  auditLogs          AuditLog[]
+  permissions        AdminPermission[]
+  flaggedContent     ContentFlag[]       @relation("FlaggedContent")
+  reviewedContent    ContentFlag[]       @relation("ReviewedContent")
+  affiliateReferrals  AffiliateReferral[] @relation("Referrer")
+  affiliateReferred   AffiliateReferral[] @relation("Referred")
+
+  @@map("users")
+}
+
+model Profile {
+  id                      String         @id @default(uuid()) @db.Uuid
+  userId                  String         @unique @map("user_id") @db.Uuid
+  
+  // Basic Profile Information
+  nationality             String?
+  region                  String?
+  height                  Int?
+  childrenStatus          String?        @map("children_status")
+  
+  // Religious Information
+  religiousCommitment     String?        @map("religious_commitment")
+  prayerHabits            String?        @map("prayer_habits")
+  quranReadingFrequency   String?        @map("quran_reading_frequency")
+  islamicClassesAttendance String?       @map("islamic_classes_attendance")
+  
+  // Education & Career
+  educationLevel           String?        @map("education_level")
+  occupation              String?
+  employmentStatus        String?        @map("employment_status")
+  monthlyIncomeRange      String?        @map("monthly_income_range")
+  
+  // Marriage Intentions
+  reasonForJoining        String?        @map("reason_for_joining")
+  desiredMarriageTimeline String?        @map("desired_marriage_timeline")
+  childrenPreference      String?        @map("children_preference")
+  
+  // Family Background
+  ethnicBackground        String?        @map("ethnic_background")
+  motherTongue            String?        @map("mother_tongue")
+  familyInvolvement       String?        @map("family_involvement")
+  
+  // Lifestyle
+  smokingHabits           String?        @map("smoking_habits")
+  khatUsage               String?        @map("khat_usage")
+  exerciseHabits          String?        @map("exercise_habits")
+  livingPreference        String?        @map("living_preference")
+  
+  // Personality & Interests
+  selfDescription         String?        @map("self_description")
+  qualities               String[]
+  interests               String[]
+  
+  // Existing fields
+  bio                     String?
+  country                 String?
+  city                    String?
+  maritalStatus           MaritalStatus  @default(single) @map("marital_status")
+  religiousLevel          String?        @map("religious_level")
+  ethnicity               String?
+  languages               String[]
+  photos                  String[]
+  isProfileComplete       Boolean        @default(false) @map("is_profile_complete")
+  
+  createdAt               DateTime       @default(now()) @map("created_at")
+  updatedAt               DateTime       @updatedAt @map("updated_at")
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spousePreference SpousePreference?
+
+  @@map("profiles")
+}
+
+model Verification {
+  id            String             @id @default(uuid()) @db.Uuid
+  userId        String             @unique @map("user_id") @db.Uuid
+  idDocumentPath String?           @map("id_document_path")
+  selfiePath    String?            @map("selfie_path")
+  additionalDocumentPath String?   @map("additional_document_path")
+  status        VerificationStatus @default(pending)
+  adminId       String?            @map("admin_id") @db.Uuid
+  adminNote     String?            @map("admin_note")
+  reviewedAt    DateTime?          @map("reviewed_at")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  admin User? @relation("AdminVerification", fields: [adminId], references: [id])
+
+  @@map("verifications")
+}
+
+model Match {
+  id                String      @id @default(uuid()) @db.Uuid
+  userId            String      @map("user_id") @db.Uuid
+  matchedUserId     String      @map("matched_user_id") @db.Uuid
+  compatibilityScore Float?     @map("compatibility_score")
+  status            MatchStatus @default(pending)
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  user        User @relation("SentMatches", fields: [userId], references: [id])
+  matchedUser User @relation("ReceivedMatches", fields: [matchedUserId], references: [id])
+
+  @@map("matches")
+}
+
+model Message {
+  id         String    @id @default(uuid()) @db.Uuid
+  senderId   String    @map("sender_id") @db.Uuid
+  receiverId String    @map("receiver_id") @db.Uuid
+  content    String
+  isRead     Boolean   @default(false) @map("is_read")
+  readAt     DateTime? @map("read_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Report {
+  id             String       @id @default(uuid()) @db.Uuid
+  reporterId     String       @map("reporter_id") @db.Uuid
+  reportedUserId String       @map("reported_user_id") @db.Uuid
+  reason         String
+  description    String?
+  status         ReportStatus @default(open)
+  adminId        String?      @map("admin_id") @db.Uuid
+  adminNote      String?      @map("admin_note")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  reporter     User @relation("Reporter", fields: [reporterId], references: [id])
+  reportedUser User @relation("ReportedUser", fields: [reportedUserId], references: [id])
+
+  @@map("reports")
+}
+
+model SpousePreference {
+  id                    String   @id @default(uuid()) @db.Uuid
+  profileId             String   @unique @map("profile_id") @db.Uuid
+  
+  // Spouse Preferences
+  preferredAgeMin       Int      @map("preferred_age_min")
+  preferredAgeMax       Int      @map("preferred_age_max")
+  preferredMaritalStatus String  @map("preferred_marital_status")
+  preferredEducationLevel String @map("preferred_education_level")
+  preferredLocation     String   @map("preferred_location")
+  waliInvolvement       String   @map("wali_involvement")
+  polygamyPreference    String   @map("polygamy_preference")
+  mahrExpectation       String   @map("mahr_expectation")
+  genderInteraction     String   @map("gender_interaction")
+  preferredReligiousCommitment String @map("preferred_religious_commitment")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("spouse_preferences")
+}
+
+model Subscription {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  planType          String   @map("plan_type")
+  status            String
+  startDate         DateTime @map("start_date")
+  endDate           DateTime? @map("end_date")
+  autoRenew         Boolean  @default(false) @map("auto_renew")
+  paymentId         String?  @map("payment_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  subscriptionId    String?  @map("subscription_id") @db.Uuid
+  amount            Float
+  currency          String   @default("USD")
+  status            String
+  paymentMethod     String   @map("payment_method")
+  transactionId     String?  @map("transaction_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@map("payments")
+}
+
+model Complaint {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  subject     String
+  description String
+  status      String   @default("open")
+  adminId     String?  @map("admin_id") @db.Uuid
+  adminResponse String? @map("admin_response")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  admin User? @relation("AdminComplaint", fields: [adminId], references: [id])
+
+  @@map("complaints")
+}
+
+model Favorite {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  favoritedUserId String @map("favorited_user_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, favoritedUserId])
+  @@map("favorites")
+}
+
+model UserRestriction {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String   // "ban", "chat_restrict", "login_restrict"
+  reason    String?
+  duration  Int?     // duration in minutes, null = permanent
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String?  @map("created_by") @db.Uuid
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  admin User? @relation("AdminRestrictions", fields: [createdBy], references: [id])
+
+  @@map("user_restrictions")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  adminId   String   @map("admin_id") @db.Uuid
+  action    String
+  resource  String
+  resourceId String? @map("resource_id")
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model FeatureToggle {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  label     String
+  description String?
+  enabled   Boolean  @default(false)
+  category  String   @default("general")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("feature_toggles")
+}
+
+model AdminPermission {
+  id        String   @id @default(uuid()) @db.Uuid
+  adminId   String   @map("admin_id") @db.Uuid
+  permission String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@unique([adminId, permission])
+  @@map("admin_permissions")
+}
+
+model ContentFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  targetType  String   @map("target_type") // "profile_bio", "photo", "message"
+  targetId    String   @map("target_id")
+  flaggedById String?  @map("flagged_by_id") @db.Uuid // null = AI auto-flagged
+  reason      String
+  aiScore     Float?   @map("ai_score")
+  status      String   @default("pending") // pending, reviewed, dismissed
+  reviewedBy  String?  @map("reviewed_by") @db.Uuid
+  adminNote   String?  @map("admin_note")
+  createdAt   DateTime @default(now()) @map("created_at")
+  reviewedAt  DateTime? @map("reviewed_at")
+
+  flaggedBy User? @relation("FlaggedContent", fields: [flaggedById], references: [id])
+  reviewer  User? @relation("ReviewedContent", fields: [reviewedBy], references: [id])
+
+  @@map("content_flags")
+}
+
+model AffiliateReferral {
+  id          String   @id @default(uuid()) @db.Uuid
+  referrerId  String   @map("referrer_id") @db.Uuid
+  referredId  String   @map("referred_id") @db.Uuid
+  code        String   @map("code")
+  status      String   @default("pending") // pending, converted, rewarded
+  rewardAmount Float?  @map("reward_amount")
+  createdAt   DateTime @default(now()) @map("created_at")
+  convertedAt DateTime? @map("converted_at")
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id])
+  referred User @relation("Referred", fields: [referredId], references: [id])
+
+  @@map("affiliate_referrals")
+}
+
+model Promotion {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  type        String   @default("percentage") // percentage, fixed, bundle
+  value       Float
+  maxUses     Int?
+  usedCount   Int      @default(0) @map("used_count")
+  minAmount   Float?   @map("min_amount")
+  startsAt    DateTime @map("starts_at")
+  expiresAt   DateTime? @map("expires_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("promotions")
+}
+
+model NotificationTemplate {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  type      String   @default("email") // email, sms, push
+  subject   String?
+  body      String
+  variables String[] // expected variable names
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_templates")
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     Json
+  category  String   @default("general")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}

@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-charcoal-100 dark:border-charcoal-700;
+  }
+
+  body {
+    @apply bg-background text-charcoal-900 font-sans antialiased dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold;
+  }
+}
+
+@layer components {
+  .gold-gradient {
+    @apply bg-gold-gradient text-white;
+  }
+
+  .gold-text {
+    @apply bg-gold-gradient bg-clip-text text-transparent;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-lg border border-white/30 shadow-card rounded-2xl;
+  }
+
+  .glass-dark {
+    @apply bg-charcoal-900/40 backdrop-blur-xl border border-white/10 shadow-soft;
+  }
+
+  .premium-card {
+    @apply bg-white rounded-2xl shadow-card border border-charcoal-100/50 transition-all duration-500 hover:shadow-elevated;
+  }
+
+  .premium-button {
+    @apply inline-flex items-center justify-center px-8 py-4 font-medium rounded-xl transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .premium-button-primary {
+    @apply premium-button gold-gradient shadow-glow hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.98] text-white;
+  }
+
+  .premium-button-secondary {
+    @apply premium-button bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 hover:border-accent/50 hover:shadow-glow;
+  }
+
+  .premium-button-outline {
+    @apply premium-button bg-transparent text-accent border border-accent/40 hover:bg-accent/10 hover:border-accent hover:shadow-glow;
+  }
+
+  .gold-border {
+    @apply border border-accent/30;
+  }
+
+  .gold-border-lg {
+    @apply border-2 border-accent/40;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D9D9D9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999999;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: rgba(212, 175, 55, 0.3);
+  color: #FFFFFF;
+}

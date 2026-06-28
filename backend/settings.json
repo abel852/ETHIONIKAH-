@@ -1,0 +1,40 @@
+{
+  "general": {
+    "siteName": "EthioNikah",
+    "siteDescription": "Islamic Marriage Platform",
+    "supportEmail": "support@ethionikah.com",
+    "contactPhone": "+251-XXX-XXXXXX",
+    "maintenanceMode": false,
+    "registrationOpen": true
+  },
+  "security": {
+    "passwordMinLength": 8,
+    "requireEmailVerification": true,
+    "requirePhoneVerification": false,
+    "sessionTimeout": 60,
+    "maxLoginAttempts": 5,
+    "adminTwoFactorEnabled": false
+  },
+  "features": {
+    "enableMatches": true,
+    "enableMessaging": true,
+    "enableVerification": true,
+    "enableSubscriptions": true,
+    "enableWallet": false
+  },
+  "notifications": {
+    "adminEmailNotifications": true,
+    "userWelcomeEmail": true,
+    "verificationEmail": true,
+    "matchNotificationEmail": true
+  },
+  "payments": {
+    "currency": "USD",
+    "taxRate": 0,
+    "subscriptionPlans": [
+      { "name": "Basic", "price": 9.99, "durationDays": 30 },
+      { "name": "Premium", "price": 19.99, "durationDays": 30 },
+      { "name": "VIP", "price": 39.99, "durationDays": 30 }
+    ]
+  }
+}
