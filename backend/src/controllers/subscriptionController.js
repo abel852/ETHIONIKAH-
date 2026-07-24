@@ -1,4 +1,5 @@
 const prisma = require("../config/database");
+const { getPlanConfig } = require("./paymentController");
 
 // Get all subscriptions with filters
 const getAllSubscriptions = async (req, res) => {
@@ -83,7 +84,7 @@ const getUserSubscription = async (req, res) => {
     const userId = req.user.userId;
     const subscription = await prisma.subscription.findFirst({
       where: { userId },
-      include: { payment: true },
+      include: { payments: true },
       orderBy: { createdAt: "desc" },
     });
 
@@ -100,22 +101,26 @@ const createSubscription = async (req, res) => {
     const userId = req.user.userId;
     const { planType, paymentMethod, transactionId } = req.body;
 
-    // Calculate end date based on plan type
+    // Fetch plan config from DB
+    const config = await getPlanConfig(planType);
+    if (!config) {
+      return res.status(400).json({ success: false, error: "Invalid plan type" });
+    }
+
     const startDate = new Date();
     const endDate = new Date(startDate);
-    if (planType === "premium") {
-      endDate.setMonth(endDate.getMonth() + 1);
-    } else if (planType === "basic") {
-      endDate.setMonth(endDate.getMonth() + 1);
+    if (config.durationDays > 0) {
+      endDate.setDate(endDate.getDate() + config.durationDays);
     }
 
     // Create payment record
     const payment = await prisma.payment.create({
       data: {
         userId,
-        amount: planType === "premium" ? 500 : 200,
+        planType,
+        amount: config.price,
         currency: "ETB",
-        status: "completed",
+        status: "approved",
         paymentMethod,
         transactionId,
       },
@@ -128,10 +133,10 @@ const createSubscription = async (req, res) => {
         planType,
         status: "active",
         startDate,
-        endDate,
+        endDate: config.durationDays > 0 ? endDate : null,
         paymentId: payment.id,
       },
-      include: { payment: true },
+      include: { payments: true },
     });
 
     res.status(201).json({ success: true, data: subscription });
@@ -141,11 +146,24 @@ const createSubscription = async (req, res) => {
   }
 };
 
-// Update subscription status
+// Update subscription status (admin only — user route uses cancelSubscription)
 const updateSubscription = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, autoRenew } = req.body;
+    const userId = req.user.userId;
+    const isAdmin = req.user.role === "admin";
+
+    // For non-admin users, verify ownership before updating
+    if (!isAdmin) {
+      const existing = await prisma.subscription.findUnique({ where: { id }, select: { userId: true } });
+      if (!existing) {
+        return res.status(404).json({ success: false, error: "Subscription not found" });
+      }
+      if (existing.userId !== userId) {
+        return res.status(403).json({ success: false, error: "You can only modify your own subscription" });
+      }
+    }
 
     const subscription = await prisma.subscription.update({
       where: { id },
@@ -153,7 +171,7 @@ const updateSubscription = async (req, res) => {
         ...(status && { status }),
         ...(autoRenew !== undefined && { autoRenew }),
       },
-      include: { payment: true },
+      include: { payments: true },
     });
 
     res.json({ success: true, data: subscription });
@@ -167,6 +185,19 @@ const updateSubscription = async (req, res) => {
 const cancelSubscription = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.userId;
+    const isAdmin = req.user.role === "admin";
+
+    // For non-admin users, verify ownership before cancelling
+    if (!isAdmin) {
+      const existing = await prisma.subscription.findUnique({ where: { id }, select: { userId: true } });
+      if (!existing) {
+        return res.status(404).json({ success: false, error: "Subscription not found" });
+      }
+      if (existing.userId !== userId) {
+        return res.status(403).json({ success: false, error: "You can only cancel your own subscription" });
+      }
+    }
 
     const subscription = await prisma.subscription.update({
       where: { id },
@@ -175,7 +206,7 @@ const cancelSubscription = async (req, res) => {
         autoRenew: false,
         endDate: new Date(),
       },
-      include: { payment: true },
+      include: { payments: true },
     });
 
     res.json({ success: true, data: subscription });
@@ -200,7 +231,7 @@ const getRevenueStats = async (req, res) => {
 
     const [totalRevenue, activeSubscriptions, premiumSubscriptions, basicSubscriptions] = await Promise.all([
       prisma.payment.aggregate({
-        where: { ...where, status: "completed" },
+        where: { ...where, status: "approved" },
         _sum: { amount: true },
         _count: true,
       }),
@@ -208,21 +239,21 @@ const getRevenueStats = async (req, res) => {
         where: { status: "active" },
       }),
       prisma.subscription.count({
-        where: { status: "active", planType: "premium" },
+        where: { status: "active", planType: "platinum" },
       }),
       prisma.subscription.count({
-        where: { status: "active", planType: "basic" },
+        where: { status: "active", planType: "gold" },
       }),
     ]);
 
-    // Revenue by plan
+    // Revenue by plan (only approved payments)
     const revenueByPlan = await prisma.$queryRaw`
       SELECT 
         s.plan_type,
         COUNT(*) as count,
         COALESCE(SUM(p.amount), 0) as revenue
       FROM subscriptions s
-      LEFT JOIN payments p ON p.subscription_id = s.id
+      LEFT JOIN payments p ON p.subscription_id = s.id AND p.status = 'approved'
       WHERE s.status = 'active'
       GROUP BY s.plan_type
     `;

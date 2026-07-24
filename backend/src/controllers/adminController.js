@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { logAudit } = require("../utils/auditLogger");
+const { createNotification } = require("../utils/notification");
+const { invalidateWeightsCache } = require("./matchController");
 
 // === USER MANAGEMENT ===
 exports.getAllUsers = async (req, res) => {
@@ -20,6 +22,9 @@ exports.getAllUsers = async (req, res) => {
     }
     if (status === "active") where.isActive = true;
     else if (status === "suspended") where.isActive = false;
+    else if (status === "flagged") where.isFlaggedForReview = true;
+    else if (status === "locked") where.OR = [{ loginPermanentlyLocked: true }, { loginLockedUntil: { gte: new Date() } }];
+    else if (status === "pinned") where.adminPinned = true;
     if (gender) where.gender = gender;
     if (isVerified === "true") where.isVerified = true;
     else if (isVerified === "false") where.isVerified = false;
@@ -33,9 +38,11 @@ exports.getAllUsers = async (req, res) => {
         where, skip, take: limit, orderBy,
         include: {
           profile: { select: { country: true, city: true, isProfileComplete: true } },
-          verification: { select: { status: true } },
+          verification: { select: { status: true, idDocumentPath: true, selfiePath: true } },
           restrictions: { where: { OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }] }, select: { id: true, type: true, reason: true, expiresAt: true, createdAt: true } },
+          subscriptions: { where: { status: "active", endDate: { gte: new Date() } }, orderBy: { createdAt: "desc" }, take: 1, select: { id: true, planType: true, endDate: true, status: true } },
         },
+        // Lockout + flag fields are on the User model, returned automatically
       }),
       prisma.user.count({ where }),
     ]);
@@ -59,10 +66,71 @@ exports.getUserById = async (req, res) => {
   }
 };
 
+const BAD_WORDS = ["sex", "fuck", "bitch", "nigga", "whore", "slut", "porn", "cock", "dick", "cunt", "bastard", "asshole"];
+
+exports.getUserStats = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true, email: true, phone: true, gender: true, dateOfBirth: true, isActive: true, isVerified: true, isPhoneVerified: true, isEmailVerified: true, lastLoginAt: true, createdAt: true, updatedAt: true, role: true, profile: true, verification: true, restrictions: true, subscriptions: { where: { status: "active", endDate: { gte: new Date() } }, orderBy: { createdAt: "desc" }, take: 1, select: { id: true, planType: true, endDate: true, status: true } } },
+    });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const adminIds = (await prisma.user.findMany({
+      where: { role: "admin" },
+      select: { id: true },
+    })).map((a) => a.id);
+
+    const [sentMessages, receivedMessages] = await Promise.all([
+      prisma.message.findMany({
+        where: { senderId: userId, receiverId: { notIn: adminIds } },
+        select: { receiverId: true, content: true },
+      }),
+      prisma.message.findMany({
+        where: { receiverId: userId, senderId: { notIn: adminIds } },
+        select: { senderId: true },
+      }),
+    ]);
+
+    const chatPartnerIds = new Set();
+    sentMessages.forEach((m) => chatPartnerIds.add(m.receiverId));
+    receivedMessages.forEach((m) => chatPartnerIds.add(m.senderId));
+
+    const badWordPattern = new RegExp(`\\b(${BAD_WORDS.join("|")})\\b`, "gi");
+    let badWordTotal = 0;
+    const wordCounts = {};
+    for (const m of sentMessages) {
+      const matches = m.content.match(badWordPattern);
+      if (matches) {
+        badWordTotal += matches.length;
+        for (const w of matches) {
+          const key = w.toLowerCase();
+          wordCounts[key] = (wordCounts[key] || 0) + 1;
+        }
+      }
+    }
+
+    res.json({
+      user,
+      stats: {
+        lastLoginAt: user.lastLoginAt,
+        chatPartners: chatPartnerIds.size,
+        badWordTotal,
+        badWordDetails: wordCounts,
+      },
+    });
+  } catch (error) {
+    console.error("Get user stats error:", error);
+    res.status(500).json({ error: "Failed to fetch user stats" });
+  }
+};
+
 exports.suspendUser = async (req, res) => {
   try {
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
-    await logAudit({ adminId: req.user.id, action: "suspend_user", resource: "user", resourceId: req.params.id, details: { reason: req.body.reason } });
+    try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
+    await logAudit({ adminId: req.user.userId, action: "suspend_user", resource: "user", resourceId: req.params.id, details: { reason: req.body.reason } });
     res.json({ message: "User suspended" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -70,7 +138,8 @@ exports.suspendUser = async (req, res) => {
 exports.activateUser = async (req, res) => {
   try {
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: true } });
-    await logAudit({ adminId: req.user.id, action: "activate_user", resource: "user", resourceId: req.params.id });
+    try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
+    await logAudit({ adminId: req.user.userId, action: "activate_user", resource: "user", resourceId: req.params.id });
     res.json({ message: "User activated" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -78,7 +147,7 @@ exports.activateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     await prisma.user.delete({ where: { id: req.params.id } });
-    await logAudit({ adminId: req.user.id, action: "delete_user", resource: "user", resourceId: req.params.id });
+    await logAudit({ adminId: req.user.userId, action: "delete_user", resource: "user", resourceId: req.params.id });
     res.json({ message: "User deleted" });
   } catch (error) { res.status(500).json({ error: "Failed to delete user" }); }
 };
@@ -86,18 +155,36 @@ exports.deleteUser = async (req, res) => {
 exports.verifyUser = async (req, res) => {
   try {
     await prisma.user.update({ where: { id: req.params.id }, data: { isVerified: true } });
-    await prisma.verification.upsert({ where: { userId: req.params.id }, update: { status: "approved", adminId: req.user.id, reviewedAt: new Date() }, create: { userId: req.params.id, status: "approved", adminId: req.user.id, reviewedAt: new Date() } });
-    await logAudit({ adminId: req.user.id, action: "verify_user", resource: "user", resourceId: req.params.id });
+    await prisma.verification.upsert({ where: { userId: req.params.id }, update: { status: "approved", adminId: req.user.userId, reviewedAt: new Date() }, create: { userId: req.params.id, status: "approved", adminId: req.user.userId, reviewedAt: new Date() } });
+    await logAudit({ adminId: req.user.userId, action: "verify_user", resource: "user", resourceId: req.params.id });
     res.json({ message: "User verified" });
+  } catch (error) { res.status(500).json({ error: "Failed" }); }
+};
+
+exports.rejectUserVerification = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    await prisma.verification.updateMany({ where: { userId: req.params.id, status: "pending" }, data: { status: "rejected", adminId: req.user.userId, adminNote: reason || null, reviewedAt: new Date() } });
+    await prisma.user.update({ where: { id: req.params.id }, data: { isVerified: false } });
+    await logAudit({ adminId: req.user.userId, action: "reject_verification", resource: "user", resourceId: req.params.id, details: { reason } });
+    res.json({ message: "Verification rejected" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
 
 exports.resetUserPassword = async (req, res) => {
   try {
     const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ error: "Password must be at least 8 characters" });
+    }
+    if (!/[A-Z]/.test(newPassword)) return res.status(400).json({ error: "Password must contain at least one uppercase letter" });
+    if (!/[a-z]/.test(newPassword)) return res.status(400).json({ error: "Password must contain at least one lowercase letter" });
+    if (!/[0-9]/.test(newPassword)) return res.status(400).json({ error: "Password must contain at least one number" });
+    if (!/[^A-Za-z0-9]/.test(newPassword)) return res.status(400).json({ error: "Password must contain at least one symbol (e.g. !@#$%)" });
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    await prisma.user.update({ where: { id: req.params.id }, data: { passwordHash } });
-    await logAudit({ adminId: req.user.id, action: "reset_password", resource: "user", resourceId: req.params.id });
+    await prisma.user.update({ where: { id: req.params.id }, data: { passwordHash, tokenVersion: { increment: 1 } } });
+    try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
+    await logAudit({ adminId: req.user.userId, action: "reset_password", resource: "user", resourceId: req.params.id });
     res.json({ message: "Password reset" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -106,27 +193,47 @@ exports.restrictUserChat = async (req, res) => {
   try {
     const { duration, reason } = req.body;
     const expiresAt = duration ? new Date(Date.now() + duration * 60 * 1000) : null;
-    const restriction = await prisma.userRestriction.create({ data: { userId: req.params.id, type: "chat_restrict", reason, duration, expiresAt, createdBy: req.user.id } });
-    await logAudit({ adminId: req.user.id, action: "restrict_chat", resource: "user", resourceId: req.params.id, details: { duration, reason } });
+    const restriction = await prisma.userRestriction.create({ data: { userId: req.params.id, type: "chat_restrict", reason, duration, expiresAt, createdBy: req.user.userId } });
+    await logAudit({ adminId: req.user.userId, action: "restrict_chat", resource: "user", resourceId: req.params.id, details: { duration, reason } });
     res.json({ restriction, message: "Chat restricted" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
 
 exports.restrictUserBan = async (req, res) => {
   try {
-    const { reason } = req.body;
+    const { reason, durationInDays } = req.body;
+    const existing = await prisma.userRestriction.findFirst({ where: { userId: req.params.id, type: "ban", OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }] } });
+    if (existing) return res.status(400).json({ error: "User is already banned" });
+    const duration = durationInDays ? durationInDays * 24 * 60 : null;
+    const expiresAt = duration ? new Date(Date.now() + duration * 60 * 1000) : null;
+    const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: { firstName: true } });
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
-    await prisma.userRestriction.create({ data: { userId: req.params.id, type: "ban", reason, createdBy: req.user.id } });
-    await logAudit({ adminId: req.user.id, action: "ban_user", resource: "user", resourceId: req.params.id, details: { reason } });
-    res.json({ message: "User banned" });
+    try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
+    await prisma.userRestriction.create({ data: { userId: req.params.id, type: "ban", reason, duration, expiresAt, createdBy: req.user.userId } });
+    const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric" }) : null;
+    const message = expiryDate ? `Your account has been temporarily suspended. You will regain access on ${expiryDate}.` : "Your account has been permanently suspended.";
+    createNotification({ userId: req.params.id, type: "account", title: "Account Suspended", body: message }).catch(() => {});
+    await logAudit({ adminId: req.user.userId, action: "ban_user", resource: "user", resourceId: req.params.id, details: { reason, durationInDays } });
+    res.json({ message: "User banned", expiresAt });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
+};
+
+exports.unbanUser = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: { isActive: true, role: true } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    await prisma.userRestriction.deleteMany({ where: { userId: req.params.id, type: "ban" } });
+    await prisma.user.update({ where: { id: req.params.id }, data: { isActive: true } });
+    await logAudit({ adminId: req.user.userId, action: "unban_user", resource: "user", resourceId: req.params.id });
+    res.json({ message: "User unbanned" });
+  } catch (error) { res.status(500).json({ error: "Failed to unban" }); }
 };
 
 exports.removeUserRestriction = async (req, res) => {
   try {
     const { type } = req.body;
     await prisma.userRestriction.deleteMany({ where: { userId: req.params.id, type } });
-    await logAudit({ adminId: req.user.id, action: "remove_restriction", resource: "user", resourceId: req.params.id, details: { type } });
+    await logAudit({ adminId: req.user.userId, action: "remove_restriction", resource: "user", resourceId: req.params.id, details: { type } });
     res.json({ message: "Restriction removed" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -146,7 +253,7 @@ exports.getDashboardData = async (req, res) => {
     const [totalUsers, activeUsers, verifiedUsers, newUsersThisMonth, totalMatches, totalMessages, unreadMessages, totalRevenueAgg, revenueThisMonthAgg, pendingVerifications, openReports, openComplaints, activeSubscriptions, genderCounts, subscriptionPlans] = await Promise.all([
       prisma.user.count(), prisma.user.count({ where: { isActive: true } }), prisma.user.count({ where: { isVerified: true } }), prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.match.count({ where: { status: "accepted" } }), prisma.message.count(), prisma.message.count({ where: { isRead: false } }),
-      prisma.payment.aggregate({ _sum: { amount: true } }), prisma.payment.aggregate({ where: { createdAt: { gte: startOfMonth } }, _sum: { amount: true } }),
+      prisma.payment.aggregate({ where: { status: "approved" }, _sum: { amount: true } }), prisma.payment.aggregate({ where: { status: "approved", createdAt: { gte: startOfMonth } }, _sum: { amount: true } }),
       prisma.verification.count({ where: { status: "pending" } }), prisma.report.count({ where: { status: { in: ["open", "investigating"] } } }), prisma.complaint.count({ where: { status: "open" } }), prisma.subscription.count({ where: { status: "active" } }),
       prisma.user.groupBy({ by: ["gender"], _count: true }), prisma.subscription.groupBy({ by: ["planType"], _count: true }),
     ]);
@@ -173,10 +280,129 @@ exports.getDashboardData = async (req, res) => {
 
 exports.getAnalytics = async (req, res) => {
   try {
-    const totalUsers = await prisma.user.count();
-    const monthly = await prisma.user.groupBy({ by: ["createdAt"], _count: true });
-    res.json({ analytics: { totalUsers, monthlyGrowth: monthly } });
-  } catch (error) { res.status(500).json({ error: "Failed" }); }
+    const now = new Date();
+
+    // Build last 6 months labels and date boundaries
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      months.push({
+        label: d.toLocaleString("en-US", { month: "short" }),
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        start: d,
+        end,
+      });
+    }
+
+    const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
+    const [
+      totalUsers, activeUsers, verifiedUsers, pendingVerifications,
+      totalMatches, totalReports, totalMessages, unreadMessages,
+      openComplaints, newUsersThisMonth, suspendedUsers, bannedUsers,
+      maleUsers, femaleUsers, totalSubscriptions, activeSubscriptions,
+      totalPayments, pendingPayments, approvedPayments, rejectedPayments,
+    ] = await Promise.all([
+      prisma.user.count({ where: { role: "user", deletedAt: null } }),
+      prisma.user.count({ where: { role: "user", isActive: true, deletedAt: null } }),
+      prisma.user.count({ where: { role: "user", isVerified: true, deletedAt: null } }),
+      prisma.verification.count({ where: { status: "pending" } }),
+      prisma.match.count(),
+      prisma.report.count({ where: { status: "open" } }),
+      prisma.message.count(),
+      prisma.message.count({ where: { isRead: false } }),
+      prisma.complaint.count({ where: { status: "open" } }),
+      prisma.user.count({ where: { role: "user", createdAt: { gte: monthAgo }, deletedAt: null } }),
+      prisma.userRestriction.count({ where: { type: "suspend" } }),
+      prisma.userRestriction.count({ where: { type: "ban" } }),
+      prisma.user.count({ where: { role: "user", gender: "male", deletedAt: null } }),
+      prisma.user.count({ where: { role: "user", gender: "female", deletedAt: null } }),
+      prisma.subscription.count(),
+      prisma.subscription.count({ where: { status: "active" } }),
+      prisma.payment.count(),
+      prisma.payment.count({ where: { status: "pending" } }),
+      prisma.payment.count({ where: { status: "approved" } }),
+      prisma.payment.count({ where: { status: "rejected" } }),
+    ]);
+
+    // Monthly time-series data
+    const [monthlyUsers, monthlyMatches, monthlyRevenue] = await Promise.all([
+      Promise.all(
+        months.map(async (m) => {
+          const count = await prisma.user.count({
+            where: {
+              role: "user",
+              deletedAt: null,
+              createdAt: { gte: m.start, lt: m.end },
+            },
+          });
+          return { month: m.label, users: count };
+        })
+      ),
+      Promise.all(
+        months.map(async (m) => {
+          const count = await prisma.match.count({
+            where: { createdAt: { gte: m.start, lt: m.end } },
+          });
+          return { month: m.label, matches: count };
+        })
+      ),
+      Promise.all(
+        months.map(async (m) => {
+          let amount = 0;
+          try {
+            const result = await prisma.payment.aggregate({
+              where: {
+                status: "approved",
+                createdAt: { gte: m.start, lt: m.end },
+              },
+              _sum: { amount: true },
+            });
+            amount = result._sum.amount || 0;
+          } catch {}
+          return { month: m.label, revenue: amount };
+        })
+      ),
+    ]);
+
+    // Merge monthly data into a single array for the frontend
+    const monthlyData = months.map((m, i) => ({
+      month: m.label,
+      users: monthlyUsers[i]?.users || 0,
+      matches: monthlyMatches[i]?.matches || 0,
+      revenue: monthlyRevenue[i]?.revenue || 0,
+    }));
+
+    let totalRevenue = 0;
+    try {
+      const revenueResult = await prisma.payment.aggregate({
+        where: { status: "approved" },
+        _sum: { amount: true },
+      });
+      totalRevenue = revenueResult._sum.amount || 0;
+    } catch {}
+
+    res.json({
+      analytics: {
+        totalUsers, activeUsers, verifiedUsers, pendingVerifications,
+        totalMatches, totalReports, totalMessages, unreadMessages,
+        openComplaints, newUsersThisMonth, totalRevenue,
+        suspendedUsers, bannedUsers,
+        genderDistribution: { male: maleUsers, female: femaleUsers },
+        subscriptionStats: { total: totalSubscriptions, active: activeSubscriptions },
+        paymentStats: {
+          total: totalPayments, pending: pendingPayments,
+          approved: approvedPayments, rejected: rejectedPayments,
+        },
+        monthlyData,
+      },
+    });
+  } catch (error) {
+    console.error("Analytics error:", error);
+    res.status(500).json({ error: "Failed to fetch analytics" });
+  }
 };
 
 exports.getActivities = async (req, res) => {
@@ -205,8 +431,13 @@ exports.getSystemSettings = async (req, res) => {
 
 exports.updateSystemSettings = async (req, res) => {
   try {
-    const { key, value } = req.body;
-    const setting = await prisma.systemSetting.upsert({ where: { key }, update: { value }, create: { key, value, category: "general" } });
+    const { key, value, category } = req.body;
+    const cat = category || "general";
+    const setting = await prisma.systemSetting.upsert({ where: { key }, update: { value, category: cat }, create: { key, value, category: cat } });
+    if (key.startsWith("matchmaking_weight_")) {
+      invalidateWeightsCache();
+    }
+    await logAudit({ adminId: req.user.userId, action: "update_setting", resource: "system_setting", resourceId: key, details: { key, value, category: cat } });
     res.json({ setting });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -331,7 +562,7 @@ exports.updateFeatureToggle = async (req, res) => {
     const { id } = req.params;
     const { enabled } = req.body;
     const toggle = await prisma.featureToggle.update({ where: { id }, data: { enabled } });
-    await logAudit({ adminId: req.user.id, action: "toggle_feature", resource: "feature_toggle", resourceId: id, details: { key: toggle.key, enabled } });
+    await logAudit({ adminId: req.user.userId, action: "toggle_feature", resource: "feature_toggle", resourceId: id, details: { key: toggle.key, enabled } });
     res.json({ toggle });
   } catch (error) { res.status(500).json({ error: "Failed to update feature toggle" }); }
 };
@@ -348,7 +579,7 @@ exports.setAdminPermission = async (req, res) => {
   try {
     const { adminId, permission } = req.body;
     const perm = await prisma.adminPermission.create({ data: { adminId, permission } });
-    await logAudit({ adminId: req.user.id, action: "grant_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
+    await logAudit({ adminId: req.user.userId, action: "grant_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
     res.json({ permission: perm });
   } catch (error) {
     if (error.code === "P2002") return res.status(400).json({ error: "Permission already exists" });
@@ -360,7 +591,7 @@ exports.removeAdminPermission = async (req, res) => {
   try {
     const { adminId, permission } = req.body;
     await prisma.adminPermission.delete({ where: { adminId_permission: { adminId, permission } } });
-    await logAudit({ adminId: req.user.id, action: "revoke_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
+    await logAudit({ adminId: req.user.userId, action: "revoke_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
     res.json({ success: true });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -380,8 +611,8 @@ exports.reviewContentFlag = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, adminNote } = req.body;
-    const flag = await prisma.contentFlag.update({ where: { id }, data: { status, adminNote, reviewedBy: req.user.id, reviewedAt: new Date() } });
-    await logAudit({ adminId: req.user.id, action: `content_${status}`, resource: "content_flag", resourceId: id, details: { targetType: flag.targetType, adminNote } });
+    const flag = await prisma.contentFlag.update({ where: { id }, data: { status, adminNote, reviewedBy: req.user.userId, reviewedAt: new Date() } });
+    await logAudit({ adminId: req.user.userId, action: `content_${status}`, resource: "content_flag", resourceId: id, details: { targetType: flag.targetType, adminNote } });
     res.json({ flag });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -405,7 +636,7 @@ exports.getPromotions = async (req, res) => {
 exports.createPromotion = async (req, res) => {
   try {
     const promo = await prisma.promotion.create({ data: req.body });
-    await logAudit({ adminId: req.user.id, action: "create_promotion", resource: "promotion", resourceId: promo.id, details: { code: promo.code } });
+    await logAudit({ adminId: req.user.userId, action: "create_promotion", resource: "promotion", resourceId: promo.id, details: { code: promo.code } });
     res.json({ promotion: promo });
   } catch (error) {
     if (error.code === "P2002") return res.status(400).json({ error: "Code already exists" });
@@ -433,7 +664,7 @@ exports.updateNotificationTemplate = async (req, res) => {
   try {
     const { id } = req.params;
     const template = await prisma.notificationTemplate.update({ where: { id }, data: req.body });
-    await logAudit({ adminId: req.user.id, action: "update_template", resource: "notification_template", resourceId: id });
+    await logAudit({ adminId: req.user.userId, action: "update_template", resource: "notification_template", resourceId: id });
     res.json({ template });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -505,6 +736,83 @@ exports.getComplianceChecks = async (req, res) => {
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
 
+// === ADMIN MESSAGING ===
+exports.sendUserMessage = async (req, res) => {
+  try {
+    const { content } = req.body;
+    const receiverId = req.params.id;
+    if (!content) return res.status(400).json({ error: "Message content is required" });
+    const message = await prisma.message.create({
+      data: { senderId: req.user.userId, receiverId, content },
+      include: {
+        sender: { select: { id: true, firstName: true, lastName: true } },
+        receiver: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+    await prisma.notification.create({
+      data: { userId: receiverId, type: "admin_message", title: "New message from admin", body: content },
+    });
+    await logAudit({ adminId: req.user.userId, action: "send_message", resource: "user", resourceId: receiverId });
+    res.status(201).json({ message });
+  } catch (error) {
+    console.error("Admin send message error:", error);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+};
+
+// === ADMIN BROADCAST NOTIFICATION ===
+exports.broadcastNotification = async (req, res) => {
+  try {
+    const { title, body, gender } = req.body;
+    if (!title || !body) return res.status(400).json({ error: "Title and body are required" });
+    const where = gender && gender !== "both" ? { gender } : {};
+    const users = await prisma.user.findMany({ where, select: { id: true } });
+    if (!users.length) return res.status(400).json({ error: "No users match the selected gender" });
+    await prisma.notification.createMany({
+      data: users.map((u) => ({ userId: u.id, type: "admin_broadcast", title, body })),
+    });
+    await logAudit({ adminId: req.user.userId, action: "broadcast_notification", resource: "all_users", details: { gender: gender || "all" } });
+    res.json({ message: `Notification sent to ${users.length} user(s)` });
+  } catch (error) {
+    console.error("Broadcast error:", error);
+    res.status(500).json({ error: "Failed to broadcast" });
+  }
+};
+
+// === ADMIN TARGETED NOTIFICATION ===
+exports.notifyUser = async (req, res) => {
+  try {
+    const { title, body } = req.body;
+    if (!title || !body) return res.status(400).json({ error: "Title and body are required" });
+    await prisma.notification.create({
+      data: { userId: req.params.id, type: "admin_reminder", title, body },
+    });
+    await logAudit({ adminId: req.user.userId, action: "notify_user", resource: "user", resourceId: req.params.id });
+    res.json({ message: "Notification sent" });
+  } catch (error) {
+    console.error("Notify user error:", error);
+    res.status(500).json({ error: "Failed to send notification" });
+  }
+};
+
+// === BADGE COUNTS ===
+exports.getBadgeCounts = async (req, res) => {
+  try {
+    const [pendingVerifications, openComplaints, openReports, pendingAffiliates, pendingPayments, suspendedUsers] = await Promise.all([
+      prisma.verification.count({ where: { status: "pending", viewed_at: null } }),
+      prisma.complaint.count({ where: { status: "open", viewed_at: null } }),
+      prisma.report.count({ where: { status: { in: ["open", "investigating"] }, viewed_at: null } }),
+      prisma.affiliateReferral.count({ where: { status: "pending" } }).catch(() => 0),
+      prisma.payment.count({ where: { status: "pending" } }).catch(() => 0),
+      prisma.user.count({ where: { isActive: false, role: { not: "admin" }, admin_viewed_at: null } }),
+    ]);
+    res.json({ counts: { verifications: pendingVerifications, complaints: openComplaints, reports: openReports, affiliates: pendingAffiliates, payments: pendingPayments, users: suspendedUsers } });
+  } catch (error) {
+    console.error("Badge counts error:", error);
+    res.status(500).json({ error: "Failed to fetch counts" });
+  }
+};
+
 // === SEED ===
 exports.seedDefaults = async (req, res) => {
   try {
@@ -533,13 +841,249 @@ exports.seedDefaults = async (req, res) => {
       { key: "logo_url", value: "/images/logo.png", category: "branding" },
       { key: "default_language", value: "en", category: "localization" },
       { key: "data_retention_days", value: 30, category: "privacy" },
+      { key: "min_compatibility_score", value: 20, category: "matchmaking" },
     ];
     for (const s of settings) {
       await prisma.systemSetting.upsert({ where: { key: s.key }, update: { value: s.value }, create: { key: s.key, value: s.value, category: s.category } });
     }
+
+    // Seed membership plans
+    const plans = [
+      { key: "free", name: "Free Membership", description: "Basic access - browse and receive messages", price: 0, currency: "ETB", durationDays: 0, planType: "free", features: ["create_profile", "upload_photos", "browse_profiles", "receive_messages", "limited_daily_profiles"], isActive: true, sortOrder: 0 },
+      { key: "gold", name: "Gold Membership", description: "Unlimited messaging and advanced features", price: 2400, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges"], isActive: true, sortOrder: 1 },
+      { key: "platinum", name: "Platinum Membership", description: "All Gold benefits plus VIP features", price: 4800, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges", "featured_placement", "highest_search_ranking", "vip_badge", "personalized_matches", "vip_support", "early_access"], isActive: true, sortOrder: 2 },
+      { key: "verification", name: "Identity Verification", description: "One-time verification fee for verified badge", price: 300, currency: "ETB", durationDays: 0, planType: "verification", features: ["verified_badge", "increased_trust", "higher_visibility"], isActive: true, sortOrder: 3 },
+      { key: "boost", name: "Profile Boost", description: "7-day profile boost for maximum exposure", price: 100, currency: "ETB", durationDays: 7, planType: "boost", features: ["featured_placement", "top_search_ranking", "increased_exposure"], isActive: true, sortOrder: 4 },
+    ];
+    for (const p of plans) {
+      await prisma.membershipPlan.upsert({ where: { key: p.key }, update: { price: p.price, durationDays: p.durationDays, features: p.features }, create: p });
+    }
+
+    // Seed contact credit packages
+    const creditPackages = [
+      { key: "credit_1", name: "1 Contact Credit", credits: 1, price: 100, currency: "ETB", isActive: true, sortOrder: 0 },
+      { key: "credit_5", name: "5 Contact Credits", credits: 5, price: 400, currency: "ETB", isActive: true, sortOrder: 1 },
+      { key: "credit_10", name: "10 Contact Credits", credits: 10, price: 700, currency: "ETB", isActive: true, sortOrder: 2 },
+    ];
+    for (const c of creditPackages) {
+      await prisma.contactCreditPackage.upsert({ where: { key: c.key }, update: { credits: c.credits, price: c.price }, create: c });
+    }
+
+    // Seed payment methods
+    const paymentMethods = [
+      { key: "telebirr", name: "Telebirr", instructions: "Send payment to the Telebirr number below. Include your reference number in the receipt.", accountInfo: "Phone: 0912345678", isActive: true, sortOrder: 0 },
+      { key: "cbe_birr", name: "CBE Birr", instructions: "Send payment via CBE Birr to the account below.", accountInfo: "Account: 1000123456789", isActive: true, sortOrder: 1 },
+      { key: "bank_transfer", name: "Bank Transfer", instructions: "Transfer to the bank account below and upload the receipt.", accountInfo: "Bank: CBE, Account: 1000123456789, Name: Ethio Nikah", isActive: true, sortOrder: 2 },
+    ];
+    for (const m of paymentMethods) {
+      await prisma.paymentMethod.upsert({ where: { key: m.key }, update: { instructions: m.instructions, accountInfo: m.accountInfo }, create: m });
+    }
+
     res.json({ success: true, message: "Default data seeded" });
   } catch (error) {
     console.error("Seed error:", error);
     res.status(500).json({ error: "Failed to seed defaults" });
+  }
+};
+
+exports.markUsersViewed = async (req, res) => {
+  try {
+    await prisma.user.updateMany({
+      where: { isActive: false, role: { not: "admin" }, admin_viewed_at: null },
+      data: { admin_viewed_at: new Date() },
+    });
+    res.json({ message: "Users marked as viewed" });
+  } catch (error) {
+    console.error("Mark users viewed error:", error);
+    res.status(500).json({ error: "Failed to mark users as viewed" });
+  }
+};
+
+// === ACCOUNT DELETION RECYCLE BIN ===
+const DELETION_GRACE_DAYS = 30;
+
+exports.getDeletedUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    const { search } = req.query;
+    const where = { deletedAt: { not: null } };
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: "insensitive" } },
+        { lastName: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+      ];
+    }
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { deletedAt: "desc" },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          gender: true,
+          deletedAt: true,
+          dataDeletionRequestedAt: true,
+          createdAt: true,
+          profile: { select: { country: true, city: true } },
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const now = new Date();
+    const data = users.map((u) => {
+      const daysLeft = Math.max(0, DELETION_GRACE_DAYS - Math.floor((now - new Date(u.deletedAt)) / (1000 * 60 * 60 * 24)));
+      return { ...u, daysLeft, canRestore: daysLeft > 0 };
+    });
+    res.json({ users: data, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+  } catch (error) {
+    console.error("Get deleted users error:", error);
+    res.status(500).json({ error: "Failed to fetch deleted users" });
+  }
+};
+
+exports.restoreDeletedUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user.userId;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user.deletedAt) return res.status(400).json({ error: "Account is not deleted" });
+
+    const daysSinceDeletion = Math.floor((new Date() - new Date(user.deletedAt)) / (1000 * 60 * 60 * 24));
+    if (daysSinceDeletion >= DELETION_GRACE_DAYS) {
+      return res.status(400).json({ error: "Restore window has expired. The account must be permanently purged." });
+    }
+
+    await prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: null,
+        dataDeletionRequestedAt: null,
+        isActive: true,
+        tokenVersion: { increment: 1 },
+      },
+    });
+
+    try { require("../middleware/auth").invalidateAuthCache(id); } catch {}
+
+    await logAudit({ userId: adminId, action: "USER_RESTORED", targetUserId: id, details: "Admin restored soft-deleted user" });
+    res.json({ message: "Account restored successfully" });
+  } catch (error) {
+    console.error("Restore user error:", error);
+    res.status(500).json({ error: "Failed to restore account" });
+  }
+};
+
+exports.purgeDeletedUsers = async (req, res) => {
+  try {
+    const adminId = req.user.userId;
+    const cutoff = new Date(Date.now() - DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000);
+
+    const eligible = await prisma.user.findMany({
+      where: { deletedAt: { lte: cutoff } },
+      select: { id: true, email: true, deletedAt: true },
+    });
+
+    const ids = eligible.map((u) => u.id);
+    if (ids.length === 0) return res.json({ message: "No accounts are eligible for purge", purged: 0 });
+
+    await prisma.$transaction([
+      prisma.profile.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.verification.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.spousePreference.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.complaint.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.report.deleteMany({ where: { reporterId: { in: ids } } }),
+      prisma.report.deleteMany({ where: { reportedId: { in: ids } } }),
+      prisma.message.deleteMany({ where: { senderId: { in: ids } } }),
+      prisma.match.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.match.deleteMany({ where: { matchedUserId: { in: ids } } }),
+      prisma.subscription.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.payment.deleteMany({ where: { userId: { in: ids } } }),
+      prisma.user.deleteMany({ where: { id: { in: ids } } }),
+    ]);
+
+    await logAudit({ userId: adminId, action: "PURGE_DELETED_USERS", details: `Permanently purged ${ids.length} accounts` });
+    res.json({ message: `Permanently purged ${ids.length} accounts`, purged: ids.length });
+  } catch (error) {
+    console.error("Purge deleted users error:", error);
+    res.status(500).json({ error: "Failed to purge deleted users" });
+  }
+};
+
+// === LOCKOUT MANAGEMENT ===
+
+exports.pinUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.user.update({
+      where: { id },
+      data: { adminPinned: true },
+    });
+    await logAudit({ adminId: req.user.userId, action: "USER_PINNED", resource: "admin", details: { userId: id } });
+    res.json({ message: "User pinned for review" });
+  } catch (error) {
+    console.error("Pin user error:", error);
+    res.status(500).json({ error: "Failed to pin user" });
+  }
+};
+
+exports.unpinUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.user.update({
+      where: { id },
+      data: { adminPinned: false },
+    });
+    await logAudit({ adminId: req.user.userId, action: "USER_UNPINNED", resource: "admin", details: { userId: id } });
+    res.json({ message: "User unpinned" });
+  } catch (error) {
+    console.error("Unpin user error:", error);
+    res.status(500).json({ error: "Failed to unpin user" });
+  }
+};
+
+exports.unlockUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.user.update({
+      where: { id },
+      data: {
+        loginLockoutCount: 0,
+        loginLockedUntil: null,
+        loginPermanentlyLocked: false,
+        isFlaggedForReview: false,
+        failedAttemptsInRound: 0,
+        lockoutLevel: 0,
+      },
+    });
+    await logAudit({ adminId: req.user.userId, action: "USER_UNLOCKED", resource: "admin", details: { userId: id } });
+    res.json({ message: "User account unlocked successfully" });
+  } catch (error) {
+    console.error("Unlock user error:", error);
+    res.status(500).json({ error: "Failed to unlock user" });
+  }
+};
+
+exports.clearFlag = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.user.update({
+      where: { id },
+      data: { isFlaggedForReview: false },
+    });
+    await logAudit({ adminId: req.user.userId, action: "USER_FLAG_CLEARED", resource: "admin", details: { userId: id } });
+    res.json({ message: "Flag cleared" });
+  } catch (error) {
+    console.error("Clear flag error:", error);
+    res.status(500).json({ error: "Failed to clear flag" });
   }
 };

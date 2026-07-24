@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { forwardRef, type InputHTMLAttributes } from "react";
-import { motion } from "framer-motion";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -40,13 +39,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           />
         </div>
         {error && (
-          <motion.p
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-red-500"
-          >
+          <p className="text-sm text-red-500 animate-fade-in">
             {error}
-          </motion.p>
+          </p>
         )}
       </div>
     );

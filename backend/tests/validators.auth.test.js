@@ -4,7 +4,7 @@ describe("registerSchema", () => {
   const validData = {
     email: "test@example.com",
     phone: "+251911000000",
-    password: "password123",
+    password: "Password123",
     firstName: "John",
     lastName: "Doe",
     gender: "male",
@@ -26,6 +26,17 @@ describe("registerSchema", () => {
     const result = registerSchema.safeParse({
       ...validData,
       phone: "+251 911-000-(000)",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.phone).toBe("+251911000000");
+    }
+  });
+
+  it("normalizes Ethiopian 09 phone format to +251", () => {
+    const result = registerSchema.safeParse({
+      ...validData,
+      phone: "0911000000",
     });
     expect(result.success).toBe(true);
     if (result.success) {

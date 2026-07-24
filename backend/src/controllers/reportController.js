@@ -1,4 +1,19 @@
 const prisma = require("../config/database");
+const { notifyAllAdmins } = require("../utils/notification");
+
+const PREMIUM_PLANS = ["gold", "platinum", "premium"];
+
+async function isPremiumUser(userId) {
+  const sub = await prisma.subscription.findFirst({
+    where: {
+      userId,
+      status: "active",
+      endDate: { gte: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return sub && PREMIUM_PLANS.includes(sub.planType.toLowerCase());
+}
 
 const createReport = async (req, res) => {
   try {
@@ -9,12 +24,15 @@ const createReport = async (req, res) => {
       return res.status(400).json({ error: "Cannot report yourself" });
     }
 
+    const isPremium = await isPremiumUser(userId);
+
     const report = await prisma.report.create({
       data: {
         reporterId: userId,
         reportedUserId,
         reason,
         description,
+        isPinned: isPremium,
       },
       include: {
         reporter: {
@@ -33,6 +51,16 @@ const createReport = async (req, res) => {
         },
       },
     });
+
+    if (isPremium) {
+      try {
+        await notifyAllAdmins({
+          type: "priority_report",
+          title: "Priority Report from Premium User",
+          body: `${report.reporter.firstName} ${report.reporter.lastName} reported ${report.reportedUser.firstName} ${report.reportedUser.lastName}: ${reason}`,
+        });
+      } catch (e) { console.error("[NOTIFY] Admin notification failed:", e.message); }
+    }
 
     res.status(201).json({ message: "Report submitted successfully", report });
   } catch (error) {
@@ -66,7 +94,10 @@ const getAllReports = async (req, res) => {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { isPinned: "desc" },
+        { createdAt: "desc" },
+      ],
     });
 
     res.json({ reports });
@@ -160,10 +191,24 @@ const dismissReport = async (req, res) => {
   }
 };
 
+const markReportViewed = async (req, res) => {
+  try {
+    await prisma.report.updateMany({
+      where: { viewed_at: null },
+      data: { viewed_at: new Date() },
+    });
+    res.json({ message: "Reports marked as viewed" });
+  } catch (error) {
+    console.error("Mark report viewed error:", error);
+    res.status(500).json({ error: "Failed to mark reports as viewed" });
+  }
+};
+
 module.exports = {
   createReport,
   getAllReports,
   getReportById,
   updateReportStatus,
   dismissReport,
+  markReportViewed,
 };

@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Save, User, MapPin, Calendar, Briefcase, GraduationCap,
   Heart, BookOpen, Globe, Users, Home, Sparkles, Upload, Camera,
-  FileText, Eye, EyeOff, ChevronRight,
+  FileText, Eye, EyeOff, ChevronRight, AtSign, CheckCircle, XCircle, Loader2,
+  Lock,
 } from "lucide-react";
 import { Button, Input, Card, Badge } from "@/components/common";
 import { profileService } from "@/services/profile";
 import { useAuth } from "@/context/AuthContext";
 import { mediaUrl } from "@/lib/utils";
+import api from "@/lib/api";
 
 const sections = [
   { id: "basic", label: "Basic Info", icon: User },
@@ -27,8 +29,11 @@ export default function EditProfilePage() {
   const { user, updateUser } = useAuth();
   const [activeSection, setActiveSection] = useState("basic");
   const [isSaving, setIsSaving] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [usernameCheck, setUsernameCheck] = useState<"idle" | "checking" | "available" | "taken">("idle");
 
   useEffect(() => {
     (async () => {
@@ -36,6 +41,7 @@ export default function EditProfilePage() {
         const { data } = await profileService.getMyProfile();
         const p = data.profile || data;
         setFormData({
+          username: p.username || user?.username || "",
           firstName: p.firstName || user?.firstName || "",
           lastName: p.lastName || user?.lastName || "",
           dateOfBirth: p.dateOfBirth ? p.dateOfBirth.split("T")[0] : user?.dateOfBirth?.split("T")[0] || "",
@@ -44,7 +50,16 @@ export default function EditProfilePage() {
           country: p.country || "",
           city: p.city || "",
           height: p.height?.toString() || "",
-          maritalStatus: p.maritalStatus || "single",
+          weight: p.weight || "",
+          appearance: p.appearance || "",
+          maritalStatus: p.maritalStatus || "single_never",
+          hasWali: p.hasWali || "",
+          waliName: p.waliName || "",
+          waliPhone: p.waliPhone || "",
+          waliRelation: p.waliRelation || "",
+          hasChildren: p.hasChildren || "",
+          childrenCount: p.childrenCount || "",
+          childrenCustody: p.childrenCustody || "",
           childrenStatus: p.childrenStatus || "none",
           religiousCommitment: p.religiousCommitment || "practicing",
           prayerHabits: p.prayerHabits || "always",
@@ -65,12 +80,16 @@ export default function EditProfilePage() {
           khatUsage: p.khat || "never",
           exerciseHabits: p.exercise || "weekly",
           livingPreference: p.livingPreference || "independent",
+          personalPreference: p.personalPreference || "",
+          islamicTradition: p.islamicTradition || "",
+          islamicTraditionOther: p.islamicTraditionOther || "",
           selfDescription: p.bio || "",
           qualities: p.qualities || [],
           interests: p.interests?.join(", ") || "",
         });
       } catch {
         setFormData({
+          username: user?.username || "",
           firstName: user?.firstName || "",
           lastName: user?.lastName || "",
           dateOfBirth: user?.dateOfBirth?.split("T")[0] || "",
@@ -94,49 +113,126 @@ export default function EditProfilePage() {
     }
   };
 
+  const handleUsernameChange = (e: any) => {
+    const raw = e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase().slice(0, 30);
+    setFormData((prev: any) => ({ ...prev, username: raw }));
+    setUsernameCheck("idle");
+    if (raw.length < 3) return;
+    setUsernameCheck("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await api.get(`/auth/username/check?username=${raw}`);
+        setUsernameCheck(data.available ? "available" : "taken");
+      } catch {
+        setUsernameCheck("idle");
+      }
+    }, 500);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
       const payload: Record<string, any> = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender,
         nationality: formData.nationality,
         country: formData.country,
         city: formData.city,
         height: formData.height ? Number(formData.height) : undefined,
+        weight: formData.weight,
+        appearance: formData.appearance,
         maritalStatus: formData.maritalStatus,
         childrenStatus: formData.childrenStatus,
         religiousCommitment: formData.religiousCommitment,
         prayerHabits: formData.prayerHabits,
-        quranReading: formData.quranReadingFrequency,
-        islamicClasses: formData.islamicClassesAttendance === "regularly",
-        preferredSpouseReligiousCommitment: formData.preferredReligiousCommitment,
-        education: formData.educationLevel,
+        quranReadingFrequency: formData.quranReadingFrequency,
+        islamicClassesAttendance: formData.islamicClassesAttendance,
+        educationLevel: formData.educationLevel,
         occupation: formData.occupation,
         employmentStatus: formData.employmentStatus,
-        monthlyIncome: formData.monthlyIncomeRange,
-        marriageReason: formData.reasonForJoining,
-        marriageTimeline: formData.desiredMarriageTimeline,
+        monthlyIncomeRange: formData.monthlyIncomeRange,
+        reasonForJoining: formData.reasonForJoining,
+        desiredMarriageTimeline: formData.desiredMarriageTimeline,
         childrenPreference: formData.childrenPreference,
-        ethnicity: formData.ethnicBackground,
+        ethnicBackground: formData.ethnicBackground,
         motherTongue: formData.motherTongue,
         familyInvolvement: formData.familyInvolvement,
-        smoking: formData.smokingHabits,
-        khat: formData.khatUsage,
-        exercise: formData.exerciseHabits,
+        smokingHabits: formData.smokingHabits,
+        khatUsage: formData.khatUsage,
+        exerciseHabits: formData.exerciseHabits,
         livingPreference: formData.livingPreference,
+        personalPreference: formData.personalPreference,
+        islamicTradition: formData.islamicTradition,
+        islamicTraditionOther: formData.islamicTraditionOther,
+        hasChildren: formData.hasChildren,
+        childrenCount: formData.childrenCount,
+        childrenCustody: formData.childrenCustody,
         bio: formData.selfDescription,
         qualities: formData.qualities,
         interests: formData.interests ? formData.interests.split(",").map((s: string) => s.trim()) : [],
       };
-      const { data } = await profileService.createOrUpdate(payload);
-      if (data.user) updateUser(data.user);
+      const [profileRes] = await Promise.all([
+        profileService.createOrUpdate(payload),
+        formData.username?.length >= 3 ? api.post("/auth/username", { username: formData.username }) : Promise.resolve(),
+      ]);
+      if (profileRes.data.user) updateUser(profileRes.data.user);
     } catch {
       // error handled silently
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCompleteProfile = async () => {
+    setIsCompleting(true);
+    setIsSaving(true);
+    try {
+      const payload: Record<string, any> = {
+        nationality: formData.nationality,
+        country: formData.country,
+        city: formData.city,
+        height: formData.height ? Number(formData.height) : undefined,
+        weight: formData.weight,
+        appearance: formData.appearance,
+        maritalStatus: formData.maritalStatus,
+        childrenStatus: formData.childrenStatus,
+        religiousCommitment: formData.religiousCommitment,
+        prayerHabits: formData.prayerHabits,
+        quranReadingFrequency: formData.quranReadingFrequency,
+        islamicClassesAttendance: formData.islamicClassesAttendance,
+        educationLevel: formData.educationLevel,
+        occupation: formData.occupation,
+        employmentStatus: formData.employmentStatus,
+        monthlyIncomeRange: formData.monthlyIncomeRange,
+        reasonForJoining: formData.reasonForJoining,
+        desiredMarriageTimeline: formData.desiredMarriageTimeline,
+        childrenPreference: formData.childrenPreference,
+        ethnicBackground: formData.ethnicBackground,
+        motherTongue: formData.motherTongue,
+        familyInvolvement: formData.familyInvolvement,
+        smokingHabits: formData.smokingHabits,
+        khatUsage: formData.khatUsage,
+        exerciseHabits: formData.exerciseHabits,
+        livingPreference: formData.livingPreference,
+        personalPreference: formData.personalPreference,
+        islamicTradition: formData.islamicTradition,
+        islamicTraditionOther: formData.islamicTraditionOther,
+        hasChildren: formData.hasChildren,
+        childrenCount: formData.childrenCount,
+        childrenCustody: formData.childrenCustody,
+        bio: formData.selfDescription,
+        qualities: formData.qualities,
+        interests: formData.interests ? formData.interests.split(",").map((s: string) => s.trim()) : [],
+      };
+      await Promise.all([
+        profileService.createOrUpdate(payload),
+        formData.username?.length >= 3 ? api.post("/auth/username", { username: formData.username }) : Promise.resolve(),
+      ]);
+      await profileService.setProfileComplete();
+      router.push("/profile");
+    } catch {
+      // ignore
+    } finally {
+      setIsSaving(false);
+      setIsCompleting(false);
     }
   };
 
@@ -159,7 +255,7 @@ export default function EditProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-charcoal-50 dark:bg-charcoal-900 flex items-center justify-center">
+      <div className="min-h-screen bg-blur-image flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full" />
       </div>
     );
@@ -171,26 +267,58 @@ export default function EditProfilePage() {
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Basic Information</h3>
+            <div>
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">
+                Username <span className="text-charcoal-400 font-normal">(@username)</span>
+              </label>
+              <div className="relative">
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-400" />
+                <Input
+                  name="username"
+                  value={formData.username || ""}
+                  onChange={handleUsernameChange}
+                  placeholder="choose_a_username"
+                  className="pl-10 pr-10"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {usernameCheck === "checking" && <Loader2 className="w-4 h-4 text-charcoal-400 animate-spin" />}
+                  {usernameCheck === "available" && <CheckCircle className="w-4 h-4 text-green-500" />}
+                  {usernameCheck === "taken" && <XCircle className="w-4 h-4 text-red-500" />}
+                </div>
+              </div>
+              {usernameCheck === "available" && <p className="text-xs text-green-500 mt-1">Username available!</p>}
+              {usernameCheck === "taken" && <p className="text-xs text-red-500 mt-1">Username already taken</p>}
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">First Name</label>
-                <Input name="firstName" value={formData.firstName || ""} onChange={handleChange} />
+                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+                  First Name <Lock className="w-3 h-3 text-charcoal-400" />
+                </label>
+                <Input name="firstName" value={formData.firstName || ""} disabled className="opacity-60 cursor-not-allowed" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Last Name</label>
-                <Input name="lastName" value={formData.lastName || ""} onChange={handleChange} />
+                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+                  Last Name <Lock className="w-3 h-3 text-charcoal-400" />
+                </label>
+                <Input name="lastName" value={formData.lastName || ""} disabled className="opacity-60 cursor-not-allowed" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Date of Birth</label>
-              <Input name="dateOfBirth" type="date" value={formData.dateOfBirth || ""} onChange={handleChange} />
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+                Date of Birth <Lock className="w-3 h-3 text-charcoal-400" />
+              </label>
+              <Input name="dateOfBirth" type="date" value={formData.dateOfBirth || ""} disabled className="opacity-60 cursor-not-allowed" />
+              <p className="text-xs text-charcoal-400 mt-1">Date of birth cannot be changed after registration.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Gender</label>
-              <select name="gender" value={formData.gender || "male"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+                Gender <Lock className="w-3 h-3 text-charcoal-400" />
+              </label>
+              <select name="gender" value={formData.gender || "male"} disabled className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl opacity-60 cursor-not-allowed">
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
+              <p className="text-xs text-charcoal-400 mt-1">Gender is permanent and cannot be changed after registration.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Nationality</label>
@@ -211,9 +339,33 @@ export default function EditProfilePage() {
               <Input name="height" type="number" value={formData.height || ""} onChange={handleChange} />
             </div>
             <div>
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Weight (kg)</label>
+              <select name="weight" value={formData.weight || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="">Select weight range</option>
+                <option value="below_40">Below 40</option>
+                <option value="41_50">41 - 50</option>
+                <option value="51_60">51 - 60</option>
+                <option value="61_70">61 - 70</option>
+                <option value="71_80">71 - 80</option>
+                <option value="above_80">Above 80</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Appearance (Skin Color)</label>
+              <select name="appearance" value={formData.appearance || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="">Select appearance</option>
+                <option value="light">Light</option>
+                <option value="reddish_brown">Reddish Brown</option>
+                <option value="brown">Brown</option>
+                <option value="black">Black</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Marital Status</label>
-              <select name="maritalStatus" value={formData.maritalStatus || "single"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
-                <option value="single">Single</option>
+              <select name="maritalStatus" value={formData.maritalStatus || "single_never"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="single_never">Single (Virgin)</option>
+                <option value="single_previous">Single (had relationship before)</option>
+                {formData.gender === "male" && <option value="married">Married</option>}
                 <option value="divorced">Divorced</option>
                 <option value="widowed">Widowed</option>
               </select>
@@ -224,6 +376,27 @@ export default function EditProfilePage() {
                 <option value="none">None</option>
                 <option value="living_with_me">Living with me</option>
                 <option value="not_living_with_me">Not living with me</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Children Count</label>
+              <select name="childrenCount" value={formData.childrenCount || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="">Select</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5+">5+</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Children Custody</label>
+              <select name="childrenCustody" value={formData.childrenCustody || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="">Select</option>
+                <option value="full_custody">Full Custody</option>
+                <option value="shared_custody">Shared Custody</option>
+                <option value="no_custody">No Custody</option>
               </select>
             </div>
           </div>
@@ -268,6 +441,22 @@ export default function EditProfilePage() {
                 <option value="never">Never</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Islamic Tradition</label>
+              <select name="islamicTradition" value={formData.islamicTradition || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <option value="">Select</option>
+                <option value="sunni">Sunni</option>
+                <option value="salafi">Salafi</option>
+                <option value="sufi">Sufi</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            {formData.islamicTradition === "other" && (
+              <div>
+                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Other Tradition (specify)</label>
+                <Input name="islamicTraditionOther" value={formData.islamicTraditionOther || ""} onChange={handleChange} />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Preferred Religious Commitment in Spouse</label>
               <select name="preferredReligiousCommitment" value={formData.preferredReligiousCommitment || "practicing"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
@@ -437,6 +626,10 @@ export default function EditProfilePage() {
               <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Interests & Hobbies</label>
               <textarea name="interests" rows={3} value={formData.interests || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Personal Preference</label>
+              <textarea name="personalPreference" rows={3} value={formData.personalPreference || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none" placeholder="Any personal preferences you'd like to share..." />
+            </div>
           </div>
         );
       default:
@@ -445,7 +638,7 @@ export default function EditProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-charcoal-50 dark:bg-charcoal-900">
+    <div className="min-h-screen bg-blur-image">
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4 mb-8">
           <Link href="/profile" className="p-2 hover:bg-charcoal-200 dark:hover:bg-charcoal-700 rounded-lg transition-colors">
@@ -504,14 +697,9 @@ export default function EditProfilePage() {
 
           <div className="lg:col-span-3">
             <Card>
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div key={activeSection}>
                 {renderSection()}
-              </motion.div>
+              </div>
 
               <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-charcoal-200 dark:border-charcoal-700">
                 <Link href="/profile">
@@ -520,6 +708,10 @@ export default function EditProfilePage() {
                 <Button onClick={handleSave} loading={isSaving}>
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
+                </Button>
+                <Button onClick={handleCompleteProfile} loading={isCompleting} variant="primary">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Mark as Complete
                 </Button>
               </div>
             </Card>

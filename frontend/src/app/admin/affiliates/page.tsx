@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
 import { HeartHandshake, Users, DollarSign, TrendingUp, Gift } from "lucide-react";
+import { useI18n } from "@/context/I18nContext";
 
 export default function AffiliatesPage() {
+  const { t } = useI18n();
   const [referrals, setReferrals] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export default function AffiliatesPage() {
   return (
     <AdminLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><HeartHandshake className="w-6 h-6" /> Affiliate & Referral Tracking</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><HeartHandshake className="w-6 h-6" /> {t('admin.nav.community')} — Affiliate</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Monitor referrals, conversions, and reward programs</p>
       </div>
 

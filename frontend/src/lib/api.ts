@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
@@ -14,6 +15,8 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const networkToast = { id: "network-error" };
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -21,7 +24,18 @@ api.interceptors.response.use(
 
     const original = error.config;
 
-    if (error.response?.status === 401 && !original._retry && !original._noRedirect) {
+    // Token expiry - auto refresh
+    if (error.response?.status === 401 && !original._retry) {
+      // Session invalidated (tokenVersion mismatch) — don't retry, redirect immediately
+      if (error.response?.data?.error?.includes("Session invalidated") || error.response?.data?.error?.includes("Account not found")) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
       if (!original.headers?.Authorization) {
         return Promise.reject(error);
       }
@@ -37,13 +51,71 @@ api.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
-        if (!original._silent) {
+        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";
         }
+        return Promise.reject(error);
       }
     }
 
-    console.error("API error:", error.response?.status, error.response?.data || error.message);
+    // Network / connection errors
+    if (!error.response) {
+      if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
+        toast.error("No internet connection. Check your network.", { id: networkToast.id, duration: 5000 });
+      } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        toast.error("Request timed out. Please try again.", { id: networkToast.id, duration: 5000 });
+      } else {
+        toast.error("Network error. Please try again.", { id: networkToast.id, duration: 5000 });
+      }
+      return Promise.reject(error);
+    }
+
+    // Server errors
+    const status = error.response.status;
+    const serverMsg = error.response.data?.error || error.response.data?.message || "";
+
+    // Catch-all: any 401 that wasn't handled above — redirect to login
+    if (status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+      return Promise.reject(error);
+    }
+
+    if (status === 503 && error.response.data?.code === "SERVER_BUSY") {
+      // Graceful overload — don't show generic "server down" toast; caller handles it
+      return Promise.reject(error);
+    } else if (status >= 500) {
+      toast.error("Server is down. Please try again later.", { id: "server-down", duration: 5000 });
+    } else if (status === 403) {
+      // Suspended/deleted account — redirect to login
+      if (serverMsg?.includes("suspended") || serverMsg?.includes("deleted") || error.response.data?.code === "ACCOUNT_DELETED") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+      if (serverMsg && !original._noToast) {
+        toast.error(serverMsg, { duration: 4000 });
+      }
+    } else if (status === 429) {
+      // Rate limited — show error toast overlay
+      if (serverMsg && !original._noToast) {
+        toast.error(serverMsg, { duration: 5000, id: "rate-limited" });
+      }
+      return Promise.reject(error);
+    } else if (status >= 400) {
+      if (serverMsg && !original._noToast) {
+        toast.error(serverMsg, { duration: 4000 });
+      }
+    }
+
     return Promise.reject(error);
   }
 );

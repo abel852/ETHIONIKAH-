@@ -1,7 +1,8 @@
 export { default as Button } from "./Button";
 export { default as Input } from "./Input";
+export { default as Textarea } from "./Textarea";
 export { Card, CardHeader, CardContent } from "./Card";
-export { Badge, VerifiedBadge } from "./Badge";
+export { Badge, VerifiedBadge, NotVerifiedBadge } from "./Badge";
 export { Modal } from "./Modal";
 export {
   Skeleton,
@@ -15,6 +16,8 @@ export {
   StatsGridSkeleton,
 } from "./Skeleton";
 export { Avatar } from "./Avatar";
-export { AnimatedCounter } from "./AnimatedCounter";
 export { ToastProvider } from "./Toast";
-export { ThemeToggle } from "./ThemeToggle";
+export { ScreenshotGuard } from "./ScreenshotGuard";
+export { NetworkBanner } from "./NetworkBanner";
+export { default as WordSuggest } from "./WordSuggest";
+export { IslamicPatternBackground } from "./IslamicPatternBackground";

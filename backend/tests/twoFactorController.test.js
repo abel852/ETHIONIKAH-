@@ -564,26 +564,24 @@ describe("POST /api/auth/2fa/disable", () => {
     expect(res.status).toBe(401);
   });
 
-  it("disables 2FA using backup code", async () => {
+  it("rejects backup code for disabling 2FA", async () => {
     const token = authedUser();
     const passwordHash = await bcrypt.hash("password123", 10);
-    const hashedBackup = bcrypt.hashSync("BACK-1234-CODE-5678", 6);
     speakeasy.totp.verify.mockReturnValue(false);
     prisma.user.findUnique.mockResolvedValue({
       ...baseUser,
       passwordHash,
       googleAuthSecret: "MOCKBASE32SECRET",
-      backupCodes: JSON.stringify([hashedBackup]),
+      backupCodes: JSON.stringify(["hashedcode1"]),
     });
-    prisma.user.update.mockResolvedValue({});
 
     const res = await request(app)
       .post("/api/auth/2fa/disable")
       .set("Authorization", `Bearer ${token}`)
       .send({ password: "password123", token: "BACK-1234-CODE-5678" });
 
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe("Two-factor authentication disabled");
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Invalid authenticator code. Use a live code from your authenticator app.");
   });
 
   it("returns 500 on database error", async () => {

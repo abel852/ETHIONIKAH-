@@ -17,6 +17,7 @@ router.post("/admins/verify-2fa", ...superAdmin, ctrl.verifyGoogleAuth);
 router.post("/admins/create", ...superAdmin, ctrl.createAdmin);
 router.get("/admins", ...superAdmin, ctrl.listAdmins);
 router.put("/admins/:id/permissions", ...superAdmin, ctrl.updateAdminPermissions);
+router.put("/admins/:id", ...superAdmin, ctrl.updateAdmin);
 router.delete("/admins/:id", ...superAdmin, ctrl.deleteAdmin);
 router.get("/admins/permissions/list", ...superAdmin, ctrl.getAvailablePermissions);
 

@@ -66,6 +66,79 @@
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
+
+  /* Premium romantic gradient background with heart motifs — pink/peach/gold */
+  .bg-blur-image {
+    background-color: #fdf2f8;
+    background-image:
+      radial-gradient(ellipse at 15% 15%, rgba(251, 207, 232, 0.35) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 20%, rgba(254, 215, 170, 0.30) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 80%, rgba(212, 175, 55, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 30% 50%, rgba(255, 200, 221, 0.20) 0%, transparent 35%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cdefs%3E%3Cpattern id='hearts' x='0' y='0' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.6' opacity='0.15'%3E%3Cpath d='M50 35 C45 28, 35 28, 35 38 C35 48, 50 58, 50 58 C50 58, 65 48, 65 38 C65 28, 55 28, 50 35 Z'/%3E%3Cpath d='M15 75 C13 72, 8 72, 8 77 C8 82, 15 87, 15 87 C15 87, 22 82, 22 77 C22 72, 17 72, 15 75 Z' opacity='0.6'/%3E%3Cpath d='M85 20 C83 17, 78 17, 78 22 C78 27, 85 32, 85 32 C85 32, 92 27, 92 22 C92 17, 87 17, 85 20 Z' opacity='0.5'/%3E%3C/g%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23hearts)'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+  }
+
+  .dark .bg-blur-image {
+    background-color: #1a0a1a;
+    background-image:
+      radial-gradient(ellipse at 15% 15%, rgba(190, 24, 93, 0.12) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 20%, rgba(180, 83, 9, 0.10) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 80%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 30% 50%, rgba(190, 24, 93, 0.08) 0%, transparent 35%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cdefs%3E%3Cpattern id='hearts-dark' x='0' y='0' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.6' opacity='0.10'%3E%3Cpath d='M50 35 C45 28, 35 28, 35 38 C35 48, 50 58, 50 58 C50 58, 65 48, 65 38 C65 28, 55 28, 50 35 Z'/%3E%3Cpath d='M15 75 C13 72, 8 72, 8 77 C8 82, 15 87, 15 87 C15 87, 22 82, 22 77 C22 72, 17 72, 15 75 Z' opacity='0.6'/%3E%3Cpath d='M85 20 C83 17, 78 17, 78 22 C78 27, 85 32, 85 32 C85 32, 92 27, 92 22 C92 17, 87 17, 85 20 Z' opacity='0.5'/%3E%3C/g%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23hearts-dark)'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+  }
+
+  /* Premium Islamic pattern overlay — lighter, for cards and sections */
+  .islamic-pattern-overlay {
+    position: relative;
+  }
+  .islamic-pattern-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cdefs%3E%3Cpattern id='islamic-stars' x='0' y='0' width='80' height='80' patternUnits='userSpaceOnUse'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.4' opacity='0.06'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40 Z'/%3E%3Cpath d='M40 15 L65 40 L40 65 L15 40 Z'/%3E%3Ccircle cx='40' cy='40' r='5'/%3E%3Cpath d='M0 0 L15 15 M80 0 L65 15 M0 80 L15 65 M80 80 L65 65'/%3E%3C/g%3E%3C/pattern%3E%3C/defs%3E%3Crect width='80' height='80' fill='url(%23islamic-stars)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Premium gradient border glow */
+  .premium-glow-border {
+    position: relative;
+  }
+  .premium-glow-border::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.4), transparent 40%, transparent 60%, rgba(212, 175, 55, 0.2));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Premium shimmer sweep for cards */
+  .premium-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .premium-shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.08), transparent);
+    transition: left 0.6s ease;
+  }
+  .premium-shimmer:hover::after {
+    left: 100%;
+  }
 }
 
 @layer utilities {
@@ -74,6 +147,21 @@
   }
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .animate-premium-fade-in {
+    animation: premiumFadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  .animate-premium-slide-up {
+    animation: premiumSlideUp 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+  .animate-premium-scale-in {
+    animation: premiumScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .animate-error-shake {
+    animation: errorShake 0.4s ease-in-out;
+  }
+  .animate-premium-glow {
+    animation: premiumGlow 3s ease-in-out infinite;
   }
 }
 
@@ -101,4 +189,108 @@ html {
 ::selection {
   background: rgba(212, 175, 55, 0.3);
   color: #FFFFFF;
+}
+
+/* Print Screen guard - blurs entire page when PrtSc is pressed */
+.prtsc-blur-active > * {
+  filter: blur(16px);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent dragging/saving images */
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s ease-out;
+}
+
+@keyframes premiumFadeIn {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes premiumSlideUp {
+  0% { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes premiumScaleIn {
+  0% { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+@keyframes premiumGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.3); }
+}
+
+/* Admin sidebar scrollbar */
+.admin-sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(139, 128, 168, 0.3);
+  border-radius: 4px;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 128, 168, 0.5);
+}
+.admin-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 128, 168, 0.3) transparent;
+}
+
+/* Admin main content scrollbar */
+.admin-main-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.admin-main-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-main-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+}
+.admin-main-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+.admin-main-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+/* Flagged user red rotating border — grabs admin attention */
+@keyframes flag-rotate {
+  0%   { box-shadow: 0 0 0 2px #ef4444, 0 0 8px rgba(239, 68, 68, 0.4); }
+  25%  { box-shadow: 0 0 0 2px #f97316, 0 0 12px rgba(249, 115, 22, 0.5); }
+  50%  { box-shadow: 0 0 0 2px #ef4444, 0 0 16px rgba(239, 68, 68, 0.6); }
+  75%  { box-shadow: 0 0 0 2px #f97316, 0 0 12px rgba(249, 115, 22, 0.5); }
+  100% { box-shadow: 0 0 0 2px #ef4444, 0 0 8px rgba(239, 68, 68, 0.4); }
+}
+
+.flagged-user-row {
+  animation: flag-rotate 2s ease-in-out infinite;
+  border-radius: 8px;
 }

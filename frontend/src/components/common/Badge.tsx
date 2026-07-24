@@ -40,11 +40,32 @@ export function Badge({ variant = "default", size = "sm", children, className }:
 
 export function VerifiedBadge({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2.5 py-0.5 bg-accent/15 text-accent-dark text-xs font-medium rounded-full", className)}>
-      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+    <span className={cn(
+      "inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold rounded-full",
+      "bg-gradient-to-r from-accent to-yellow-500 text-white",
+      "shadow-lg shadow-accent/30",
+      "ring-1 ring-accent/50",
+      className
+    )}>
+      <svg className="w-3.5 h-3.5 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
       </svg>
       Verified
+    </span>
+  );
+}
+
+export function NotVerifiedBadge({ className }: { className?: string }) {
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium rounded-full",
+      "bg-charcoal-100 dark:bg-charcoal-700 text-charcoal-400 dark:text-charcoal-500",
+      className
+    )}>
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 102 0V6zm-1 7a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+      </svg>
+      Not Verified
     </span>
   );
 }

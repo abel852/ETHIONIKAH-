@@ -6,17 +6,17 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import Button from "@/components/common/Button";
 import NotificationBell from "@/components/notifications/NotificationBell";
-
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/matches", label: "Matches" },
-];
+import { useI18n } from "@/context/I18nContext";
 
 export default function Navbar() {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
+  const navLinks = [
+    { href: "/", label: t('nav.home') },
+    { href: "/matches", label: t('nav.matches') },
+  ];
   const [scrolled, setScrolled] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -80,20 +80,19 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <ThemeToggle />
             <NotificationBell />
             {isAuthenticated ? (
               <>
                 <Link href="/matches">
                   <Button variant="ghost" size="sm">
                     <User className="w-4 h-4 mr-2" />
-                    Profile
+                    {t('nav.profile')}
                   </Button>
                 </Link>
                 <Button variant="ghost" size="sm" onClick={() => { localStorage.removeItem("accessToken"); localStorage.removeItem("refreshToken"); localStorage.removeItem("user"); window.location.href = "/"; }}>
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
+                    {t('nav.logout')}
+                  </Button>
               </>
             ) : (
               <>
@@ -103,18 +102,18 @@ export default function Navbar() {
                     size="sm"
                     className={cn("transition-all duration-300", scrolled ? "" : "text-white/80 hover:text-white hover:bg-white/10")}
                   >
-                    Sign In
+                    {t('nav.signIn')}
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="primary" size="sm" className="shadow-glow hover:shadow-glow-lg transition-shadow duration-300">Get Started</Button>
+                  <Button variant="primary" size="sm" className="shadow-glow hover:shadow-glow-lg transition-shadow duration-300">{t('nav.getStarted')}</Button>
                 </Link>
               </>
             )}
           </div>
 
           <button
-            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-label={isOpen ? t("nav.closeMenu") : t("nav.openMenu")}
             className={cn(
               "md:hidden relative z-50 p-2.5 rounded-xl transition-all duration-300",
               scrolled
@@ -154,10 +153,10 @@ export default function Navbar() {
             >
               <div className="px-5 pt-6 pb-2">
                 <div className="flex items-center gap-3 mb-6">
-                  <Image src="/images/logo.png" alt="Ethio Nikah" width={40} height={40} className="rounded-lg border border-accent/30" />
+                  <Image src="/images/logo.png" alt={t("app.name")} width={40} height={40} className="rounded-lg border border-accent/30" />
                   <div>
-                    <p className="font-display font-bold text-charcoal-900">Ethio Nikah</p>
-                    <p className="text-xs text-charcoal-400">Premium Islamic Matchmaking</p>
+                    <p className="font-display font-bold text-charcoal-900">{t("app.name")}</p>
+                    <p className="text-xs text-charcoal-400">{t("app.tagline")}</p>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -181,15 +180,11 @@ export default function Navbar() {
                 </div>
               </div>
               <div className="px-5 py-4 bg-charcoal-50/80 border-t border-charcoal-100/50 space-y-2">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs text-charcoal-500 font-medium">Theme</span>
-                  <ThemeToggle />
-                </div>
                 <Link href="/login" className="block" onClick={() => setIsOpen(false)}>
-                  <Button variant="secondary" className="w-full">Sign In</Button>
+                  <Button variant="secondary" className="w-full">{t('nav.signIn')}</Button>
                 </Link>
                 <Link href="/register" className="block" onClick={() => setIsOpen(false)}>
-                  <Button variant="primary" className="w-full shadow-glow">Get Started</Button>
+                  <Button variant="primary" className="w-full shadow-glow">{t('nav.getStarted')}</Button>
                 </Link>
               </div>
             </motion.div>

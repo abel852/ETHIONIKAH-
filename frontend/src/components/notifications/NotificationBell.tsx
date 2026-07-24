@@ -18,7 +18,17 @@ const typeIcons: Record<string, string> = {
 export default function NotificationBell() {
   const { notifications, unreadCount, fetchNotifications, fetchUnreadCount, markAsRead, markAllAsRead } = useNotificationStore();
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      setIsAdmin(user.role === "admin");
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -39,14 +49,34 @@ export default function NotificationBell() {
 
   const poll = useCallback(() => { fetchUnreadCount(); }, [fetchUnreadCount]);
   useEffect(() => {
-    const id = setInterval(poll, 30000);
+    const id = setInterval(poll, 15000);
     return () => clearInterval(id);
   }, [poll]);
+
+  const handleToggle = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const dw = 384;
+      let left = rect.left;
+      if (left + dw > window.innerWidth - 8) {
+        left = window.innerWidth - dw - 8;
+      }
+      if (left < 8) left = 8;
+      setDropdownStyle({
+        position: "fixed",
+        top: `${rect.bottom + 8}px`,
+        left: `${left}px`,
+        zIndex: 9999,
+      });
+    }
+    setOpen(!open);
+  };
 
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(!open)}
+        ref={btnRef}
+        onClick={handleToggle}
         className="relative p-2 rounded-xl hover:bg-charcoal-100 dark:hover:bg-charcoal-700 transition-colors"
         aria-label="Notifications"
       >
@@ -59,7 +89,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-charcoal-800 rounded-2xl shadow-elevated border border-charcoal-100 dark:border-charcoal-700 overflow-hidden z-50">
+        <div style={dropdownStyle} className="w-[90vw] sm:w-96 max-w-sm bg-white dark:bg-charcoal-800 rounded-2xl shadow-elevated border border-charcoal-100 dark:border-charcoal-700 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-charcoal-100 dark:border-charcoal-700">
             <h3 className="font-semibold text-sm text-charcoal-900 dark:text-white">Notifications</h3>
             <div className="flex items-center gap-2">
@@ -101,7 +131,7 @@ export default function NotificationBell() {
 
           {notifications.length > 0 && (
             <Link
-              href="/notifications"
+              href={isAdmin ? "/admin" : "/notifications"}
               onClick={() => setOpen(false)}
               className="block text-center text-sm text-accent font-medium py-3 border-t border-charcoal-100 dark:border-charcoal-700 hover:bg-charcoal-50 dark:hover:bg-charcoal-700/30 transition-colors"
             >

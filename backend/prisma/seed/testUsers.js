@@ -1,0 +1,755 @@
+const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
+const { encrypt } = require("../../src/utils/encryption");
+
+const prisma = new PrismaClient();
+
+async function createTestUser(data) {
+  const {
+    email, phone, password, firstName, lastName, gender, dateOfBirth,
+    profile: profileData,
+    spousePreference: prefData,
+    healthInfo: healthData,
+  } = data;
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    console.log(`User ${email} already exists, skipping.`);
+    return existing;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      phone,
+      passwordHash,
+      firstName,
+      lastName,
+      gender,
+      dateOfBirth: new Date(dateOfBirth),
+      isVerified: profileData.isVerified || false,
+      isEmailVerified: true,
+      isPhoneVerified: true,
+    },
+  });
+
+  const profile = await prisma.profile.create({
+    data: {
+      userId: user.id,
+      nationality: profileData.nationality || "Ethiopian",
+      country: profileData.country || "Ethiopia",
+      city: profileData.city || "Addis Ababa",
+      region: profileData.region || "Addis Ababa",
+      height: profileData.height || null,
+      maritalStatus: profileData.maritalStatus || "single_never",
+      childrenStatus: profileData.childrenStatus || null,
+      religiousCommitment: profileData.religiousCommitment || "moderate",
+      prayerHabits: profileData.prayerHabits || "sometimes",
+      quranReadingFrequency: profileData.quranReadingFrequency || "sometimes",
+      islamicClassesAttendance: profileData.islamicClassesAttendance || "no",
+      educationLevel: profileData.educationLevel || "bachelors",
+      occupation: profileData.occupation || "",
+      employmentStatus: profileData.employmentStatus || "employed",
+      monthlyIncomeRange: profileData.monthlyIncomeRange || "",
+      reasonForJoining: profileData.reasonForJoining || "seeking_marriage",
+      desiredMarriageTimeline: profileData.desiredMarriageTimeline || "within_1_year",
+      childrenPreference: profileData.childrenPreference || "wants_children",
+      ethnicBackground: profileData.ethnicBackground || "Oromo",
+      motherTongue: profileData.motherTongue || "Oromo",
+      familyInvolvement: profileData.familyInvolvement || "important",
+      smokingHabits: profileData.smokingHabits || "non_smoker",
+      khatUsage: profileData.khatUsage || "never",
+      exerciseHabits: profileData.exerciseHabits || "sometimes",
+      livingPreference: profileData.livingPreference || "own_place",
+      religiousLevel: profileData.religiousCommitment || "moderate",
+      selfDescription: profileData.selfDescription || "",
+      qualities: profileData.qualities || [],
+      interests: profileData.interests || [],
+      languages: profileData.languages || ["Amharic"],
+      ethnicity: profileData.ethnicity || profileData.ethnicBackground || "Oromo",
+      bio: profileData.bio || "",
+      isProfileComplete: true,
+    },
+  });
+
+  if (prefData) {
+    await prisma.spousePreference.create({
+      data: {
+        profileId: profile.id,
+        preferredAgeMin: prefData.preferredAgeMin || 18,
+        preferredAgeMax: prefData.preferredAgeMax || 120,
+        preferredMaritalStatus: prefData.preferredMaritalStatus || "any",
+        preferredEducationLevel: prefData.preferredEducationLevel || "any",
+        preferredLocation: prefData.preferredLocation || "any",
+        waliInvolvement: prefData.waliInvolvement || "optional",
+        polygamyPreference: prefData.polygamyPreference || "not_acceptable",
+        mahrExpectation: prefData.mahrExpectation || "",
+        genderInteraction: prefData.genderInteraction || "moderate",
+        preferredReligiousCommitment: prefData.preferredReligiousCommitment || "any",
+      },
+    });
+  }
+
+  if (healthData) {
+    const enc = (v) => (v ? encrypt(v) : null);
+    await prisma.health_info.create({
+      data: {
+        id: require("crypto").randomUUID(),
+        profile_id: profile.id,
+        hiv_status: enc(healthData.hivStatus || "negative"),
+        std_status: enc(healthData.stdStatus || "no"),
+        hereditary_diseases: enc(healthData.hereditaryDiseases || "no"),
+        chronic_conditions: enc(healthData.chronicConditions || "no"),
+        disabilities: enc(healthData.disabilities || "no"),
+        other_conditions: enc(healthData.otherConditions || null),
+        share_with_matches: healthData.shareWithMatches !== false,
+        hiv_match_preference: healthData.hivMatchPreference || "any",
+        std_match_preference: healthData.stdMatchPreference || "any",
+        hereditary_match_preference: healthData.hereditaryMatchPreference || "any",
+        health_match_preference: healthData.healthMatchPreference || "any",
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  console.log(`Created user: ${firstName} ${lastName} (${email})`);
+  return user;
+}
+
+async function main() {
+  console.log("Creating test users...\n");
+
+  // ===================== MALE USERS =====================
+
+  await createTestUser({
+    email: "ahmed@ethionikah.com",
+    phone: "+251911000001",
+    password: "test1234",
+    firstName: "Ahmed",
+    lastName: "Hassan",
+    gender: "male",
+    dateOfBirth: "1995-03-15",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Addis Ababa", region: "Addis Ababa",
+      height: 178, weight: "75", appearance: "average",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "very_committed", prayerHabits: "all_prayers",
+      quranReadingFrequency: "daily", islamicClassesAttendance: "yes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "masters", occupation: "Software Engineer", employmentStatus: "employed",
+      monthlyIncomeRange: "50000-100000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_6_months",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Oromo", motherTongue: "Oromo", familyInvolvement: "very_important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "regularly",
+      livingPreference: "own_place",
+      selfDescription: "A practicing Muslim seeking a righteous wife for marriage.",
+      qualities: ["honest", "kind", "ambitious", "religious", "family_oriented"],
+      interests: ["reading", "technology", "sports", "charity_work", "islamic_learning"],
+      languages: ["Amharic", "Oromo", "English"],
+      bio: "Software engineer passionate about deen and family.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 20, preferredAgeMax: 30,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "bachelors",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "required",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "conservative",
+      preferredReligiousCommitment: "very_committed",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "no", healthMatchPreference: "no",
+    },
+  });
+
+  await createTestUser({
+    email: "yusuf@ethionikah.com",
+    phone: "+251911000002",
+    password: "test1234",
+    firstName: "Yusuf",
+    lastName: "Mohamed",
+    gender: "male",
+    dateOfBirth: "1990-07-22",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Dire Dawa", region: "Dire Dawa",
+      height: 175, weight: "80", appearance: "average",
+      maritalStatus: "divorced", hasChildren: "yes", childrenCount: "1", childrenStatus: "has_children",
+      religiousCommitment: "moderate", prayerHabits: "most_prayers",
+      quranReadingFrequency: "often", islamicClassesAttendance: "sometimes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "bachelors", occupation: "Accountant", employmentStatus: "employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_1_year",
+      childrenPreference: "wants_more_children",
+      ethnicBackground: "Somali", motherTongue: "Somali", familyInvolvement: "important",
+      smokingHabits: "non_smoker", khatUsage: "sometimes", exerciseHabits: "sometimes",
+      livingPreference: "with_family",
+      selfDescription: "Divorced father seeking a second chance at marriage.",
+      qualities: ["patient", "responsible", "caring", "hardworking"],
+      interests: ["cooking", "traveling", "reading", "outdoor_activities"],
+      languages: ["Somali", "Amharic", "English"],
+      bio: "Accountant and loving father.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 25, preferredAgeMax: 40,
+      preferredMaritalStatus: "any",
+      preferredEducationLevel: "any",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "important",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "moderate",
+      preferredReligiousCommitment: "moderate",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "any", healthMatchPreference: "any",
+    },
+  });
+
+  await createTestUser({
+    email: "ibrahim@ethionikah.com",
+    phone: "+251911000003",
+    password: "test1234",
+    firstName: "Ibrahim",
+    lastName: "Ali",
+    gender: "male",
+    dateOfBirth: "1998-11-05",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Addis Ababa", region: "Addis Ababa",
+      height: 182, weight: "70", appearance: "athletic",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "practicing", prayerHabits: "all_prayers",
+      quranReadingFrequency: "often", islamicClassesAttendance: "yes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "bachelors", occupation: "Doctor", employmentStatus: "employed",
+      monthlyIncomeRange: "50000-100000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_1_year",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Amhara", motherTongue: "Amharic", familyInvolvement: "very_important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "regularly",
+      livingPreference: "own_place",
+      selfDescription: "Young doctor seeking a pious wife.",
+      qualities: ["ambitious", "caring", "religious", "intelligent", "honest"],
+      interests: ["sports", "reading", "traveling", "charity_work"],
+      languages: ["Amharic", "English"],
+      bio: "Doctor with passion for helping others.",
+      isVerified: false,
+    },
+    spousePreference: {
+      preferredAgeMin: 22, preferredAgeMax: 32,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "bachelors",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "required",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "conservative",
+      preferredReligiousCommitment: "very_committed",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "no", healthMatchPreference: "no",
+    },
+  });
+
+  await createTestUser({
+    email: "khalid@ethionikah.com",
+    phone: "+251911000004",
+    password: "test1234",
+    firstName: "Khalid",
+    lastName: "Abdurahman",
+    gender: "male",
+    dateOfBirth: "1988-01-30",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Harar", region: "Harari",
+      height: 170, weight: "85", appearance: "average",
+      maritalStatus: "widowed", hasChildren: "yes", childrenCount: "2", childrenStatus: "has_children",
+      religiousCommitment: "very_committed", prayerHabits: "all_prayers",
+      quranReadingFrequency: "daily", islamicClassesAttendance: "yes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "phd", occupation: "University Professor", employmentStatus: "employed",
+      monthlyIncomeRange: "100000+",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_6_months",
+      childrenPreference: "wants_more_children",
+      ethnicBackground: "Harari", motherTongue: "Harari", familyInvolvement: "very_important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "sometimes",
+      livingPreference: "own_place",
+      selfDescription: "Widowed professor seeking a new beginning with a righteous wife.",
+      qualities: ["wise", "patient", "religious", "educated", "family_oriented"],
+      interests: ["reading", "islamic_learning", "teaching", "charity_work", "traveling"],
+      languages: ["Harari", "Amharic", "Arabic", "English"],
+      bio: "Professor of Islamic Studies.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 30, preferredAgeMax: 45,
+      preferredMaritalStatus: "any",
+      preferredEducationLevel: "bachelors",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "required",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "conservative",
+      preferredReligiousCommitment: "very_committed",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "no", healthMatchPreference: "no",
+    },
+  });
+
+  await createTestUser({
+    email: "omar@ethionikah.com",
+    phone: "+251911000005",
+    password: "test1234",
+    firstName: "Omar",
+    lastName: "Farah",
+    gender: "male",
+    dateOfBirth: "2000-05-18",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Jimma", region: "Oromia",
+      height: 168, weight: "65", appearance: "slim",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "moderate", prayerHabits: "sometimes",
+      quranReadingFrequency: "sometimes", islamicClassesAttendance: "no",
+      islamicTradition: "sunni", islamicMatchPreference: "any",
+      educationLevel: "high_school", occupation: "Business Owner", employmentStatus: "self_employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_2_years",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Oromo", motherTongue: "Oromo", familyInvolvement: "important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "regularly",
+      livingPreference: "with_family",
+      selfDescription: "Young entrepreneur looking for a life partner.",
+      qualities: ["ambitious", "funny", "outgoing", "hardworking"],
+      interests: ["sports", "technology", "cooking", "outdoor_activities", "traveling"],
+      languages: ["Oromo", "Amharic"],
+      bio: "Business owner with big dreams.",
+      isVerified: false,
+    },
+    spousePreference: {
+      preferredAgeMin: 18, preferredAgeMax: 28,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "any",
+      preferredLocation: "any",
+      waliInvolvement: "optional",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "simple",
+      genderInteraction: "moderate",
+      preferredReligiousCommitment: "any",
+      islamicMatchPreference: "any",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: false,
+      hivMatchPreference: "any", stdMatchPreference: "any",
+      hereditaryMatchPreference: "any", healthMatchPreference: "any",
+    },
+  });
+
+  // ===================== FEMALE USERS =====================
+
+  await createTestUser({
+    email: "amina@ethionikah.com",
+    phone: "+251922000001",
+    password: "test1234",
+    firstName: "Amina",
+    lastName: "Ibrahim",
+    gender: "female",
+    dateOfBirth: "1998-09-12",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Addis Ababa", region: "Addis Ababa",
+      height: 165, weight: "60", appearance: "average",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "very_committed", prayerHabits: "all_prayers",
+      quranReadingFrequency: "daily", islamicClassesAttendance: "yes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "masters", occupation: "Teacher", employmentStatus: "employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_6_months",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Oromo", motherTongue: "Oromo", familyInvolvement: "very_important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "sometimes",
+      livingPreference: "with_family",
+      selfDescription: "Practicing Muslimah seeking a righteous husband for halal marriage.",
+      qualities: ["religious", "kind", "intelligent", "family_oriented", "patient"],
+      interests: ["reading", "islamic_learning", "cooking", "charity_work", "teaching"],
+      languages: ["Oromo", "Amharic", "English"],
+      bio: "Teacher with love for deen and family.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 25, preferredAgeMax: 35,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "bachelors",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "required",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "conservative",
+      preferredReligiousCommitment: "very_committed",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "no", healthMatchPreference: "no",
+    },
+  });
+
+  await createTestUser({
+    email: "fatima@ethionikah.com",
+    phone: "+251922000002",
+    password: "test1234",
+    firstName: "Fatima",
+    lastName: "Hussein",
+    gender: "female",
+    dateOfBirth: "1993-04-25",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Dire Dawa", region: "Dire Dawa",
+      height: 160, weight: "70", appearance: "average",
+      maritalStatus: "divorced", hasChildren: "yes", childrenCount: "1", childrenStatus: "has_children",
+      religiousCommitment: "moderate", prayerHabits: "most_prayers",
+      quranReadingFrequency: "sometimes", islamicClassesAttendance: "sometimes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "bachelors", occupation: "Nurse", employmentStatus: "employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_1_year",
+      childrenPreference: "wants_more_children",
+      ethnicBackground: "Somali", motherTongue: "Somali", familyInvolvement: "important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "sometimes",
+      livingPreference: "own_place",
+      selfDescription: "Nurse and mother seeking a caring husband.",
+      qualities: ["caring", "patient", "responsible", "nurturing"],
+      interests: ["cooking", "reading", "charity_work", "outdoor_activities"],
+      languages: ["Somali", "Amharic", "English"],
+      bio: "Nurse with a big heart.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 28, preferredAgeMax: 45,
+      preferredMaritalStatus: "any",
+      preferredEducationLevel: "any",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "important",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "moderate",
+      preferredReligiousCommitment: "moderate",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "any", healthMatchPreference: "any",
+    },
+  });
+
+  await createTestUser({
+    email: "khadija@ethionikah.com",
+    phone: "+251922000003",
+    password: "test1234",
+    firstName: "Khadija",
+    lastName: "Ahmed",
+    gender: "female",
+    dateOfBirth: "2000-12-03",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Addis Ababa", region: "Addis Ababa",
+      height: 168, weight: "55", appearance: "slim",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "practicing", prayerHabits: "all_prayers",
+      quranReadingFrequency: "often", islamicClassesAttendance: "yes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "bachelors", occupation: "Pharmacist", employmentStatus: "employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_1_year",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Amhara", motherTongue: "Amharic", familyInvolvement: "very_important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "regularly",
+      livingPreference: "with_family",
+      selfDescription: "Young pharmacist seeking a righteous husband.",
+      qualities: ["religious", "ambitious", "intelligent", "kind", "family_oriented"],
+      interests: ["reading", "sports", "traveling", "islamic_learning", "cooking"],
+      languages: ["Amharic", "English"],
+      bio: "Pharmacist with passion for health and deen.",
+      isVerified: false,
+    },
+    spousePreference: {
+      preferredAgeMin: 23, preferredAgeMax: 33,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "bachelors",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "required",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "conservative",
+      preferredReligiousCommitment: "very_committed",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "no", healthMatchPreference: "no",
+    },
+  });
+
+  await createTestUser({
+    email: "maryam@ethionikah.com",
+    phone: "+251922000004",
+    password: "test1234",
+    firstName: "Maryam",
+    lastName: "Yusuf",
+    gender: "female",
+    dateOfBirth: "1985-08-14",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Harar", region: "Harari",
+      height: 158, weight: "65", appearance: "average",
+      maritalStatus: "widowed", hasChildren: "yes", childrenCount: "2", childrenStatus: "has_children",
+      religiousCommitment: "very_committed", prayerHabits: "all_prayers",
+      quranReadingFrequency: "daily", islamicClassesAttendance: "yes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "masters", occupation: "Social Worker", employmentStatus: "employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_6_months",
+      childrenPreference: "wants_more_children",
+      ethnicBackground: "Harari", motherTongue: "Harari", familyInvolvement: "very_important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "sometimes",
+      livingPreference: "own_place",
+      selfDescription: "Widowed mother of two seeking a righteous husband and father figure.",
+      qualities: ["patient", "religious", "caring", "resilient", "family_oriented"],
+      interests: ["reading", "islamic_learning", "charity_work", "cooking", "teaching"],
+      languages: ["Harari", "Amharic", "Arabic", "English"],
+      bio: "Social worker dedicated to helping families.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 35, preferredAgeMax: 50,
+      preferredMaritalStatus: "any",
+      preferredEducationLevel: "masters",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "required",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "conservative",
+      preferredReligiousCommitment: "very_committed",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "no", stdMatchPreference: "no",
+      hereditaryMatchPreference: "no", healthMatchPreference: "no",
+    },
+  });
+
+  await createTestUser({
+    email: "safiya@ethionikah.com",
+    phone: "+251922000005",
+    password: "test1234",
+    firstName: "Safiya",
+    lastName: "Gemedo",
+    gender: "female",
+    dateOfBirth: "2002-02-20",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Jimma", region: "Oromia",
+      height: 162, weight: "58", appearance: "average",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "moderate", prayerHabits: "sometimes",
+      quranReadingFrequency: "sometimes", islamicClassesAttendance: "no",
+      islamicTradition: "sunni", islamicMatchPreference: "any",
+      educationLevel: "high_school", occupation: "Student", employmentStatus: "unemployed",
+      monthlyIncomeRange: "0-10000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_2_years",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Oromo", motherTongue: "Oromo", familyInvolvement: "important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "sometimes",
+      livingPreference: "with_family",
+      selfDescription: "Young student looking for a kind and ambitious partner.",
+      qualities: ["funny", "outgoing", "ambitious", "caring"],
+      interests: ["sports", "cooking", "technology", "outdoor_activities", "reading"],
+      languages: ["Oromo", "Amharic"],
+      bio: "Student with dreams of a happy family.",
+      isVerified: false,
+    },
+    spousePreference: {
+      preferredAgeMin: 20, preferredAgeMax: 30,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "any",
+      preferredLocation: "any",
+      waliInvolvement: "optional",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "simple",
+      genderInteraction: "moderate",
+      preferredReligiousCommitment: "any",
+      islamicMatchPreference: "any",
+    },
+    healthInfo: {
+      hivStatus: "negative", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: false,
+      hivMatchPreference: "any", stdMatchPreference: "any",
+      hereditaryMatchPreference: "any", healthMatchPreference: "any",
+    },
+  });
+
+  // ===================== HIV POSITIVE USERS =====================
+
+  await createTestUser({
+    email: "abdullah@ethionikah.com",
+    phone: "+251911000006",
+    password: "test1234",
+    firstName: "Abdullah",
+    lastName: "Tadesse",
+    gender: "male",
+    dateOfBirth: "1992-06-10",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Addis Ababa", region: "Addis Ababa",
+      height: 174, weight: "72", appearance: "average",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "practicing", prayerHabits: "most_prayers",
+      quranReadingFrequency: "often", islamicClassesAttendance: "sometimes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "bachelors", occupation: "Graphic Designer", employmentStatus: "employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_1_year",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Amhara", motherTongue: "Amharic", familyInvolvement: "important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "sometimes",
+      livingPreference: "own_place",
+      selfDescription: "Creative professional seeking an understanding partner.",
+      qualities: ["creative", "kind", "honest", "resilient"],
+      interests: ["technology", "reading", "cooking", "outdoor_activities"],
+      languages: ["Amharic", "English"],
+      bio: "Graphic designer with a positive outlook on life.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 22, preferredAgeMax: 35,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "any",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "important",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "moderate",
+      preferredReligiousCommitment: "practicing",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "positive", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "same", stdMatchPreference: "no",
+      hereditaryMatchPreference: "any", healthMatchPreference: "any",
+    },
+  });
+
+  await createTestUser({
+    email: "rahma@ethionikah.com",
+    phone: "+251922000006",
+    password: "test1234",
+    firstName: "Rahma",
+    lastName: "Bekele",
+    gender: "female",
+    dateOfBirth: "1996-03-08",
+    profile: {
+      nationality: "Ethiopian", country: "Ethiopia", city: "Addis Ababa", region: "Addis Ababa",
+      height: 163, weight: "62", appearance: "average",
+      maritalStatus: "single_never", hasChildren: "no",
+      religiousCommitment: "practicing", prayerHabits: "most_prayers",
+      quranReadingFrequency: "often", islamicClassesAttendance: "sometimes",
+      islamicTradition: "sunni", islamicMatchPreference: "sunni",
+      educationLevel: "bachelors", occupation: "Banker", employmentStatus: "employed",
+      monthlyIncomeRange: "25000-50000",
+      reasonForJoining: "seeking_marriage", desiredMarriageTimeline: "within_1_year",
+      childrenPreference: "wants_children",
+      ethnicBackground: "Amhara", motherTongue: "Amharic", familyInvolvement: "important",
+      smokingHabits: "non_smoker", khatUsage: "never", exerciseHabits: "sometimes",
+      livingPreference: "with_family",
+      selfDescription: "Banker seeking an honest and understanding partner.",
+      qualities: ["honest", "caring", "ambitious", "religious"],
+      interests: ["reading", "cooking", "charity_work", "traveling"],
+      languages: ["Amharic", "English"],
+      bio: "Banker with a warm heart.",
+      isVerified: true,
+    },
+    spousePreference: {
+      preferredAgeMin: 25, preferredAgeMax: 40,
+      preferredMaritalStatus: "single_never",
+      preferredEducationLevel: "bachelors",
+      preferredLocation: "Ethiopia",
+      waliInvolvement: "important",
+      polygamyPreference: "not_acceptable",
+      mahrExpectation: "moderate",
+      genderInteraction: "moderate",
+      preferredReligiousCommitment: "practicing",
+      islamicMatchPreference: "sunni",
+    },
+    healthInfo: {
+      hivStatus: "positive", stdStatus: "no", hereditaryDiseases: "no",
+      chronicConditions: "no", disabilities: "no",
+      shareWithMatches: true,
+      hivMatchPreference: "same", stdMatchPreference: "no",
+      hereditaryMatchPreference: "any", healthMatchPreference: "any",
+    },
+  });
+
+  console.log("\nAll test users created successfully!");
+  console.log("\nTest credentials (all passwords: test1234):");
+  console.log("  Male users:");
+  console.log("    ahmed@ethionikah.com - Ahmed Hassan (29, Addis Ababa, very committed)");
+  console.log("    yusuf@ethionikah.com - Yusuf Mohamed (35, Dire Dawa, divorced, moderate)");
+  console.log("    ibrahim@ethionikah.com - Ibrahim Ali (27, Addis Ababa, practicing)");
+  console.log("    khalid@ethionikah.com - Khalid Abdurahman (37, Harar, widowed, very committed)");
+  console.log("    omar@ethionikah.com - Omar Farah (25, Jimma, moderate)");
+  console.log("    abdullah@ethionikah.com - Abdullah Tadesse (33, Addis Ababa, HIV+)");
+  console.log("  Female users:");
+  console.log("    amina@ethionikah.com - Amina Ibrahim (27, Addis Ababa, very committed)");
+  console.log("    fatima@ethionikah.com - Fatima Hussein (32, Dire Dawa, divorced, moderate)");
+  console.log("    khadija@ethionikah.com - Khadija Ahmed (24, Addis Ababa, practicing)");
+  console.log("    maryam@ethionikah.com - Maryam Yusuf (40, Harar, widowed, very committed)");
+  console.log("    safiya@ethionikah.com - Safiya Gemedo (23, Jimma, moderate)");
+  console.log("    rahma@ethionikah.com - Rahma Bekele (29, Addis Ababa, HIV+)");
+}
+
+main()
+  .catch((e) => {
+    console.error("Test user seed error:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

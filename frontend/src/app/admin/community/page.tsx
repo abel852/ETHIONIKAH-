@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
 import { Shield, Flag, Scale, UserCheck, CheckCircle, XCircle, Clock, AlertTriangle, Search } from "lucide-react";
+import { useI18n } from "@/context/I18nContext";
 
 export default function CommunityPage() {
+  const { t } = useI18n();
   const [flags, setFlags] = useState<any[]>([]);
   const [compliance, setCompliance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,8 +31,8 @@ export default function CommunityPage() {
   return (
     <AdminLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Community Oversight</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Review flagged content, cultural compliance, and wali involvement</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.community.title')}</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('admin.community.subtitle')}</p>
       </div>
 
       <div className="flex gap-1 mb-6 p-1 rounded-xl bg-gray-100 dark:bg-white/5 w-fit">

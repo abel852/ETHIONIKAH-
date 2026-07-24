@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Users, UserCheck, UserPlus, Shield,
   Heart, MessageCircle, DollarSign, Activity,
@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
+import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 
 const statusColors: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -30,22 +32,30 @@ const activityIcons: Record<string, React.ElementType> = {
 };
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
+  const { t } = useI18n();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good morning");
-    else if (hour < 18) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
+    if (hour < 12) setGreeting(t('admin.dashboard.goodMorning'));
+    else if (hour < 18) setGreeting(t('admin.dashboard.goodAfternoon'));
+    else setGreeting(t('admin.dashboard.goodEvening'));
   }, []);
 
-  useEffect(() => {
+  const fetchDashboard = useCallback(() => {
     adminService.getDashboardData().then(({ data: res }) => {
       setData(res.dashboard || {});
     }).catch(console.error).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+    const id = setInterval(fetchDashboard, 45000);
+    return () => clearInterval(id);
+  }, [fetchDashboard]);
 
   const s = data?.stats || {};
   const today = new Date().toLocaleDateString("en-US", {
@@ -53,19 +63,19 @@ export default function AdminDashboard() {
   });
 
   const statCards = [
-    { label: "Total Users", value: s.totalUsers, icon: Users, change: `+${s.newUsersThisMonth || 0} this month`, color: "from-blue-500 to-blue-600", bgLight: "bg-blue-50 dark:bg-blue-900/20", iconColor: "text-blue-600 dark:text-blue-400" },
-    { label: "Active Users", value: s.activeUsers, icon: UserCheck, change: `${((s.activeUsers / (s.totalUsers || 1)) * 100).toFixed(0)}% of total`, color: "from-green-500 to-emerald-600", bgLight: "bg-green-50 dark:bg-green-900/20", iconColor: "text-green-600 dark:text-green-400" },
-    { label: "Verified Users", value: s.verifiedUsers, icon: Shield, change: `${((s.verifiedUsers / (s.totalUsers || 1)) * 100).toFixed(0)}% verified`, color: "from-purple-500 to-violet-600", bgLight: "bg-purple-50 dark:bg-purple-900/20", iconColor: "text-purple-600 dark:text-purple-400" },
-    { label: "Pending Verification", value: s.pendingVerifications, icon: Clock, change: "awaiting review", color: "from-amber-500 to-orange-600", bgLight: "bg-amber-50 dark:bg-amber-900/20", iconColor: "text-amber-600 dark:text-amber-400" },
+    { label: t('admin.dashboard.totalUsers'), value: s.totalUsers, icon: Users, change: `+${s.newUsersThisMonth || 0} ${t('admin.analytics.thisMonth')}`, color: "from-blue-500 to-blue-600", bgLight: "bg-blue-50 dark:bg-blue-900/20", iconColor: "text-blue-600 dark:text-blue-400" },
+    { label: t('admin.dashboard.activeUsers'), value: s.activeUsers, icon: UserCheck, change: `${((s.activeUsers / (s.totalUsers || 1)) * 100).toFixed(0)}% ${t('admin.total').toLowerCase()}`, color: "from-green-500 to-emerald-600", bgLight: "bg-green-50 dark:bg-green-900/20", iconColor: "text-green-600 dark:text-green-400" },
+    { label: t('admin.dashboard.verifiedUsers'), value: s.verifiedUsers, icon: Shield, change: `${((s.verifiedUsers / (s.totalUsers || 1)) * 100).toFixed(0)}% ${t('admin.analytics.verifiedUsers').toLowerCase()}`, color: "from-purple-500 to-violet-600", bgLight: "bg-purple-50 dark:bg-purple-900/20", iconColor: "text-purple-600 dark:text-purple-400" },
+    { label: t('admin.dashboard.pendingVerifications'), value: s.pendingVerifications, icon: Clock, change: t('admin.analytics.pendingReview'), color: "from-amber-500 to-orange-600", bgLight: "bg-amber-50 dark:bg-amber-900/20", iconColor: "text-amber-600 dark:text-amber-400" },
   ];
 
   const metricCards = [
-    { label: "Total Matches", value: s.totalMatches, icon: Heart, color: "text-rose-600 dark:text-rose-400" },
-    { label: "Messages Sent", value: s.totalMessages, icon: MessageCircle, color: "text-sky-600 dark:text-sky-400" },
-    { label: "Unread Messages", value: s.unreadMessages, icon: Mail, color: "text-indigo-600 dark:text-indigo-400" },
-    { label: "Active Subscriptions", value: s.activeSubscriptions, icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400" },
-    { label: "Open Reports", value: s.openReports, icon: AlertTriangle, color: "text-red-600 dark:text-red-400" },
-    { label: "Open Complaints", value: s.openComplaints, icon: Activity, color: "text-orange-600 dark:text-orange-400" },
+    { label: t('admin.dashboard.totalMatches'), value: s.totalMatches, icon: Heart, color: "text-rose-600 dark:text-rose-400" },
+    { label: t('admin.dashboard.totalMessages'), value: s.totalMessages, icon: MessageCircle, color: "text-sky-600 dark:text-sky-400" },
+    { label: t('admin.analytics.unreadMessages'), value: s.unreadMessages, icon: Mail, color: "text-indigo-600 dark:text-indigo-400" },
+    { label: t('admin.dashboard.activeSubscriptions'), value: s.activeSubscriptions, icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400" },
+    { label: t('admin.dashboard.openReports'), value: s.openReports, icon: AlertTriangle, color: "text-red-600 dark:text-red-400" },
+    { label: t('admin.dashboard.openComplaints'), value: s.openComplaints, icon: Activity, color: "text-orange-600 dark:text-orange-400" },
   ];
 
   return (
@@ -75,7 +85,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-              {greeting}, Admin
+              {greeting}, {user?.adminRole === "super_admin" ? t('admin.dashboard.superAdmin') : t('admin.dashboard.admin')}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
@@ -84,7 +94,7 @@ export default function AdminDashboard() {
           </div>
           <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-[#222240] border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">System Online</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('admin.dashboard.systemOnline')}</span>
           </div>
         </div>
       </div>
@@ -128,12 +138,12 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Quick Actions */}
             <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Quick Actions</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t('admin.dashboard.quickActions')}</h2>
               <div className="space-y-2">
                 {[
-                  { href: "/admin/users", label: "Manage Users", desc: "View, verify, suspend, or ban users", icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" },
-                  { href: "/admin/verifications", label: "Verification Requests", desc: "Review and approve user verifications", icon: Shield, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-900/20" },
-                  { href: "/admin/activities", label: "Activity Log", desc: "Monitor all platform activity", icon: Activity, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-900/20" },
+                  { href: "/admin/users", label: t('admin.dashboard.manageUsers'), desc: t('admin.dashboard.manageUsersDesc'), icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" },
+                  { href: "/admin/verifications", label: t('admin.dashboard.verificationRequests'), desc: t('admin.dashboard.verificationRequestsDesc'), icon: Shield, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-900/20" },
+                  { href: "/admin/activities", label: t('admin.dashboard.activityLog'), desc: t('admin.dashboard.activityLogDesc'), icon: Activity, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-900/20" },
                 ].map((item) => (
                   <a key={item.href} href={item.href}
                     className="group flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-all"
@@ -153,10 +163,10 @@ export default function AdminDashboard() {
 
             {/* Gender & Subscription */}
             <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">User Distribution</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t('admin.dashboard.userDistribution')}</h2>
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Gender</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{t('admin.dashboard.gender')}</p>
                   <div className="space-y-2">
                     {data?.genderDistribution?.length > 0 ? data.genderDistribution.map((g: any) => {
                       const pct = ((g.value / (s.totalUsers || 1)) * 100).toFixed(1);
@@ -176,12 +186,12 @@ export default function AdminDashboard() {
                         </div>
                       );
                     }) : (
-                      <p className="text-sm text-gray-400 dark:text-gray-500">No data</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">{t('admin.dashboard.noData')}</p>
                     )}
                   </div>
                 </div>
                 <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Subscription Plans</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{t('admin.dashboard.subscriptionPlans')}</p>
                   <div className="space-y-2">
                     {data?.subscriptionBreakdown?.length > 0 ? data.subscriptionBreakdown.map((p: any) => {
                       const total = data.subscriptionBreakdown.reduce((a: number, b: any) => a + b.value, 0);
@@ -205,7 +215,7 @@ export default function AdminDashboard() {
                         </div>
                       );
                     }) : (
-                      <p className="text-sm text-gray-400 dark:text-gray-500">No data</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">{t('admin.dashboard.noData')}</p>
                     )}
                   </div>
                 </div>
@@ -214,16 +224,16 @@ export default function AdminDashboard() {
 
             {/* Revenue & Metrics */}
             <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Revenue Overview</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t('admin.dashboard.revenueOverview')}</h2>
               <div className="mb-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Revenue</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin.dashboard.totalRevenue')}</p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white">${(s.totalRevenue || 0).toLocaleString()}</p>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  +${(s.revenueThisMonth || 0).toLocaleString()} this month
+                  +${(s.revenueThisMonth || 0).toLocaleString()} {t('admin.analytics.thisMonth').toLowerCase()}
                 </p>
               </div>
               <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Platform Metrics</h3>
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{t('admin.dashboard.platformMetrics')}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {metricCards.map((m) => (
                     <div key={m.label} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-white/5">
@@ -243,19 +253,19 @@ export default function AdminDashboard() {
             {/* Recent Users */}
             <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Recent Users</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{t('admin.dashboard.recentUsers')}</h2>
                 <a href="/admin/users" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-                  View All <ArrowRight className="w-3 h-3" />
+                  {t('admin.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
                 </a>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-700">
-                      <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                      <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
-                      <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                      <th className="text-right px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                      <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.users.name')}</th>
+                      <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.users.email')}</th>
+                      <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.users.status')}</th>
+                      <th className="text-right px-5 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('admin.users.date')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -278,7 +288,7 @@ export default function AdminDashboard() {
                             "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                           }`}>
                             {u.isVerified ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                            {u.isVerified ? "Verified" : "Pending"}
+                            {u.isVerified ? t('admin.verified') : t('admin.pending')}
                           </span>
                         </td>
                         <td className="px-5 py-3 text-right text-gray-500 dark:text-gray-400 text-xs">
@@ -288,7 +298,7 @@ export default function AdminDashboard() {
                     )) : (
                       <tr>
                         <td colSpan={4} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
-                          No users yet
+                          {t('admin.dashboard.noUsers')}
                         </td>
                       </tr>
                     )}
@@ -300,9 +310,9 @@ export default function AdminDashboard() {
             {/* Activity Timeline */}
             <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Recent Activity</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{t('admin.dashboard.recentActivity')}</h2>
                 <a href="/admin/activities" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-                  View All <ArrowRight className="w-3 h-3" />
+                  {t('admin.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
                 </a>
               </div>
               <div className="p-5 max-h-[420px] overflow-y-auto">
@@ -336,7 +346,7 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="text-center py-8">
                     <Activity className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400 dark:text-gray-500">No recent activity</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">{t('admin.dashboard.noActivity')}</p>
                   </div>
                 )}
               </div>

@@ -9,8 +9,13 @@ export const loginSchema = z.object({
 export const step1AccountSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  phone: z.string().regex(/^(09\d{8}|\+2519\d{8})$/, "Phone must be in format 09XXXXXXXXX or +251XXXXXXXXX"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain at least one symbol (e.g. !@#$%)"),
   confirmPassword: z.string(),
   agreeToTerms: z.literal(true, { errorMap: () => ({ message: "You must agree to the terms" }) }),
 }).refine((d) => d.password === d.confirmPassword, { message: "Passwords do not match", path: ["confirmPassword"] });
@@ -90,7 +95,12 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Reset token is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain at least one symbol (e.g. !@#$%)"),
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, { message: "Passwords do not match", path: ["confirmPassword"] });
 

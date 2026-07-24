@@ -2,17 +2,18 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import {
-  User, ChevronRight, Bell, Shield, Globe, HelpCircle,
-  Scale, FileText, LogOut, Moon, ArrowLeft,
-  Palette, Languages, ShieldCheck, Key, Link as LinkIcon,
-  Camera, Mail, Smartphone, CheckCircle, Smartphone as SmartphoneIcon,
-  Download,
+  ChevronRight, Bell, Shield, Globe, HelpCircle,
+  Scale, FileText, LogOut, ArrowLeft,
+  Languages, ShieldCheck,
+  Mail, Smartphone, CheckCircle, Smartphone as SmartphoneIcon,
+  Download, Heart, Crown, Send, AlertTriangle, ShieldAlert,
+  MessageSquare, Trash2, Lock,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
-import { Button, Badge, Input } from "@/components/common";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { Button, Badge, Input, Textarea } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
-import { profileService } from "@/services/profile";
+import { useI18n, type Lang } from "@/context/I18nContext";
+import { complaintService } from "@/services/complaint";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { mediaUrl } from "@/lib/utils";
@@ -74,6 +75,7 @@ function Divider() {
 }
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  const { t } = useI18n();
   return (
     <button
       onClick={() => onChange(!checked)}
@@ -81,7 +83,7 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
         "relative w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 dark:focus:ring-offset-charcoal-800",
         checked ? "bg-accent" : "bg-charcoal-200 dark:bg-charcoal-600"
       )}
-      aria-label={checked ? "Turn off" : "Turn on"}
+      aria-label={checked ? t("settings.turnOff") : t("settings.turnOn")}
       role="switch"
       aria-checked={checked}
     >
@@ -115,234 +117,33 @@ function SettingRow({ icon, label, description, href, toggle, badge, onClick }: 
   return inner;
 }
 
-// ---------------------------------------------------------------------------
-// Nav categories
-// ---------------------------------------------------------------------------
-const navCategories: NavCategory[] = [
-  {
-    label: "General",
-    items: [
-      { id: "appearance", icon: <Palette className="w-5 h-5" />, label: "Appearance", description: "Theme & display" },
-      { id: "languages", icon: <Languages className="w-5 h-5" />, label: "Languages", description: "App language" },
-    ],
-  },
-  {
-    label: "Account",
-    items: [
-      { id: "profile", icon: <User className="w-5 h-5" />, label: "Profile", description: "Personal info & password" },
-      { id: "verification", icon: <Shield className="w-5 h-5" />, label: "Verification", description: "ID & badge status" },
-    ],
-  },
-  {
-    label: "Notifications",
-    items: [
-      { id: "notifications", icon: <Bell className="w-5 h-5" />, label: "Notifications", description: "Push, email & SMS" },
-    ],
-  },
-  {
-    label: "Security",
-    items: [
-      { id: "two-factor", icon: <SmartphoneIcon className="w-5 h-5" />, label: "Two-Factor Auth", description: "Google Authenticator 2FA" },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      { id: "help", icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", description: "FAQ & contact" },
-      { id: "rules", icon: <Scale className="w-5 h-5" />, label: "Rules & Regulations", description: "Community guidelines" },
-      { id: "terms", icon: <FileText className="w-5 h-5" />, label: "Terms & Privacy", description: "Policies" },
-    ],
-  },
-  {
-    label: "Advanced",
-    items: [
-      { id: "integrations", icon: <LinkIcon className="w-5 h-5" />, label: "Integrations", description: "Connected services" },
-    ],
-  },
-];
 
-const allNavItems = navCategories.flatMap((c) => c.items);
 
 // ---------------------------------------------------------------------------
 // Content panels
 // ---------------------------------------------------------------------------
-function AppearanceContent() {
-  return (
-    <>
-      <PanelHeading icon={<Palette className="w-5 h-5 text-accent" />} title="Appearance" subtitle="Customize how the app looks on your device" />
-      <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        <PanelRow label="Dark Mode" description="Switch between light and dark themes">
-          <ThemeToggle />
-        </PanelRow>
-      </div>
-    </>
-  );
-}
-
 function LanguagesContent() {
+  const { lang, setLang, t } = useI18n();
+  const languageOptions: { code: Lang; label: string }[] = [
+    { code: "en", label: t("lang.english") },
+    { code: "am", label: t("lang.amharic") },
+    { code: "ar", label: t("lang.arabic") },
+    { code: "om", label: t("lang.oromo") },
+  ];
+
   return (
     <>
-      <PanelHeading icon={<Languages className="w-5 h-5 text-accent" />} title="Languages" subtitle="Select your preferred language" />
+      <PanelHeading icon={<Languages className="w-5 h-5 text-accent" />} title={t("settings.languages")} subtitle={t("settings.selectLanguage")} />
       <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        {["English", "አማርኛ (Amharic)", "العربية (Arabic)", "Afaan Oromoo", "Somali"].map((lang) => (
-          <PanelRow key={lang} label={lang}>
-            <div className="w-4 h-4 rounded-full border-2 border-charcoal-300 dark:border-charcoal-600 flex items-center justify-center">
-              {lang === "English" && <div className="w-2 h-2 rounded-full bg-accent" />}
-            </div>
-          </PanelRow>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function ProfileContent() {
-  const { user, updateUser } = useAuth();
-  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
-  const [name, setName] = useState(fullName || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [saving, setSaving] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState(user?.photos?.[0] || "");
-  const initials = fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U";
-
-  useEffect(() => {
-    setPhotoUrl(user?.photos?.[0] || "");
-  }, [user?.photos]);
-
-  const handlePhotoUpload = async () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const { data } = await profileService.uploadPhoto(file);
-        const newUrl = data.photoUrl || user?.photos?.[0] || "";
-        setPhotoUrl(newUrl);
-        updateUser({ photos: [...(user?.photos || []), newUrl].filter(Boolean) });
-        toast.success("Photo uploaded");
-      } catch {
-        toast.error("Failed to upload photo");
-      }
-    };
-    input.click();
-  };
-
-  const handleSaveName = async () => {
-    setSaving(true);
-    const parts = name.trim().split(" ");
-    try {
-      await profileService.createOrUpdate({
-        firstName: parts[0] || "",
-        lastName: parts.slice(1).join(" ") || "",
-      });
-      updateUser({ firstName: parts[0] || "", lastName: parts.slice(1).join(" ") || "" });
-      toast.success("Name updated");
-    } catch {
-      toast.error("Failed to update name");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveEmail = async () => {
-    setSaving(true);
-    try {
-      await profileService.createOrUpdate({ email });
-      updateUser({ email });
-      toast.success("Email updated");
-    } catch {
-      toast.error("Failed to update email");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    toast.info("Password change will be available soon");
-  };
-
-  return (
-    <>
-      <div className="flex items-center gap-6 p-6 -m-6 mb-6 rounded-t-2xl bg-gradient-to-r from-teal-500/5 via-accent/5 to-transparent dark:from-teal-500/10 dark:via-accent/10 dark:to-transparent border-b border-charcoal-100/50 dark:border-charcoal-700">
-        <div className="relative shrink-0">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-teal-500 p-0.5 shadow-glow">
-            {photoUrl ? (
-              <img src={mediaUrl(photoUrl)} alt={fullName} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              <div className="w-full h-full rounded-full bg-white dark:bg-charcoal-800 flex items-center justify-center">
-                <span className="text-2xl font-display font-bold text-accent">{initials}</span>
+        {languageOptions.map(({ code, label }) => (
+          <button key={code} type="button" className="w-full text-left" onClick={() => setLang(code)}>
+            <PanelRow label={label}>
+              <div className="w-4 h-4 rounded-full border-2 border-charcoal-300 dark:border-charcoal-600 flex items-center justify-center">
+                {lang === code && <div className="w-2 h-2 rounded-full bg-accent" />}
               </div>
-            )}
-          </div>
-          <button onClick={handlePhotoUpload} className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent border-2 border-white dark:border-charcoal-800 flex items-center justify-center hover:bg-accent-dark transition-colors">
-            <Camera className="w-3.5 h-3.5 text-white" />
+            </PanelRow>
           </button>
-        </div>
-        <div>
-          <h2 className="text-xl font-display font-bold text-charcoal-900 dark:text-white">{fullName || "User"}</h2>
-          <p className="text-sm text-charcoal-500 dark:text-charcoal-400">{user?.email || "No email"}</p>
-          <div className="flex items-center gap-2 mt-1.5">
-            {user?.verificationStatus === "verified" ? (
-              <Badge variant="success" size="sm">
-                <CheckCircle className="w-3 h-3 mr-1" /> Verified
-              </Badge>
-            ) : (
-              <Badge variant="default" size="sm">Unverified</Badge>
-            )}
-            {user?.isPremium && <Badge variant="gold" size="sm">Premium</Badge>}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Full Name</label>
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-sm text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-charcoal-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-              placeholder="Your full name"
-            />
-            <Button variant="primary" size="sm" className="shrink-0" onClick={handleSaveName} loading={saving}>Save</Button>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Email Address</label>
-          <div className="flex gap-3">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-sm text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-charcoal-500 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
-              placeholder="your@email.com"
-            />
-            <Button variant="primary" size="sm" className="shrink-0" onClick={handleSaveEmail} loading={saving}>Save</Button>
-          </div>
-        </div>
-
-        <Divider />
-
-        <div>
-          <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Password</label>
-          <div className="flex gap-3">
-            <input
-              type="password"
-              value="********"
-              readOnly
-              className="flex-1 px-4 py-2.5 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-sm text-charcoal-900 dark:text-white focus:outline-none cursor-not-allowed opacity-60 dark:opacity-50"
-              placeholder="Current password"
-            />
-            <Button variant="secondary" size="sm" className="shrink-0" onClick={handleChangePassword}>
-              <Key className="w-4 h-4 mr-1.5" /> Change
-            </Button>
-          </div>
-          <p className="text-xs text-charcoal-400 dark:text-charcoal-500 mt-1.5">Minimum 8 characters with a number and a letter</p>
-        </div>
+        ))}
       </div>
     </>
   );
@@ -350,6 +151,7 @@ function ProfileContent() {
 
 function VerificationContent() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [vStatus, setVStatus] = useState<"loading" | "none" | "pending" | "approved" | "rejected">("loading");
   const [adminNote, setAdminNote] = useState("");
 
@@ -361,24 +163,24 @@ function VerificationContent() {
     }).catch(() => setVStatus("none"));
   }, []);
 
-  const statusLabel = { none: "Not Submitted", pending: "Pending Review", approved: "Approved", rejected: "Rejected", loading: "..." };
+  const statusLabel = { none: t("settings.notSubmitted"), pending: t("settings.pendingReview"), approved: t("settings.approved"), rejected: t("settings.rejected"), loading: "..." };
   const badgeVariant: Record<string, "default" | "success" | "warning" | "danger"> = { none: "default", pending: "warning", approved: "success", rejected: "danger" };
 
   return (
     <>
-      <PanelHeading icon={<Shield className="w-5 h-5 text-accent" />} title="Verification" subtitle="Verify your identity by uploading your ID and selfie" />
+      <PanelHeading icon={<Shield className="w-5 h-5 text-accent" />} title={t("settings.verification")} subtitle={t("settings.verifyIdentity")} />
       <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        <PanelRow label="ID Verification" description="National ID + Selfie upload required">
+        <PanelRow label={t("settings.idVerification")} description={t("settings.idVerificationDesc")}>
           <Badge variant={badgeVariant[vStatus]} size="sm">{statusLabel[vStatus]}</Badge>
         </PanelRow>
         {vStatus === "rejected" && adminNote && (
-          <PanelRow label="Admin Note" description={adminNote} />
+          <PanelRow label={t("settings.adminNote")} description={adminNote} />
         )}
       </div>
       <div className="mt-5">
         <Link href="/verification">
           <Button variant="primary" size="md">
-            <ShieldCheck className="w-4 h-4 mr-2" /> {vStatus === "approved" ? "View Status" : "Go to Verification"}
+            <ShieldCheck className="w-4 h-4 mr-2" /> {vStatus === "approved" ? t("settings.viewStatus") : t("settings.goToVerification")}
           </Button>
         </Link>
       </div>
@@ -387,114 +189,278 @@ function VerificationContent() {
 }
 
 function NotificationsContent() {
+  const { t } = useI18n();
   const [pushOn, setPushOn] = useState(true);
   const [emailOn, setEmailOn] = useState(true);
-  const [smsOn, setSmsOn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get("/users/preferences").then(({ data }) => {
+      setEmailOn(data.emailNotifications !== false);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const handleEmailToggle = async (v: boolean) => {
+    setEmailOn(v);
+    try {
+      await api.patch("/users/preferences", { emailNotifications: v });
+      toast.success(v
+        ? "Email notifications enabled. You will receive emails for matches, messages, and system updates."
+        : "Email notifications disabled. You will only receive emails for OTP and password reset. No other emails will be sent."
+      );
+    } catch {
+      setEmailOn(!v);
+      toast.error("Failed to update email notification preference.");
+    }
+  };
 
   return (
     <>
-      <PanelHeading icon={<Bell className="w-5 h-5 text-accent" />} title="Notifications" subtitle="Choose which notifications you receive" />
+      <PanelHeading icon={<Bell className="w-5 h-5 text-accent" />} title={t("settings.notifications")} subtitle={t("settings.chooseNotifications")} />
       <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        <PanelRow label="Push Notifications" description="Receive alerts on your device">
+        <PanelRow label={t("settings.pushNotifications")} description={t("settings.pushNotificationsDesc")}>
           <ToggleSwitch checked={pushOn} onChange={setPushOn} />
         </PanelRow>
-        <PanelRow label="Email Notifications" description="Get notified via email">
-          <ToggleSwitch checked={emailOn} onChange={setEmailOn} />
-        </PanelRow>
-        <PanelRow label="SMS Notifications" description="Receive text message updates">
-          <ToggleSwitch checked={smsOn} onChange={setSmsOn} />
+        <PanelRow label={t("settings.emailNotifications")} description={t("settings.emailNotificationsDesc")}>
+          <ToggleSwitch checked={emailOn} onChange={handleEmailToggle} />
         </PanelRow>
       </div>
     </>
   );
 }
 
+function CollapsibleDoc({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden mb-4">
+      <button onClick={() => setOpen(!open)} className="w-full px-4 py-3.5 flex items-center justify-between text-left">
+        <span className="text-sm font-semibold text-charcoal-900 dark:text-white">{title}</span>
+        <ChevronRight className={cn("w-4 h-4 text-charcoal-400 transition-transform", open && "rotate-90")} />
+      </button>
+      {open && <div className="px-4 pb-4 text-sm text-charcoal-600 dark:text-charcoal-300 leading-relaxed border-t border-charcoal-100/50 dark:border-charcoal-700/50 pt-4">{children}</div>}
+    </div>
+  );
+}
+
 function HelpContent() {
+  const { t } = useI18n();
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const sendToAdmin = async () => {
+    if (!subject.trim() || !message.trim()) return toast.error("Please fill in both subject and message.");
+    setLoading(true);
+    try {
+      await complaintService.createComplaint({ subject: subject.trim(), description: message.trim() });
+      toast.success("Your message has been sent to the support team.");
+      setSubject("");
+      setMessage("");
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
-      <PanelHeading icon={<HelpCircle className="w-5 h-5 text-accent" />} title="Help & Support" subtitle="Get help or contact our support team" />
-      <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        {["FAQ", "Contact Support", "Report a Problem", "Safety Tips"].map((item) => (
-          <PanelRow key={item} label={item}>
-            <ChevronRight className="w-4 h-4 text-charcoal-300 dark:text-charcoal-600" />
-          </PanelRow>
-        ))}
-      </div>
+      <PanelHeading icon={<HelpCircle className="w-5 h-5 text-accent" />} title={t("settings.help")} subtitle={t("settings.helpDesc")} />
+
+      <CollapsibleDoc title={t("settings.faq")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>How do I verify my profile?</strong> Go to the Verification section and upload your national ID plus a selfie.</li>
+          <li><strong>Can I change my spouse preferences?</strong> Yes — visit Preferences in your profile settings at any time.</li>
+          <li><strong>Why was my photo rejected?</strong> Photos must clearly show your face, be decent, and not contain contact information.</li>
+          <li><strong>How do I report a user?</strong> Use the report button on any profile or message thread.</li>
+          <li><strong>What happens if I delete my account?</strong> Your account enters a 30-day grace period. You can contact support to restore it during that window. After 30 days it is permanently erased.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.contactSupport")}>
+        <p className="mb-3">Our support team typically replies within 24-48 hours on business days.</p>
+        <div className="space-y-3">
+          <Input placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          <Textarea placeholder="Describe your issue or question..." rows={4} value={message} onChange={(e) => setMessage(e.target.value)} />
+          <Button onClick={sendToAdmin} loading={loading} className="w-full">
+            <Send className="w-4 h-4 mr-2" /> Send to Support
+          </Button>
+        </div>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.reportProblem")}>
+        <p className="mb-3">Found a bug or inappropriate behavior? Please describe it in detail using the contact form above or report a user directly from their profile.</p>
+        <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2">
+          <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+          For urgent safety concerns, mention "URGENT" in the subject line.
+        </div>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.safetyTips")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Keep initial conversations inside the app until you feel comfortable.</li>
+          <li>Never send money or share banking details with matches.</li>
+          <li>Meet in public places and involve your wali or guardian.</li>
+          <li>Trust your instincts — report anyone who pressures you.</li>
+        </ul>
+      </CollapsibleDoc>
     </>
   );
 }
 
 function RulesContent() {
+  const { t } = useI18n();
   return (
     <>
-      <PanelHeading icon={<Scale className="w-5 h-5 text-accent" />} title="Rules & Regulations" subtitle="Our community guidelines ensure a safe environment" />
-      <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        {["Code of Conduct", "Privacy Guidelines", "Prohibited Behavior", "Reporting Violations"].map((item) => (
-          <PanelRow key={item} label={item}>
-            <ChevronRight className="w-4 h-4 text-charcoal-300 dark:text-charcoal-600" />
-          </PanelRow>
-        ))}
-      </div>
+      <PanelHeading icon={<Scale className="w-5 h-5 text-accent" />} title={t("settings.rules")} subtitle={t("settings.rulesDesc")} />
+
+      <CollapsibleDoc title={t("settings.codeOfConduct")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Treat all members with respect, kindness, and Islamic adab.</li>
+          <li>Be honest about your age, marital status, location, and intentions.</li>
+          <li>Keep conversations decent and marriage-focused.</li>
+          <li>Do not share another member&apos;s private information.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.privacyGuidelines")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Only upload photos you own and that clearly represent you.</li>
+          <li>Do not post phone numbers, emails, or social handles in public photos or bio.</li>
+          <li>We never sell your data to third parties.</li>
+          <li>You can request data deletion at any time from Terms &amp; Privacy.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.prohibitedBehavior")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Hate speech, harassment, threats, or discrimination of any kind.</li>
+          <li>Solicitation, commercial promotion, or scam attempts.</li>
+          <li>Fake profiles, impersonation, or misleading information.</li>
+          <li>Sexual content, nudity, or indecent language.</li>
+          <li>Encouraging users to leave the platform for unsafe external chat.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.reportingViolations")}>
+        <p className="mb-3">If you see a violation, tap the report icon on a profile or message. Admins review reports within 24-48 hours and may suspend accounts that break the rules.</p>
+        <div className="bg-red-50 dark:bg-red-500/10 rounded-lg p-3 text-red-700 dark:text-red-400 text-xs flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          Repeated violations may result in permanent suspension without refund.
+        </div>
+      </CollapsibleDoc>
     </>
   );
 }
 
 function TermsContent() {
-  return (
-    <>
-      <PanelHeading icon={<FileText className="w-5 h-5 text-accent" />} title="Terms & Privacy" subtitle="Review our terms of service and privacy policy" />
-      <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        {["Terms of Service", "Privacy Policy", "Cookie Policy", "Data Deletion Request"].map((item) => (
-          <PanelRow key={item} label={item}>
-            <ChevronRight className="w-4 h-4 text-charcoal-300 dark:text-charcoal-600" />
-          </PanelRow>
-        ))}
-      </div>
-    </>
-  );
-}
+  const { t } = useI18n();
+  const [deleteStep, setDeleteStep] = useState<"idle" | "confirm" | "final">("idle");
+  const [loading, setLoading] = useState(false);
+  const { logout } = useAuth();
+  const router = useRouter();
 
-function IntegrationsContent() {
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      await api.delete("/auth/me");
+      toast.success("Your account has been scheduled for deletion. It can be restored within 30 days by contacting support.");
+      logout();
+      router.push("/");
+    } catch {
+      toast.error("Failed to delete account. Please contact support.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
-      <PanelHeading icon={<LinkIcon className="w-5 h-5 text-accent" />} title="Integrations" subtitle="Manage connected services and third-party access" />
-      <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-        <PanelRow label="Google Calendar" description="Sync your availability for scheduling">
-          <div className="flex items-center gap-3">
-            <Badge variant="success" size="sm">Connected</Badge>
-            <ToggleSwitch checked={true} onChange={() => {}} />
-          </div>
-        </PanelRow>
-        <PanelRow label="Apple Calendar" description="iCloud calendar integration">
-          <div className="flex items-center gap-3">
-            <Badge variant="default" size="sm">Not Connected</Badge>
-            <Button variant="secondary" size="sm">Connect</Button>
-          </div>
-        </PanelRow>
-        <PanelRow label="Zoom" description="Enable video call scheduling">
-          <div className="flex items-center gap-3">
-            <Badge variant="success" size="sm">Connected</Badge>
-            <ToggleSwitch checked={false} onChange={() => {}} />
-          </div>
-        </PanelRow>
-        <PanelRow label="WhatsApp" description="Receive notifications via WhatsApp">
-          <div className="flex items-center gap-3">
-            <Badge variant="default" size="sm">Not Connected</Badge>
-            <Button variant="secondary" size="sm">Connect</Button>
-          </div>
-        </PanelRow>
-        <PanelRow label="Telegram" description="Bot notifications and updates">
-          <div className="flex items-center gap-3">
-            <Badge variant="success" size="sm">Connected</Badge>
-            <ToggleSwitch checked={true} onChange={() => {}} />
-          </div>
-        </PanelRow>
-      </div>
+      <PanelHeading icon={<FileText className="w-5 h-5 text-accent" />} title={t("settings.terms")} subtitle={t("settings.termsDesc")} />
+
+      <CollapsibleDoc title={t("settings.termsOfService")}>
+        <div className="space-y-3">
+          <p>By using this platform, you agree to use it solely for the purpose of finding a righteous spouse in a manner consistent with Islamic principles.</p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>You must be at least 18 years old.</li>
+            <li>Account information must be truthful and kept up to date.</li>
+            <li>Premium memberships are non-refundable unless required by law.</li>
+            <li>We reserve the right to suspend accounts that violate these terms.</li>
+          </ul>
+        </div>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.privacyPolicy")}>
+        <div className="space-y-3">
+          <p>We collect only the information needed to provide matchmaking services safely:</p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Profile data you provide (name, gender, date of birth, preferences).</li>
+            <li>Verification documents to confirm identity and age.</li>
+            <li>Payment information for premium memberships.</li>
+          </ul>
+          <p>Your data is encrypted in transit and at rest. We do not sell personal data to advertisers.</p>
+        </div>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.cookiePolicy")}>
+        <p>We use essential cookies to keep you logged in and remember your language/theme preferences. We do not use tracking cookies for advertising. By continuing to use the app, you consent to essential cookies.</p>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("settings.dataDeletion")}>
+        <div className="space-y-4">
+          <p>You can request deletion of your account and personal data below. Here is what happens:</p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Your profile is hidden immediately and you will be logged out.</li>
+            <li>Your account enters a 30-day grace period in the admin recycle bin.</li>
+            <li>During the grace period you can contact support to restore your account.</li>
+            <li>After 30 days all personal data is permanently erased and cannot be recovered.</li>
+          </ul>
+
+          {deleteStep === "idle" && (
+            <Button variant="danger" className="w-full" onClick={() => setDeleteStep("confirm")}>
+              <Trash2 className="w-4 h-4 mr-2" /> Request Account Deletion
+            </Button>
+          )}
+
+          {deleteStep === "confirm" && (
+            <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 space-y-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-red-800 dark:text-red-300 text-sm">This action is not undoable</p>
+                  <p className="text-xs text-red-700 dark:text-red-400 mt-1">If you delete your account, you will not be able to get it back after 30 days. Your photos, messages, matches, and preferences will be permanently erased.</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="secondary" className="flex-1" onClick={() => setDeleteStep("idle")}>Cancel</Button>
+                <Button variant="danger" className="flex-1" onClick={() => setDeleteStep("final")}>I understand, continue</Button>
+              </div>
+            </div>
+          )}
+
+          {deleteStep === "final" && (
+            <div className="bg-charcoal-900 dark:bg-black text-white rounded-xl p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-red-400" />
+                <h3 className="font-display font-bold text-sm">Final confirmation</h3>
+              </div>
+              <p className="text-sm text-charcoal-200">Type <strong>DELETE</strong> below to confirm you understand this is irreversible after 30 days.</p>
+              <Input placeholder="Type DELETE to confirm" className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+              <div className="flex gap-3">
+                <Button variant="secondary" className="flex-1" onClick={() => setDeleteStep("idle")}>Cancel</Button>
+                <Button variant="danger" className="flex-1" loading={loading} onClick={handleDelete}>Permanently delete my account</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </CollapsibleDoc>
     </>
   );
 }
 
 function TwoFactorContent() {
+  const { t } = useI18n();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<"status" | "setup" | "confirm" | "disable">("status");
@@ -512,6 +478,8 @@ function TwoFactorContent() {
   const [recoveryCodeCount, setRecoveryCodeCount] = useState(0);
   const [regeneratePassword, setRegeneratePassword] = useState("");
   const [showRegenerate, setShowRegenerate] = useState(false);
+  const [show2faSuccess, setShow2faSuccess] = useState(false);
+  const [show2faError, setShow2faError] = useState(false);
 
   useEffect(() => {
     api.get("/auth/2fa/status").then((r) => {
@@ -541,7 +509,7 @@ function TwoFactorContent() {
       setExistingSecret(data.existing);
       setStep("setup");
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to setup 2FA");
+      toast.error(err?.response?.data?.error || t("settings.twoFactorSetupFailed"));
     } finally {
       setSaving(false);
     }
@@ -557,9 +525,11 @@ function TwoFactorContent() {
       setShowBackupCodes(true);
       setStep("status");
       setVerifyCode("");
-      toast.success("Two-factor authentication enabled");
+      setShow2faSuccess(true);
+      setTimeout(() => setShow2faSuccess(false), 2500);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Invalid code. Try again.");
+      setShow2faError(true);
+      setTimeout(() => setShow2faError(false), 2500);
     } finally {
       setSaving(false);
     }
@@ -574,9 +544,9 @@ function TwoFactorContent() {
       setStep("status");
       setDisablePassword("");
       setDisableCode("");
-      toast.success("Two-factor authentication disabled");
+      toast.success(t("settings.twoFactorDisabled"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to disable 2FA");
+      toast.error(err?.response?.data?.error || t("settings.twoFactorDisableFailed"));
     } finally {
       setSaving(false);
     }
@@ -591,9 +561,9 @@ function TwoFactorContent() {
       setShowBackupCodes(true);
       setShowRegenerate(false);
       setRegeneratePassword("");
-      toast.success("Recovery codes regenerated");
+      toast.success(t("settings.recoveryRegenerated"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to regenerate");
+      toast.error(err?.response?.data?.error || t("settings.regenerateFailed"));
     } finally {
       setSaving(false);
     }
@@ -601,7 +571,7 @@ function TwoFactorContent() {
 
   return (
     <>
-      <PanelHeading icon={<SmartphoneIcon className="w-5 h-5 text-accent" />} title="Two-Factor Authentication" subtitle="Add an extra layer of security to your account" />
+      <PanelHeading icon={<SmartphoneIcon className="w-5 h-5 text-accent" />} title={t("settings.twoFactor")} subtitle={t("settings.twoFactorDesc")} />
 
       {loading ? (
         <div className="flex items-center justify-center py-8">
@@ -611,26 +581,26 @@ function TwoFactorContent() {
         <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-6 space-y-4">
           <div className="text-center">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-charcoal-900 dark:text-white">Backup Recovery Codes</p>
-            <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-1">Save these codes in a safe place. Each code can be used only once to access your account if you lose your phone.</p>
+            <p className="text-sm font-semibold text-charcoal-900 dark:text-white">{t("settings.recoveryCodes")}</p>
+            <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-1">{t("settings.recoveryCodesDesc")}</p>
           </div>
           <div className="bg-charcoal-50 dark:bg-charcoal-700 rounded-xl p-4 space-y-1.5">
             {backupCodes.map((code, i) => (
               <div key={i} className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-charcoal-600 rounded-lg">
                 <span className="text-sm font-mono font-bold text-charcoal-900 dark:text-white tracking-wider">{code}</span>
-                <span className="text-[10px] text-charcoal-400 dark:text-charcoal-500 uppercase">Code {i + 1}</span>
+                <span className="text-[10px] text-charcoal-400 dark:text-charcoal-500 uppercase">{t("settings.codeN", { n: i + 1 })}</span>
               </div>
             ))}
           </div>
           <div className="flex gap-2">
-            <Button variant="primary" size="sm" className="flex-1" onClick={() => { navigator.clipboard.writeText(backupCodes.join("\n")); toast.success("Codes copied to clipboard"); }}>
-              Copy Codes
+            <Button variant="primary" size="sm" className="flex-1" onClick={() => { navigator.clipboard.writeText(backupCodes.join("\n")); toast.success(t("settings.codesCopied")); }}>
+              {t("settings.copyCodes")}
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => { const blob = new Blob([backupCodes.join("\n")], {type: "text/plain"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ethio-nikah-backup-codes.txt"; a.click(); toast.success("Codes downloaded"); }}>
-              <Download className="w-4 h-4 mr-1" /> Download
+            <Button variant="secondary" size="sm" onClick={() => { const blob = new Blob([backupCodes.join("\n")], {type: "text/plain"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ethio-nikah-backup-codes.txt"; a.click(); toast.success(t("settings.codesDownloaded")); }}>
+              <Download className="w-4 h-4 mr-1" /> {t("settings.download")}
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setShowBackupCodes(false)}>
-              I've Saved Them
+              {t("settings.iveSavedThem")}
             </Button>
           </div>
         </div>
@@ -639,71 +609,71 @@ function TwoFactorContent() {
           {existingSecret ? (
             <div className="text-center">
               <SmartphoneIcon className="w-12 h-12 text-accent mx-auto mb-3" />
-              <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300">Use your existing authenticator entry</p>
-              <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-1">Your previously saved secret is still valid. Enter the code from your existing Google Authenticator entry.</p>
+              <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300">{t("settings.existingEntry")}</p>
+              <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-1">{t("settings.existingEntryDesc")}</p>
               {showForceInput ? (
                 <div className="flex items-center gap-2 mt-2">
                   <input type="password" value={forcePassword} onChange={(e) => setForcePassword(e.target.value)}
-                    placeholder="Enter your password" className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    placeholder={t("settings.enterPassword")} className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
                   />
-                  <button type="button" onClick={async () => { if (!forcePassword) return; setSaving(true); try { const { data } = await api.post("/auth/2fa/enable", { force: true, password: forcePassword }); setSecret(data.secret); setQrCode(data.qrCode); setExistingSecret(false); setShowForceInput(false); setForcePassword(""); } catch (e: any) { toast.error(e?.response?.data?.error || "Failed"); } finally { setSaving(false); } }}
-                    className="text-xs px-2.5 py-1.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-dark">Confirm</button>
-                  <button type="button" onClick={() => { setShowForceInput(false); setForcePassword(""); }} className="text-xs text-charcoal-400 hover:text-charcoal-600">Cancel</button>
+                  <button type="button" onClick={async () => { if (!forcePassword) return; setSaving(true); try { const { data } = await api.post("/auth/2fa/enable", { force: true, password: forcePassword }); setSecret(data.secret); setQrCode(data.qrCode); setExistingSecret(false); setShowForceInput(false); setForcePassword(""); } catch (e: any) { toast.error(e?.response?.data?.error || t("settings.genericFailed")); } finally { setSaving(false); } }}
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-dark">{t("settings.confirm")}</button>
+                  <button type="button" onClick={() => { setShowForceInput(false); setForcePassword(""); }} className="text-xs text-charcoal-400 hover:text-charcoal-600">{t("common.cancel")}</button>
                 </div>
               ) : (
                 <button type="button" onClick={() => setShowForceInput(true)}
                   className="text-xs text-accent hover:text-accent-dark mt-2 underline underline-offset-2"
-                >I don't have access — generate a new key</button>
+                >{t("settings.generateNewKey")}</button>
               )}
             </div>
           ) : (
             <div className="text-center">
-              <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-3">Scan this QR code with Google Authenticator</p>
+              <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-3">{t("settings.scanQR")}</p>
               {qrCode && <img src={qrCode} alt="QR Code" className="mx-auto w-48 h-48 rounded-lg border border-charcoal-200 dark:border-charcoal-600" />}
             </div>
           )}
           {!existingSecret && (
             <div className="bg-charcoal-50 dark:bg-charcoal-700 rounded-lg p-3 text-center">
-              <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">Or enter this key manually:</p>
+              <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">{t("settings.manualKey")}</p>
               <p className="text-sm font-mono font-bold text-charcoal-900 dark:text-white tracking-wider select-all">{secret}</p>
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-2">Enter the 6-digit code from the app</label>
+            <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-2">{t("settings.enterCode")}</label>
             <input
               type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
               value={verifyCode} onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="000000"
+              placeholder={t("settings.codePlaceholder")}
               className="w-full text-center text-xl tracking-[0.5em] font-mono px-4 py-2.5 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-300 dark:placeholder-charcoal-600 focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
           </div>
           <div className="flex gap-3">
             <Button variant="primary" className="flex-1" size="md" onClick={handleConfirm} loading={saving} disabled={verifyCode.length !== 6}>
-              {existingSecret ? "Enable with existing entry" : "Verify & Enable"}
+              {existingSecret ? t("settings.enableWithExisting") : t("settings.verifyAndEnable")}
             </Button>
-            <Button variant="secondary" size="md" onClick={() => setStep("status")}>Cancel</Button>
+            <Button variant="secondary" size="md" onClick={() => setStep("status")}>{t("common.cancel")}</Button>
           </div>
         </div>
       ) : (
         <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-          <PanelRow label="Status" description={enabled ? "Account is protected by 2FA" : "No 2FA configured"}>
+          <PanelRow label={t("settings.status")} description={enabled ? t("settings.protectedBy2FA") : t("settings.no2FA")}>
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${enabled ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-charcoal-100 text-charcoal-500 dark:bg-charcoal-700 dark:text-charcoal-400"}`}>
-              {enabled ? "Enabled" : "Disabled"}
+              {enabled ? t("profile.enabled") : t("profile.disabled")}
             </span>
           </PanelRow>
           {enabled && step !== "disable" && (
             <>
-              <PanelRow label="Recovery Codes" description={`${recoveryCodeCount} code(s) remaining. Use these if you lose access to your authenticator app.`}>
+              <PanelRow label={t("settings.recoveryCodes")} description={t("settings.recoveryCodesRemaining", { count: recoveryCodeCount })}>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{recoveryCodeCount}</span>
-                  <Button variant="secondary" size="sm" onClick={() => { fetchRecoveryCodes(); setShowRegenerate(!showRegenerate); }}>Manage</Button>
+                  <Button variant="secondary" size="sm" onClick={() => { fetchRecoveryCodes(); setShowRegenerate(!showRegenerate); }}>{t("settings.manage")}</Button>
                 </div>
               </PanelRow>
               {showRegenerate && (
                 <div className="px-4 py-3 bg-charcoal-50 dark:bg-charcoal-700/50 space-y-3">
                   {recoveryCodes.length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">Remaining codes (masked for security):</p>
+                      <p className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">{t("settings.remainingCodes")}</p>
                       <div className="grid grid-cols-2 gap-1">
                         {recoveryCodes.map((c) => (
                           <span key={c.index} className="text-xs font-mono text-charcoal-600 dark:text-charcoal-300">{c.hint}</span>
@@ -713,54 +683,75 @@ function TwoFactorContent() {
                   )}
                   <div className="flex items-center gap-2">
                     <input type="password" value={regeneratePassword} onChange={(e) => setRegeneratePassword(e.target.value)}
-                      placeholder="Enter password to regenerate" className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-charcoal-600 border border-charcoal-200 dark:border-charcoal-500 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                      placeholder={t("settings.passwordPlaceholder")} className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-charcoal-600 border border-charcoal-200 dark:border-charcoal-500 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
                     />
-                    <Button variant="primary" size="sm" onClick={handleRegenerate} loading={saving} disabled={!regeneratePassword}>Regenerate</Button>
+                    <Button variant="primary" size="sm" onClick={handleRegenerate} loading={saving} disabled={!regeneratePassword}>{t("settings.regenerate")}</Button>
                   </div>
                 </div>
               )}
-              <PanelRow label="Disable Two-Factor Auth" description="Turn off Google Authenticator protection">
-                <Button variant="danger" size="sm" onClick={() => setStep("disable")}>Disable</Button>
+              <PanelRow label={t("settings.disable2FA")} description={t("settings.disable2FADesc")}>
+                <Button variant="danger" size="sm" onClick={() => setStep("disable")}>{t("settings.disable")}</Button>
               </PanelRow>
             </>
           )}
           {!enabled && (
-            <PanelRow label="Enable Two-Factor Auth" description="Secure your account with Google Authenticator">
-              <Button variant="primary" size="sm" onClick={handleEnable} loading={saving}>Enable</Button>
+            <PanelRow label={t("settings.enable2FA")} description={t("settings.enable2FADesc")}>
+              <Button variant="primary" size="sm" onClick={handleEnable} loading={saving}>{t("settings.enable")}</Button>
             </PanelRow>
           )}
         </div>
       )}
       {step === "disable" && (
         <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-5 space-y-4 mt-4">
-          <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300">Confirm to disable 2FA</p>
+          <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300">{t("settings.confirmDisable2FA")}</p>
           <div>
-            <label className="block text-xs font-medium text-charcoal-600 dark:text-charcoal-400 mb-1.5">Current Password</label>
+            <label className="block text-xs font-medium text-charcoal-600 dark:text-charcoal-400 mb-1.5">{t("settings.currentPassword")}</label>
             <input type="password" value={disablePassword} onChange={(e) => setDisablePassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder={t("settings.enterPassword")}
               className="w-full px-3 py-2 text-sm rounded-lg bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-charcoal-600 dark:text-charcoal-400 mb-1.5">Authenticator Code</label>
+            <label className="block text-xs font-medium text-charcoal-600 dark:text-charcoal-400 mb-1.5">{t("settings.authenticatorCode")}</label>
             <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
               value={disableCode} onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="000000"
+              placeholder={t("settings.codePlaceholder")}
               className="w-full text-center text-lg tracking-[0.5em] font-mono px-3 py-2 text-sm rounded-lg bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
           </div>
           <div className="flex gap-3">
             <Button variant="danger" size="sm" onClick={handleDisableConfirm} loading={saving} disabled={!disablePassword || disableCode.length !== 6}>
-              Disable 2FA
+              {t("settings.disable2FAButton")}
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => { setStep("status"); setDisablePassword(""); setDisableCode(""); }}>Cancel</Button>
+            <Button variant="secondary" size="sm" onClick={() => { setStep("status"); setDisablePassword(""); setDisableCode(""); }}>{t("common.cancel")}</Button>
           </div>
         </div>
       )}
       <p className="text-xs text-charcoal-400 dark:text-charcoal-500 mt-3 px-1">
-        Two-factor authentication uses time-based one-time passwords (TOTP) from apps like Google Authenticator or Authy.
-        You will need to enter a code from the app each time you sign in.
+        {t("settings.twoFactorInfo")}
       </p>
+
+      {show2faSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-xl p-8 text-center max-w-sm mx-4 animate-bounce-in">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <p className="text-lg font-semibold text-charcoal-900 dark:text-white">{t("settings.connectedTitle")}</p>
+          </div>
+        </div>
+      )}
+
+      {show2faError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-xl p-8 text-center max-w-sm mx-4 animate-bounce-in">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+            </div>
+            <p className="text-lg font-semibold text-charcoal-900 dark:text-white">{t("settings.useSameEmail")}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -770,9 +761,56 @@ function TwoFactorContent() {
 // ---------------------------------------------------------------------------
 export default function SettingsPage() {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
-  const [activeSection, setActiveSection] = useState("profile");
+  const [activeSection, setActiveSection] = useState("languages");
   const [mobileSection, setMobileSection] = useState<string | null>(null);
+
+  // Deep-link into a section via ?section= (e.g. /settings?section=two-factor)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get("section");
+    if (section) {
+      setActiveSection(section);
+      setMobileSection(section);
+    }
+  }, []);
+
+  const navCategories: NavCategory[] = [
+    {
+      label: t("settings.general"),
+      items: [
+        { id: "languages", icon: <Languages className="w-5 h-5" />, label: t("settings.languages"), description: t("settings.languagesDesc") },
+      ],
+    },
+    {
+      label: t("settings.account"),
+      items: [
+        { id: "verification", icon: <Shield className="w-5 h-5" />, label: t("settings.verification"), description: t("settings.verificationDesc") },
+      ],
+    },
+    {
+      label: t("settings.notifications"),
+      items: [
+        { id: "notifications", icon: <Bell className="w-5 h-5" />, label: t("settings.notifications"), description: t("settings.notificationsDesc") },
+      ],
+    },
+    {
+      label: t("settings.security"),
+      items: [
+        { id: "two-factor", icon: <SmartphoneIcon className="w-5 h-5" />, label: t("settings.twoFactor"), description: t("settings.twoFactorDesc") },
+      ],
+    },
+    {
+      label: t("settings.system"),
+      items: [
+        { id: "help", icon: <HelpCircle className="w-5 h-5" />, label: t("settings.help"), description: t("settings.helpDesc") },
+        { id: "rules", icon: <Scale className="w-5 h-5" />, label: t("settings.rules"), description: t("settings.rulesDesc") },
+        { id: "terms", icon: <FileText className="w-5 h-5" />, label: t("settings.terms"), description: t("settings.termsDesc") },
+      ],
+    },
+  ];
+  const allNavItems = navCategories.flatMap((c) => c.items);
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
   const initials = (fullName || "U")
@@ -783,22 +821,19 @@ export default function SettingsPage() {
     .slice(0, 2);
 
   const contentMap: Record<string, ReactNode> = {
-    appearance: <AppearanceContent />,
     languages: <LanguagesContent />,
-    profile: <ProfileContent />,
     verification: <VerificationContent />,
     notifications: <NotificationsContent />,
     "two-factor": <TwoFactorContent />,
     help: <HelpContent />,
     rules: <RulesContent />,
     terms: <TermsContent />,
-    integrations: <IntegrationsContent />,
   };
 
   return (
     <>
       {/* Mobile layout */}
-      <div className="lg:hidden min-h-screen bg-charcoal-50 dark:bg-charcoal-900">
+      <div className="lg:hidden min-h-screen bg-blur-image">
         <DashboardSidebar />
         <div className="pt-14 pb-20">
           <main className="mx-auto max-w-lg">
@@ -806,7 +841,7 @@ export default function SettingsPage() {
               /* Mobile panel view */
               <div className="px-4 pb-8 pt-4">
                 <button onClick={() => setMobileSection(null)} className="flex items-center gap-1.5 text-sm font-medium text-accent mb-4">
-                  <ArrowLeft className="w-4 h-4" /> Back to Settings
+                  <ArrowLeft className="w-4 h-4" /> {t("settings.backToSettings")}
                 </button>
                 <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-6">
                   {contentMap[mobileSection]}
@@ -835,40 +870,42 @@ export default function SettingsPage() {
                           </div>
                         )}
                       </div>
-                      <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white">{fullName || "User"}</h2>
+                      <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white">{fullName || t("settings.user")}</h2>
                     </div>
                   </div>
                 </div>
                 <div className="px-4 pb-8 space-y-1">
-                  <SectionHeader title="Account" />
+                  <SectionHeader title={t("settings.mobileAccount")} />
                   <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-                    <SettingRow icon={<User className="w-5 h-5 text-accent" />} label="User Profile" description="View and edit your personal information" href="/profile" />
+                    <SettingRow icon={<Crown className="w-5 h-5 text-accent" />} label={user?.isPremium ? "Membership" : "Upgrade to Premium"} description="Gold, Platinum, boost & more" href="/membership" badge={user?.isPremium ? undefined : "PRO"} />
                     <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
-                    <SettingRow icon={<Shield className="w-5 h-5 text-accent" />} label="Verification" description="ID verification and badge status" href="/verification" />
+                    <SettingRow icon={<Shield className="w-5 h-5 text-accent" />} label={t("settings.verificationMobile")} description={t("settings.verificationMobileDesc")} href="/verification" />
                     <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
-                    <SettingRow icon={<Globe className="w-5 h-5 text-accent" />} label="Languages" description="Choose your preferred language" />
+                    <SettingRow icon={<Globe className="w-5 h-5 text-accent" />} label={t("settings.languagesMobile")} description={t("settings.languagesMobileDesc")} />
                   </div>
-                  <SectionHeader title="Preferences" />
+                  <SectionHeader title={t("settings.mobilePreferences")} />
                   <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-                    <SettingRow icon={<Moon className="w-5 h-5 text-accent" />} label="Appearance" description="Toggle dark mode or light mode" toggle={<ThemeToggle />} />
-                    <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
-                    <SettingRow icon={<Bell className="w-5 h-5 text-accent" />} label="Notifications" description="Manage your notification preferences" toggle={<ToggleSwitch checked={true} onChange={() => {}} />} />
+                    <SettingRow icon={<Bell className="w-5 h-5 text-accent" />} label={t("settings.notificationsMobile")} description={t("settings.notificationsMobileDesc")} toggle={<ToggleSwitch checked={true} onChange={() => {}} />} />
                   </div>
-                  <SectionHeader title="Security" />
+                  <SectionHeader title={t("settings.mobileSecurity")} />
                   <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden">
-                    <SettingRow icon={<SmartphoneIcon className="w-5 h-5 text-accent" />} label="Two-Factor Auth" description="Google Authenticator 2FA" onClick={() => setMobileSection("two-factor")} />
+                    <SettingRow icon={<SmartphoneIcon className="w-5 h-5 text-accent" />} label={t("settings.twoFactorMobile")} description={t("settings.twoFactorMobileDesc")} onClick={() => setMobileSection("two-factor")} />
+                    <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
+                    <Link href="/health-info">
+                      <SettingRow icon={<Heart className="w-5 h-5 text-accent" />} label={t("settings.healthInfo")} description={t("settings.healthInfoDesc")} />
+                    </Link>
                   </div>
-                  <SectionHeader title="Support" />
+                  <SectionHeader title={t("settings.mobileSupport")} />
                   <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
-                    <SettingRow icon={<HelpCircle className="w-5 h-5 text-accent" />} label="Help & Support" description="Get help or contact support" />
+                    <SettingRow icon={<HelpCircle className="w-5 h-5 text-accent" />} label={t("settings.helpMobile")} description={t("settings.helpMobileDesc")} onClick={() => setMobileSection("help")} />
                     <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
-                    <SettingRow icon={<Scale className="w-5 h-5 text-accent" />} label="Rules & Regulations" description="Community guidelines and rules" />
+                    <SettingRow icon={<Scale className="w-5 h-5 text-accent" />} label={t("settings.rulesMobile")} description={t("settings.rulesMobileDesc")} onClick={() => setMobileSection("rules")} />
                     <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
-                    <SettingRow icon={<FileText className="w-5 h-5 text-accent" />} label="Terms & Privacy" description="Terms of service and privacy policy" />
+                    <SettingRow icon={<FileText className="w-5 h-5 text-accent" />} label={t("settings.termsMobile")} description={t("settings.termsMobileDesc")} onClick={() => setMobileSection("terms")} />
                   </div>
                   <div className="pt-6">
                     <Button variant="danger" size="md" className="w-full !rounded-2xl h-12" onClick={() => { logout(); router.push("/"); }}>
-                      <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                      <LogOut className="w-4 h-4 mr-2" /> {t("settings.signOut")}
                     </Button>
                   </div>
                 </div>
@@ -879,14 +916,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden lg:block min-h-screen bg-charcoal-50 dark:bg-charcoal-900">
+      <div className="hidden lg:block min-h-screen bg-blur-image">
         <DashboardSidebar />
         <div className="lg:pl-64 pt-14 lg:pt-0">
         <div className="max-w-6xl mx-auto px-8 py-8 flex gap-8">
           {/* Settings Sub-nav */}
           <aside className="w-60 shrink-0">
-            {navCategories.map((cat) => (
-              <div key={cat.label} className="mb-4">
+            {navCategories.map((cat, idx) => (
+              <div key={`navcat-${idx}`} className="mb-4">
                 <p className="px-4 pb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-charcoal-400 dark:text-charcoal-500">
                   {cat.label}
                 </p>
@@ -933,7 +970,7 @@ export default function SettingsPage() {
                 <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
                   <LogOut className="w-4 h-4 text-red-500" />
                 </div>
-                <span>Sign Out</span>
+                <span>{t("settings.signOut")}</span>
               </button>
             </div>
           </aside>

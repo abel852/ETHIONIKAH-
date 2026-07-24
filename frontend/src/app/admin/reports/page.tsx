@@ -4,15 +4,19 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Search, AlertTriangle, CheckCheck, X, Ban,
-  MessageSquare, Clock, UserX, Eye,
+  MessageSquare, Clock, UserX, Eye, Pin,
 } from "lucide-react";
 import { Button, Card } from "@/components/common";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
 import { formatRelativeTime } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { useI18n } from "@/context/I18nContext";
+
+const glass = "bg-white dark:bg-white/[0.06] backdrop-blur-xl border-charcoal-100 dark:border-white/10";
 
 export default function AdminReportsPage() {
+  const { t } = useI18n();
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -25,6 +29,8 @@ export default function AdminReportsPage() {
     try {
       const { data } = await adminService.getReports(statusFilter !== "all" ? statusFilter : undefined);
       setReports(data.reports);
+      adminService.markReportViewed();
+      window.dispatchEvent(new CustomEvent("refresh-badge-counts"));
     } catch { toast.error("Failed to fetch reports"); }
     finally { setLoading(false); }
   };
@@ -35,7 +41,11 @@ export default function AdminReportsPage() {
     !search || r.reason?.toLowerCase().includes(search.toLowerCase()) ||
     r.reportedUser?.firstName?.toLowerCase().includes(search.toLowerCase()) ||
     r.reporter?.firstName?.toLowerCase().includes(search.toLowerCase())
-  );
+  ).sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   const stats = {
     total: reports.length,
@@ -68,8 +78,8 @@ export default function AdminReportsPage() {
             <AlertTriangle className="w-5 h-5 text-red-500" />
           </div>
           <div>
-            <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white">Content Moderation</h1>
-            <p className="text-sm text-charcoal-500 dark:text-charcoal-400">Review and moderate user-reported content</p>
+            <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white">{t('admin.reports.title')}</h1>
+            <p className="text-sm text-charcoal-500 dark:text-white">{t('admin.reports.subtitle')}</p>
           </div>
         </div>
       </motion.div>
@@ -83,14 +93,14 @@ export default function AdminReportsPage() {
           { label: "Resolved", value: stats.resolved, icon: CheckCheck, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
         ].map((stat, i) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <Card hover={false}>
+            <Card hover={false} className={glass}>
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-charcoal-900 dark:text-white">{stat.value}</p>
-                  <p className="text-xs text-charcoal-400">{stat.label}</p>
+                  <p className="text-xs text-charcoal-400 dark:text-white/60">{stat.label}</p>
                 </div>
               </div>
             </Card>
@@ -99,21 +109,21 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Search & Filter */}
-      <Card className="mb-6">
+      <div className="bg-white dark:bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-charcoal-100 dark:border-white/10 p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-400" />
             <input
-              placeholder="Search reports..."
+              placeholder={t('admin.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-white/10 border border-charcoal-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 text-charcoal-900 dark:text-white placeholder-charcoal-400"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/30"
+            className="px-4 py-2.5 bg-white dark:bg-white/10 border border-charcoal-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 text-charcoal-900 dark:text-white"
           >
             <option value="all">All Status</option>
             <option value="open">Open</option>
@@ -122,7 +132,7 @@ export default function AdminReportsPage() {
             <option value="dismissed">Dismissed</option>
           </select>
         </div>
-      </Card>
+      </div>
 
       {/* Reports List */}
       {loading ? (
@@ -130,15 +140,15 @@ export default function AdminReportsPage() {
           {[...Array(3)].map((_, i) => <div key={i} className="h-40 bg-charcoal-100 dark:bg-charcoal-800 rounded-2xl animate-pulse" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
+        <Card className={glass}>
           <div className="text-center py-12">
-            <CheckCheck className="w-12 h-12 text-charcoal-200 dark:text-charcoal-700 mx-auto mb-3" />
-            <p className="text-sm text-charcoal-400">No reports found</p>
+            <CheckCheck className="w-12 h-12 text-charcoal-200 dark:text-white/20 mx-auto mb-3" />
+            <p className="text-sm text-charcoal-400 dark:text-white/60">{t('admin.reports.noReports')}</p>
           </div>
         </Card>
       ) : filtered.map((report: any, i: number) => (
         <motion.div key={report.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-          <Card className="mb-4">
+          <Card className={`${glass} mb-4`}>
             <div className="flex flex-col lg:flex-row lg:items-start gap-4">
               <div className="flex-1">
                 <div className="flex items-start gap-3 mb-3">
@@ -156,14 +166,19 @@ export default function AdminReportsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-charcoal-900 dark:text-white text-sm">{report.reason}</h3>
+                      {report.isPinned && (
+                        <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400 flex items-center gap-0.5">
+                          <Pin className="w-2.5 h-2.5" />Priority
+                        </span>
+                      )}
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         report.status === "open" ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400" :
                         report.status === "investigating" ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" :
                         "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
                       }`}>{report.status}</span>
                     </div>
-                    <p className="text-sm text-charcoal-600 dark:text-charcoal-300 mb-3">{report.description}</p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-charcoal-400">
+                    <p className="text-sm text-charcoal-600 dark:text-white mb-3">{report.description}</p>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-charcoal-400 dark:text-white">
                       <span className="flex items-center gap-1">
                         <MessageSquare className="w-3 h-3" />
                         Reported by: {report.reporter?.firstName} {report.reporter?.lastName}
@@ -180,7 +195,7 @@ export default function AdminReportsPage() {
                   </div>
                 </div>
                 {report.adminNote && (
-                  <div className="text-xs text-charcoal-400 bg-charcoal-50 dark:bg-charcoal-700/30 px-3 py-2 rounded-lg">
+                  <div className="text-xs text-charcoal-400 dark:text-white bg-charcoal-50 dark:bg-charcoal-700/30 px-3 py-2 rounded-lg">
                     Admin note: {report.adminNote}
                   </div>
                 )}
@@ -203,7 +218,7 @@ export default function AdminReportsPage() {
       {/* Action Modal */}
       {actionModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setActionModal(null)}>
-          <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+          <Card className="bg-white dark:bg-[#151028]/95 backdrop-blur-xl border-charcoal-100 dark:border-white/10 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                 actionModal.type === "resolve" ? "bg-green-500/10" : "bg-charcoal-500/10"
@@ -216,7 +231,7 @@ export default function AdminReportsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-charcoal-900 dark:text-white capitalize">{actionModal.type} Report</h3>
-                <p className="text-sm text-charcoal-400">Add a note (optional)</p>
+                <p className="text-sm text-charcoal-400 dark:text-white">Add a note (optional)</p>
               </div>
             </div>
             <div className="mb-4">

@@ -156,16 +156,18 @@ export function ProfileImageEditor({ isOpen, onSave, onCancel, currentImage }: P
             <>
               {/* Cropper */}
               <div className="relative w-full h-72 sm:h-80 rounded-xl overflow-hidden bg-charcoal-900 mb-4">
-                <Cropper
-                  image={imageSrc}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={1}
-                  cropShape="round"
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={onCropComplete}
-                />
+                {imageSrc && (
+                  <Cropper
+                    image={imageSrc}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1}
+                    cropShape="round"
+                    onCropChange={setCrop}
+                    onZoomChange={setZoom}
+                    onCropComplete={onCropComplete}
+                  />
+                )}
               </div>
 
               {/* Zoom slider */}

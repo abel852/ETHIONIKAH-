@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
+import { headers } from "next/headers";
 import "../styles/globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext";
-import { ToastProvider } from "@/components/common";
+import { RouteGuard } from "@/components/auth/RouteGuard";
+import { SocketProvider } from "@/context/SocketContext";
+import { I18nProvider } from "@/context/I18nContext";
+import { ToastProvider, ScreenshotGuard, NetworkBanner } from "@/components/common";
+import { VerificationPrompt } from "@/components/auth/VerificationPrompt";
+import { TwoFactorPrompt } from "@/components/auth/TwoFactorPrompt";
+import { ThemeInit } from "@/components/ThemeInit";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
@@ -14,19 +19,27 @@ export const metadata: Metadata = {
   keywords: ["Islamic marriage", "Muslim matchmaking", "halal dating", "Muslim matrimonial", "Ethio Nikah", "Ethiopian"],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get("x-nonce") || undefined;
+
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth" className={inter.variable}>
+    <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth" className={inter.variable} nonce={nonce}>
       <body className="font-sans antialiased bg-background text-charcoal-900 dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300">
-        <script dangerouslySetInnerHTML={{
-          __html: `(function(){try{var a=localStorage.getItem("admin-dark-mode");if(a==="true"){document.documentElement.classList.add("dark");return}var t=localStorage.getItem("ethio-nikah-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches))document.documentElement.classList.add("dark")}catch(e){}})()`
-        }} />
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-            <ToastProvider />
-          </AuthProvider>
-        </ThemeProvider>
+        <ThemeInit />
+        <ScreenshotGuard />
+        <NetworkBanner />
+        <AuthProvider>
+          <RouteGuard>
+            <I18nProvider>
+              <SocketProvider>
+                {children}
+                <VerificationPrompt />
+                <TwoFactorPrompt />
+              </SocketProvider>
+            </I18nProvider>
+          </RouteGuard>
+          <ToastProvider />
+        </AuthProvider>
       </body>
     </html>
   );

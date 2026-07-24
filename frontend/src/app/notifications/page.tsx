@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Heart, MessageCircle, Shield, UserPlus, Star, Bell } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
-import { Button, Badge, NotificationSkeleton } from "@/components/common";
+import { Button, Badge, NotificationSkeleton, IslamicPatternBackground } from "@/components/common";
 import { useNotificationStore } from "@/store/notifications";
 
 const iconMap: Record<string, { icon: typeof Heart; color: string; bg: string }> = {
@@ -24,7 +24,7 @@ export default function NotificationsPage() {
   }, [fetchNotifications]);
 
   return (
-    <div className="min-h-screen bg-blur-image">
+    <IslamicPatternBackground>
       <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
@@ -83,6 +83,6 @@ export default function NotificationsPage() {
           )}
         </main>
       </div>
-    </div>
+    </IslamicPatternBackground>
   );
 }

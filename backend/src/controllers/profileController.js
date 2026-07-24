@@ -1,9 +1,17 @@
 const prisma = require("../config/database");
+const { recordProfileView } = require("../utils/subscriptionHelper");
 
 const createOrUpdateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
     const data = req.body;
+
+    // Fields that belong to the User model but are locked after registration
+    // gender, dateOfBirth, firstName, lastName cannot be changed via profile edit
+    const lockedUserFields = ["gender", "dateOfBirth", "firstName", "lastName"];
+    for (const field of lockedUserFields) {
+      delete data[field];
+    }
 
     const existingProfile = await prisma.profile.findUnique({
       where: { userId },
@@ -27,9 +35,24 @@ const createOrUpdateProfile = async (req, res) => {
       });
     }
 
-    res.json({ message: "Profile updated successfully", profile });
-  } catch (error) {
-    console.error("Profile update error:", error);
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    const userPhotos = await prisma.profile.findUnique({
+      where: { userId },
+      select: { photos: true },
+    });
+
+    if (updatedUser) {
+      delete updatedUser.passwordHash;
+      updatedUser.photos = userPhotos?.photos || [];
+    }
+
+    res.json({ message: "Profile updated successfully", profile, user: updatedUser });
+    } catch (error) {
+    console.error("Profile update error:", error.message || error);
+    if (error.code) console.error("Error code:", error.code);
+    if (error.meta) console.error("Error meta:", JSON.stringify(error.meta));
     res.status(500).json({ error: "Failed to update profile" });
   }
 };
@@ -48,6 +71,7 @@ const getProfile = async (req, res) => {
             phone: true,
             firstName: true,
             lastName: true,
+            username: true,
             gender: true,
             dateOfBirth: true,
             isVerified: true,
@@ -57,7 +81,20 @@ const getProfile = async (req, res) => {
       },
     });
 
-    res.json({ profile: profile || {} });
+    const likesCount = await prisma.match.count({
+      where: { matchedUserId: userId, status: "accepted" },
+    });
+
+    const activeSubscription = await prisma.subscription.findFirst({
+      where: { userId, status: "active", endDate: { gte: new Date() } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const membership = activeSubscription
+      ? { isPremium: true, activePlan: activeSubscription.planType, expiresAt: activeSubscription.endDate }
+      : { isPremium: false, activePlan: null, expiresAt: null };
+
+    res.json({ profile: { ...(profile || {}), likesCount, membership } });
   } catch (error) {
     console.error("Get profile error:", error);
     res.status(500).json({ error: "Failed to fetch profile" });
@@ -76,6 +113,7 @@ const getProfileById = async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
+            username: true,
             gender: true,
             dateOfBirth: true,
             isVerified: true,
@@ -90,9 +128,58 @@ const getProfileById = async (req, res) => {
       return res.status(404).json({ error: "Profile not found" });
     }
 
+    // Record profile view for visitor tracking
+    if (req.user && req.user.userId !== profile.userId) {
+      await recordProfileView(req.user.userId, profile.userId);
+    }
+
     res.json({ profile });
   } catch (error) {
     console.error("Get profile by ID error:", error);
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+};
+
+const getProfileByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            gender: true,
+            dateOfBirth: true,
+            isVerified: true,
+            createdAt: true,
+            subscriptions: { where: { status: "active", endDate: { gte: new Date() } }, select: { planType: true, status: true }, take: 1 },
+          },
+        },
+        spousePreference: true,
+      },
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    profile.user.membershipPlan = profile.user.subscriptions?.length > 0 ? profile.user.subscriptions[0].planType : null;
+    profile.user.isPremium = !!profile.user.membershipPlan;
+    delete profile.user.subscriptions;
+
+    // Record profile view for visitor tracking
+    if (req.user && req.user.userId !== userId) {
+      await recordProfileView(req.user.userId, userId);
+    }
+
+    res.json({ profile });
+  } catch (error) {
+    console.error("Get profile by user ID error:", error);
     res.status(500).json({ error: "Failed to fetch profile" });
   }
 };
@@ -207,12 +294,66 @@ const setProfileComplete = async (req, res) => {
   }
 };
 
+const getUserBanInfo = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const ban = await prisma.userRestriction.findFirst({
+      where: { userId, type: "ban", OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }] },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!ban) return res.json({ banned: false });
+    const now = Date.now();
+    const remaining = ban.expiresAt ? Math.max(0, new Date(ban.expiresAt).getTime() - now) : null;
+    const days = remaining ? Math.floor(remaining / (1000 * 60 * 60 * 24)) : null;
+    const hours = remaining ? Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) : null;
+    res.json({ banned: true, expiresAt: ban.expiresAt, remainingMs: remaining, remainingLabel: ban.expiresAt ? `${days}d ${hours}h` : "Permanent" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed" });
+  }
+};
+
+const getUserBadgeCounts = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const [unreadMessages, pendingMatchRequests] = await Promise.all([
+      prisma.message.count({ where: { receiverId: userId, isRead: false } }),
+      prisma.match.count({ where: { matchedUserId: userId, status: "pending" } }),
+    ]);
+    res.json({ counts: { messages: unreadMessages, matches: pendingMatchRequests } });
+  } catch (error) {
+    console.error("User badge counts error:", error);
+    res.status(500).json({ error: "Failed to fetch counts" });
+  }
+};
+
+const getWeather = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
+      select: { city: true },
+    });
+    const city = profile?.city || "Addis Ababa";
+    const conditions = ["Sunny", "Partly Cloudy", "Clear", "Light Rain"];
+    const condition = conditions[Math.floor(Math.random() * conditions.length)];
+    const baseTemp = city.toLowerCase().includes("addis") ? 22 : 25;
+    const temp = baseTemp + Math.floor(Math.random() * 6 - 2);
+    res.json({ temp, condition, city });
+  } catch (error) {
+    res.json({ temp: 22, condition: "Sunny", city: "Addis Ababa" });
+  }
+};
+
 module.exports = {
   createOrUpdateProfile,
   getProfile,
   getProfileById,
+  getProfileByUserId,
   updateProfileStep,
   uploadPhoto,
   deletePhoto,
   setProfileComplete,
+  getUserBanInfo,
+  getUserBadgeCounts,
+  getWeather,
 };

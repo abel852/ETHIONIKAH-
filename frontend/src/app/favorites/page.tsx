@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect } from "react";
-import { Heart, MapPin, Briefcase, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Heart, MapPin, Briefcase, X, Crown, Gem } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
-import { Button, Badge, VerifiedBadge } from "@/components/common";
+import { Button, Badge, VerifiedBadge, IslamicPatternBackground } from "@/components/common";
+import { mediaUrl, cn } from "@/lib/utils";
 import { useMatchStore } from "@/store/matches";
 
 export default function FavoritesPage() {
@@ -15,7 +16,7 @@ export default function FavoritesPage() {
   }, [fetchFavorites]);
 
   return (
-    <div className="min-h-screen bg-blur-image">
+    <IslamicPatternBackground>
       <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8">
@@ -44,25 +45,46 @@ export default function FavoritesPage() {
             </div>
           ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {favoriteProfiles.map((profile, i) => (
+            {favoriteProfiles.map((profile, i) => {
+              const isGold = profile.user?.membershipPlan === "gold";
+              const isPlatinum = profile.user?.membershipPlan === "platinum";
+              const isPremium = isGold || isPlatinum;
+              return (
               <motion.div
                 key={profile.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.08 }}
-                className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden group hover:shadow-elevated transition-all"
+                className={cn(
+                  "bg-white dark:bg-charcoal-800 rounded-2xl shadow-card overflow-hidden group hover:shadow-elevated transition-all",
+                  isPlatinum
+                    ? "border-2 border-purple-400/70 dark:border-purple-400/60 shadow-[0_0_20px_rgba(168,85,247,0.25)]"
+                    : isGold
+                    ? "border-2 border-amber-400/70 dark:border-amber-400/60 shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+                    : "border border-charcoal-100/50 dark:border-charcoal-700"
+                )}
               >
-                <div className="relative h-32 bg-gradient-to-br from-accent/30 to-accent/10 dark:from-accent/20 dark:to-charcoal-700 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-white/90 dark:bg-charcoal-700/90 backdrop-blur flex items-center justify-center">
-                    <span className="text-xl font-display font-bold text-accent">
-                      {[profile.user?.firstName, profile.user?.lastName].filter(Boolean).map(n => n[0]).join("") || "U"}
-                    </span>
-                  </div>
+                <div className="relative h-32 bg-gradient-to-br from-accent/30 to-accent/10 dark:from-accent/20 dark:to-charcoal-700 flex items-center justify-center overflow-hidden">
+                  {profile.user?.photos?.[0] || profile.profile?.photos?.[0] ? (
+                    <img src={mediaUrl(profile.user?.photos?.[0] || profile.profile?.photos?.[0])} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-white/90 dark:bg-charcoal-700/90 backdrop-blur flex items-center justify-center">
+                      <span className="text-xl font-display font-bold text-accent">
+                        {[profile.user?.firstName, profile.user?.lastName].filter(Boolean).map(n => n[0]).join("") || "U"}
+                      </span>
+                    </div>
+                  )}
                   <button onClick={() => toggleFavorite(profile.user?.id || profile.id)} className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 dark:bg-charcoal-800/80 backdrop-blur hover:bg-white dark:hover:bg-charcoal-700 transition-colors">
                     <X className="w-4 h-4 text-charcoal-500" />
                   </button>
-                  <div className="absolute top-2 left-2">
+                  <div className="absolute top-2 left-2 flex items-center gap-1.5">
                     {profile.user?.isVerified && <VerifiedBadge />}
+                    {isPremium && (
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full text-white shadow-md ${isPlatinum ? "bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500" : "bg-gradient-to-r from-amber-400 to-yellow-500"}`}>
+                        {isPlatinum ? <Gem className="w-2.5 h-2.5" /> : <Crown className="w-2.5 h-2.5" />}
+                        {isPlatinum ? "Platinum" : "Gold"}
+                      </span>
+                    )}
                   </div>
                   <div className="absolute bottom-2 right-2">
                     <Badge variant="gold" size="sm">{profile.compatibilityScore || 0}%</Badge>
@@ -85,11 +107,12 @@ export default function FavoritesPage() {
                   </Button>
                 </div>
               </motion.div>
-            ))}
+            );
+          })}
           </div>
           )}
         </main>
       </div>
-    </div>
+    </IslamicPatternBackground>
   );
 }

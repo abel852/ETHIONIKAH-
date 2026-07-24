@@ -1,5 +1,16 @@
 import { useNotificationStore } from "@/store/notifications";
+import type { Notification } from "@/types";
 import { act } from "@testing-library/react";
+
+const mockNotification = (id: string, read: boolean): Notification => ({
+  id,
+  userId: "user-1",
+  type: "message",
+  title: "Test",
+  body: "Test notification",
+  read,
+  createdAt: new Date().toISOString(),
+});
 
 const mockGetAll = jest.fn();
 const mockGetUnreadCount = jest.fn();
@@ -27,9 +38,9 @@ describe("notificationStore", () => {
 
   it("fetchNotifications loads notifications and calculates unread count", async () => {
     const mockNotifs = [
-      { id: "n1", read: false },
-      { id: "n2", read: true },
-      { id: "n3", read: false },
+      mockNotification("n1", false),
+      mockNotification("n2", true),
+      mockNotification("n3", false),
     ];
     mockGetAll.mockResolvedValue({ data: { notifications: mockNotifs } });
 
@@ -45,7 +56,7 @@ describe("notificationStore", () => {
   });
 
   it("fetchNotifications handles direct array response", async () => {
-    const mockNotifs = [{ id: "n1", read: false }];
+    const mockNotifs = [mockNotification("n1", false)];
     mockGetAll.mockResolvedValue({ data: mockNotifs });
 
     await act(async () => {
@@ -93,8 +104,8 @@ describe("notificationStore", () => {
   it("markAsRead marks a notification as read and decrements count", async () => {
     useNotificationStore.setState({
       notifications: [
-        { id: "n1", read: false },
-        { id: "n2", read: false },
+        mockNotification("n1", false),
+        mockNotification("n2", false),
       ],
       unreadCount: 2,
     });
@@ -113,7 +124,7 @@ describe("notificationStore", () => {
 
   it("markAsRead handles errors gracefully", async () => {
     useNotificationStore.setState({
-      notifications: [{ id: "n1", read: false }],
+      notifications: [mockNotification("n1", false)],
       unreadCount: 1,
     });
     mockMarkAsRead.mockRejectedValue(new Error("Error"));
@@ -130,8 +141,8 @@ describe("notificationStore", () => {
   it("markAllAsRead marks all as read", async () => {
     useNotificationStore.setState({
       notifications: [
-        { id: "n1", read: false },
-        { id: "n2", read: false },
+        mockNotification("n1", false),
+        mockNotification("n2", false),
       ],
       unreadCount: 2,
     });
@@ -149,7 +160,7 @@ describe("notificationStore", () => {
 
   it("markAllAsRead handles errors gracefully", async () => {
     useNotificationStore.setState({
-      notifications: [{ id: "n1", read: false }],
+      notifications: [mockNotification("n1", false)],
       unreadCount: 1,
     });
     mockMarkAllAsRead.mockRejectedValue(new Error("Error"));

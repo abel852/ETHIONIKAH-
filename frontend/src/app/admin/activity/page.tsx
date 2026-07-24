@@ -8,6 +8,7 @@ import {
   UserCheck, TrendingUp, Calendar, ArrowRight, Eye,
   BarChart3, Hourglass, CheckCircle, XCircle,
 } from "lucide-react";
+import { useI18n } from "@/context/I18nContext";
 
 type TimelineData = {
   adminLogins: any[];
@@ -23,6 +24,7 @@ type TimelineData = {
 };
 
 export default function ActivityTimelinePage() {
+  const { t } = useI18n();
   const [data, setData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("today");
@@ -53,7 +55,7 @@ export default function ActivityTimelinePage() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity Timeline</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.activity.title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" /> {todayStr}
             </p>

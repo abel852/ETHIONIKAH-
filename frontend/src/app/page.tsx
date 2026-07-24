@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +11,8 @@ import {
   Award, Gem, Fingerprint, Users,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
+import { useI18n } from "@/context/I18nContext";
+import { useAuth } from "@/context/AuthContext";
 
 const goldText = "bg-gold-gradient bg-clip-text text-transparent";
 
@@ -39,45 +42,6 @@ function SectionHeading({ label, title, subtitle, light }: { label?: string; tit
   );
 }
 
-function CircularScore({ score, size = 80 }: { score: number; size?: number }) {
-  const strokeWidth = 4;
-  const radius = (size - strokeWidth * 2) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-40px" });
-
-  return (
-    <div ref={ref} className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(212,175,55,0.15)" strokeWidth={strokeWidth} />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke="url(#goldScore)" strokeWidth={strokeWidth} strokeLinecap="round"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={isInView ? { strokeDashoffset: offset } : {}}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-        />
-        <defs>
-          <linearGradient id="goldScore" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#D4AF37" />
-            <stop offset="100%" stopColor="#E6C878" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <motion.span
-        className="absolute text-sm font-bold text-accent"
-        initial={{ opacity: 0 }}
-        animate={isInView ? { opacity: 1 } : {}}
-        transition={{ delay: 0.8, duration: 0.4 }}
-      >
-        {score}%
-      </motion.span>
-    </div>
-  );
-}
-
 function GoldDivider() {
   return (
     <div className="flex items-center justify-center gap-3 py-8">
@@ -88,12 +52,35 @@ function GoldDivider() {
   );
 }
 
+function Highlight({ text, className }: { text: string; className?: string }) {
+  return <span className={className ? `${className} ${goldText}` : goldText}>{text}</span>;
+}
+
+function HighlightText({ text, highlight, className }: { text: string; highlight: string; className?: string }) {
+  const parts = text.split(highlight);
+  return (
+    <>
+      {parts[0]}
+      {parts.length > 1 && (
+        <>
+          <Highlight text={highlight} className={className} />
+          {parts.slice(1).join(highlight)}
+        </>
+      )}
+      {parts.length === 1 && text}
+    </>
+  );
+}
+
 /* ─── Hero ─── */
 function HeroSection() {
   const ref = useRef(null);
+  const { t } = useI18n();
   const { scrollYProgress } = useScroll({ target: ref, container: ref, offset: ["start start", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const highlight = t("home.heroHighlight");
+  const heroBadges = [t("home.heroBadge1"), t("home.heroBadge2"), t("home.heroBadge3")];
 
   return (
     <section ref={ref} className="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden bg-charcoal-900">
@@ -123,44 +110,37 @@ function HeroSection() {
       <motion.div style={{ opacity }} className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center">
         <div>
           <span className="inline-block text-xs uppercase tracking-[0.35em] text-accent/80 font-medium mb-6">
-            Premium Islamic Matchmaking
+            {t("home.heroEyebrow")}
           </span>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-display font-bold text-white leading-[1.1] mb-6"
-        >
-          Where Faith, Trust{" "}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-display font-bold text-white leading-[1.1] mb-6">
+          {t("home.heroTitle")}{" "}
           <span className="block mt-2">
-            and <span className={goldText}>Marriage</span> Meet
+            <HighlightText text={t("home.heroTitleLine2", { highlight })} highlight={highlight} />
           </span>
         </h1>
 
-        <p
-          className="text-lg md:text-xl text-charcoal-300 max-w-2xl mx-auto mb-10 leading-relaxed"
-        >
-          A private, exclusive platform for Muslim singles committed to finding
-          a righteous spouse through sincerity, family involvement, and Islamic values.
+        <p className="text-lg md:text-xl text-charcoal-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+          {t("home.heroDesc")}
         </p>
 
-        <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
-        >
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/login">
             <button className="group relative overflow-hidden premium-button-primary text-lg px-10 py-4">
-              <span className="relative z-10">Begin Your Journey</span>
+              <span className="relative z-10">{t("home.heroCtaPrimary")}</span>
               <div className="absolute inset-0 bg-gradient-to-r from-accent via-accent-light to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </button>
           </Link>
           <Link href="/login">
             <button className="premium-button-secondary text-lg px-10 py-4">
-              Explore Matches
+              {t("home.heroCtaSecondary")}
             </button>
           </Link>
         </div>
 
-        <div className="mt-16 flex items-center justify-center gap-6 text-sm text-charcoal-400"
-        >
-          {["Verified Profiles", "Privacy Protected", "Sharia Compliant"].map((item) => (
+        <div className="mt-16 flex items-center justify-center gap-6 text-sm text-charcoal-400">
+          {heroBadges.map((item) => (
             <span key={item} className="flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-accent/60" />
               {item}
@@ -178,92 +158,152 @@ function HeroSection() {
   );
 }
 
-/* ─── Match Preview ─── */
-const profiles = [
-  { name: "Aisha M.", age: 26, city: "Addis Ababa", occupation: "Physician", match: 94, verified: true, img: "/images/nikkah-prep.png" },
-  { name: "Fatima A.", age: 24, city: "Dire Dawa", occupation: "Educator", match: 89, verified: true, img: "/images/wedding-thumb.png" },
-  { name: "Zainab H.", age: 27, city: "Adama", occupation: "Engineer", match: 85, verified: false, img: "/images/g.png" },
-  { name: "Khadija O.", age: 28, city: "Addis Ababa", occupation: "Attorney", match: 82, verified: true, img: "/images/R.png" },
-];
-
-function MatchPreviewSection() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
+function PremiumSection() {
+  const { t } = useI18n();
+  const premiumFeatures = [
+    { icon: Star, label: t("home.premiumFeature1"), desc: t("home.premiumFeature1Desc") },
+    { icon: Users, label: t("home.premiumFeature2"), desc: t("home.premiumFeature2Desc") },
+    { icon: Heart, label: t("home.premiumFeature3"), desc: t("home.premiumFeature3Desc") },
+    { icon: Shield, label: t("home.premiumFeature4"), desc: t("home.premiumFeature4Desc") },
+    { icon: CheckCircle, label: t("home.premiumFeature5"), desc: t("home.premiumFeature5Desc") },
+    { icon: Award, label: t("home.premiumFeature6"), desc: t("home.premiumFeature6Desc") },
+  ];
 
   return (
-    <section ref={ref} className="relative py-24 md:py-32 bg-white overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-accent/[0.02] rounded-full blur-3xl pointer-events-none" />
+    <section className="relative py-24 md:py-32 bg-gradient-to-br from-charcoal-900 via-[#1a1040] to-charcoal-900 overflow-hidden">
+      <div className="absolute inset-0">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gold/10 rounded-full blur-3xl" />
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          label="Discover Matches"
-          title="Compatible. Verified. Intentional."
-          subtitle="Profiles built on character, deen, and life goals — not just photos."
-        />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          className="text-center mb-14"
+        >
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-accent mb-3">{t("home.premiumEyebrow")}</span>
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">
+            {t("home.premiumTitle")}
+          </h2>
+          <p className="text-charcoal-400 max-w-xl mx-auto">
+            {t("home.premiumSubtitle")}
+          </p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
-          {profiles.map((profile, i) => (
-            <motion.div
-              key={profile.name}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ delay: i * 0.12, duration: 0.6 }}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className="group relative bg-white rounded-2xl border border-charcoal-100/60 shadow-card hover:shadow-elevated transition-all duration-500 overflow-hidden"
-            >
-              <div className="relative h-48 overflow-hidden">
-                <Image src={profile.img} alt={profile.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute top-3 right-3">
-                  {profile.verified ? <VerifiedBadge /> : <span className="text-xs text-charcoal-400 bg-white/80 px-2 py-1 rounded-full">Unverified</span>}
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Gold */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ delay: 0.1 }}
+            className="relative bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-3xl p-8 hover:border-gold/40 transition-colors duration-300"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center">
+                <Star className="w-6 h-6 text-gold" />
               </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">{t("home.premiumGold")}</h3>
+                <p className="text-sm text-charcoal-400">{t("home.premiumGoldDesc")}</p>
+              </div>
+            </div>
 
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-2">
+            <div className="mb-6">
+              <span className="text-4xl font-bold text-white">{t("home.premiumGoldPrice")}</span>
+              <span className="text-charcoal-400 ml-2">{t("home.premiumGoldPeriod")}</span>
+            </div>
+
+            <ul className="space-y-3 mb-8">
+              {premiumFeatures.slice(0, 4).map((f) => (
+                <li key={f.label} className="flex items-start gap-3">
+                  <f.icon className="w-4 h-4 text-gold mt-0.5 shrink-0" />
                   <div>
-                    <h3 className="font-display font-semibold text-charcoal-900">{profile.name}</h3>
-                    <p className="text-sm text-charcoal-500">{profile.age} · {profile.city}</p>
+                    <p className="text-sm font-medium text-white">{f.label}</p>
+                    <p className="text-xs text-charcoal-400">{f.desc}</p>
                   </div>
-                  <CircularScore score={profile.match} size={64} />
-                </div>
-                <p className="text-sm text-charcoal-400 mt-2">{profile.occupation}</p>
-                <div className="mt-4 pt-4 border-t border-charcoal-100/50 flex items-center justify-between">
-                  <span className="text-xs text-charcoal-400">Compatibility</span>
-                  <span className="text-xs font-medium text-accent">{profile.match}% Match</span>
-                </div>
+                </li>
+              ))}
+            </ul>
+
+            <Link href="/login">
+              <button className="w-full py-3 rounded-xl bg-gradient-to-r from-gold to-yellow-500 text-charcoal-900 font-semibold text-sm hover:shadow-lg hover:shadow-gold/20 transition-all duration-300">
+                {t("home.premiumGoldCta")}
+              </button>
+            </Link>
+          </motion.div>
+
+          {/* Platinum */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ delay: 0.2 }}
+            className="relative bg-white/[0.06] backdrop-blur-xl border border-accent/30 rounded-3xl p-8 hover:border-accent/60 transition-colors duration-300"
+          >
+            <div className="absolute -top-3 right-6">
+              <span className="text-[10px] font-semibold uppercase tracking-widest bg-accent text-white px-3 py-1 rounded-full">{t("home.premiumPlatinumBadge")}</span>
+            </div>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center">
+                <Gem className="w-6 h-6 text-accent" />
               </div>
-            </motion.div>
-          ))}
+              <div>
+                <h3 className="text-xl font-bold text-white">{t("home.premiumPlatinum")}</h3>
+                <p className="text-sm text-charcoal-400">{t("home.premiumPlatinumDesc")}</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <span className="text-4xl font-bold text-white">{t("home.premiumPlatinumPrice")}</span>
+              <span className="text-charcoal-400 ml-2">{t("home.premiumPlatinumPeriod")}</span>
+            </div>
+
+            <ul className="space-y-3 mb-8">
+              {premiumFeatures.map((f) => (
+                <li key={f.label} className="flex items-start gap-3">
+                  <f.icon className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-white">{f.label}</p>
+                    <p className="text-xs text-charcoal-400">{f.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <Link href="/login">
+              <button className="w-full py-3 rounded-xl bg-gradient-to-r from-accent to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-accent/20 transition-all duration-300">
+                {t("home.premiumPlatinumCta")}
+              </button>
+            </Link>
+          </motion.div>
         </div>
 
-        <motion.div
+        <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center mt-10"
+          className="text-center text-xs text-charcoal-500 mt-8"
         >
-          <Link href="/login">
-            <button className="premium-button-outline">
-              View All Matches <ArrowRight className="w-4 h-4 ml-2" />
-            </button>
-          </Link>
-        </motion.div>
+          {t("home.premiumFooter")}
+        </motion.p>
       </div>
     </section>
   );
 }
 
-/* ─── Trust ─── */
-const trustItems = [
-  { icon: Shield, title: "Identity Verified", desc: "Every member undergoes manual ID verification. No bots, no fake profiles, no compromises on authenticity." },
-  { icon: Fingerprint, title: "Privacy First", desc: "Your data is protected with enterprise-grade encryption. You control what you share and with whom." },
-  { icon: Award, title: "Islamically Compliant", desc: "Designed around Islamic values. Guardian involvement, respectful communication, and marriage-first approach." },
-  { icon: UserCheck, title: "Family Inclusive", desc: "Optional wali access allows family to participate in the process with dignity and transparency." },
-];
-
 function TrustSection() {
+  const { t } = useI18n();
+  const trustItems = [
+    { icon: Shield, title: t("home.trust1Title"), desc: t("home.trust1Desc") },
+    { icon: Fingerprint, title: t("home.trust2Title"), desc: t("home.trust2Desc") },
+    { icon: Award, title: t("home.trust3Title"), desc: t("home.trust3Desc") },
+    { icon: UserCheck, title: t("home.trust4Title"), desc: t("home.trust4Desc") },
+  ];
+
   return (
     <section className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden">
       <div className="absolute inset-0">
@@ -273,9 +313,9 @@ function TrustSection() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          label="Why Trust Us"
-          title="Built on Integrity"
-          subtitle="Every feature, every decision — rooted in sincerity and Islamic ethics."
+          label={t("home.trustEyebrow")}
+          title={t("home.trustTitle")}
+          subtitle={t("home.trustSubtitle")}
           light
         />
 
@@ -303,19 +343,18 @@ function TrustSection() {
   );
 }
 
-/* ─── Journey Timeline ─── */
-const steps = [
-  { icon: UserCheck, title: "Create Profile", desc: "Share your story, values, and what you seek in a spouse. Thoughtful questions guide every step." },
-  { icon: Shield, title: "Get Verified", desc: "Upload your ID and take a selfie. Our team reviews and verifies your identity within 24 hours." },
-  { icon: Sparkles, title: "Find Compatible Matches", desc: "Our algorithm matches you based on deen, character, education, and life goals — not just appearances." },
-  { icon: Heart, title: "Respectful Communication", desc: "Engage in meaningful conversations within a safe, monitored environment with full privacy controls." },
-  { icon: Users, title: "Family Engagement", desc: "Invite your wali or family to review profiles and participate in the process when you're ready." },
-  { icon: Award, title: "Blessed Marriage", desc: "When hearts align, we support your journey toward a blessed union grounded in faith and mutual respect." },
-];
-
 function JourneySection() {
+  const { t } = useI18n();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const steps = [
+    { icon: UserCheck, title: t("home.journeyStep1Title"), desc: t("home.journeyStep1Desc") },
+    { icon: Shield, title: t("home.journeyStep2Title"), desc: t("home.journeyStep2Desc") },
+    { icon: Sparkles, title: t("home.journeyStep3Title"), desc: t("home.journeyStep3Desc") },
+    { icon: Heart, title: t("home.journeyStep4Title"), desc: t("home.journeyStep4Desc") },
+    { icon: Users, title: t("home.journeyStep5Title"), desc: t("home.journeyStep5Desc") },
+    { icon: Award, title: t("home.journeyStep6Title"), desc: t("home.journeyStep6Desc") },
+  ];
 
   return (
     <section ref={ref} className="relative py-24 md:py-32 bg-white overflow-hidden">
@@ -324,9 +363,9 @@ function JourneySection() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          label="Your Journey"
-          title="The Path to a Blessed Union"
-          subtitle="Every great marriage begins with intention. Here is how we walk with you."
+          label={t("home.journeyEyebrow")}
+          title={t("home.journeyTitle")}
+          subtitle={t("home.journeySubtitle")}
         />
 
         <div className="relative">
@@ -368,32 +407,32 @@ function JourneySection() {
   );
 }
 
-/* ─── Success Stories ─── */
-const stories = [
-  {
-    name: "Aisha & Ibrahim",
-    location: "Addis Ababa",
-    image: "/images/nikkah-prep.png",
-    quote: "Ethio Nikah brought us together in the most respectful way. The verification process gave both our families complete peace of mind.",
-    role: "Married March 2026",
-  },
-  {
-    name: "Fatima & Yusuf",
-    location: "Dire Dawa",
-    image: "/images/wedding-ceremony.png",
-    quote: "After two years of searching, I found my perfect match. The compatibility scoring was incredibly accurate — we connected on values that truly matter.",
-    role: "Married January 2026",
-  },
-  {
-    name: "Khadija & Ahmed",
-    location: "Adama",
-    image: "/images/wedding-thumb.png",
-    quote: "The family involvement feature made all the difference. My father could participate while maintaining Islamic guidelines. A truly blessed experience.",
-    role: "Married February 2026",
-  },
-];
-
 function StoriesSection() {
+  const { t } = useI18n();
+  const stories = [
+    {
+      name: t("home.story1Name"),
+      location: t("home.story1Location"),
+      image: "/images/nikkah-prep.png",
+      quote: t("home.story1Quote"),
+      role: t("home.story1Role"),
+    },
+    {
+      name: t("home.story2Name"),
+      location: t("home.story2Location"),
+      image: "/images/wedding-ceremony.png",
+      quote: t("home.story2Quote"),
+      role: t("home.story2Role"),
+    },
+    {
+      name: t("home.story3Name"),
+      location: t("home.story3Location"),
+      image: "/images/wedding-thumb.png",
+      quote: t("home.story3Quote"),
+      role: t("home.story3Role"),
+    },
+  ];
+
   const [active, setActive] = useState(0);
   const prev = () => setActive((a) => (a === 0 ? stories.length - 1 : a - 1));
   const next = () => setActive((a) => (a === stories.length - 1 ? 0 : a + 1));
@@ -413,7 +452,7 @@ function StoriesSection() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading label="Success Stories" title="Blessed Unions" subtitle="Real couples who found each other through Ethio Nikah." light />
+        <SectionHeading label={t("home.storiesEyebrow")} title={t("home.storiesTitle")} subtitle={t("home.storiesSubtitle")} light />
 
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-2">
@@ -487,6 +526,8 @@ function StoriesSection() {
 
 /* ─── CTA ─── */
 function CTASection() {
+  const { t } = useI18n();
+  const highlight = t("home.ctaHighlight");
   return (
     <section className="relative py-28 md:py-40 bg-charcoal-900 overflow-hidden">
       <div className="absolute inset-0">
@@ -503,36 +544,34 @@ function CTASection() {
           transition={{ duration: 0.8 }}
         >
           <span className="inline-block text-xs uppercase tracking-[0.35em] text-accent/80 font-medium mb-6">
-            Start Your Journey
+            {t("home.ctaEyebrow")}
           </span>
 
           <h2 className="text-3xl md:text-4xl lg:text-6xl font-display font-bold text-white leading-tight mb-6">
-            Your Righteous Spouse{" "}
-            <span className={goldText}>Awaits</span>
+            <HighlightText text={t("home.ctaTitle", { highlight })} highlight={highlight} />
           </h2>
 
           <p className="text-lg text-charcoal-300 max-w-xl mx-auto mb-10 leading-relaxed">
-            Join a community of sincere Muslims committed to finding marriage the halal way.
-            Free to join. Premium by design.
+            {t("home.ctaDesc")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/register">
               <button className="group relative overflow-hidden premium-button-primary text-lg px-12 py-4">
-                <span className="relative z-10">Create Free Account</span>
+                <span className="relative z-10">{t("home.ctaPrimary")}</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-accent via-accent-light to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </button>
             </Link>
             <Link href="/login">
               <button className="premium-button-secondary text-lg px-12 py-4">
-                Sign In
+                {t("home.ctaSecondary")}
               </button>
             </Link>
           </div>
 
           <div className="mt-12 pt-8 border-t border-white/5">
             <p className="text-xs text-charcoal-500 uppercase tracking-[0.2em]">
-              Trusted by thousands across Ethiopia
+              {t("home.ctaTrust")}
             </p>
           </div>
         </motion.div>
@@ -541,23 +580,23 @@ function CTASection() {
   );
 }
 
-/* ─── VerifiedBadge (inline since we removed the import) ─── */
-function VerifiedBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-white bg-accent/90 backdrop-blur-sm px-2.5 py-1 rounded-full">
-      <CheckCircle className="w-3 h-3" />
-      Verified
-    </span>
-  );
-}
-
 /* ─── Main Page ─── */
 export default function HomePage() {
+  const { t } = useI18n();
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/matches");
+    }
+  }, [user, isLoading, router]);
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <HeroSection />
-      <MatchPreviewSection />
+      <PremiumSection />
       <TrustSection />
       <JourneySection />
       <StoriesSection />

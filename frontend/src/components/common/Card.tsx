@@ -18,7 +18,7 @@ const paddings = {
   lg: "p-8",
 };
 
-export function Card({ className, hover = true, glass = false, padding = "md", children }: CardProps) {
+export function Card({ className, hover = true, glass = false, padding = "md", children, ...props }: CardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,6 +34,7 @@ export function Card({ className, hover = true, glass = false, padding = "md", c
         paddings[padding],
         className
       )}
+      {...(props as any)}
     >
       {children}
     </motion.div>

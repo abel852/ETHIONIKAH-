@@ -1,5 +1,6 @@
 const prisma = require("../config/database");
 const { createNotification, notifyAllAdmins } = require("../utils/notification");
+const { emitVerificationStatus } = require("../utils/messageSocket");
 
 const submitVerification = async (req, res) => {
   try {
@@ -48,10 +49,6 @@ const getVerificationStatus = async (req, res) => {
         admin: { select: { id: true, firstName: true, lastName: true } },
       },
     });
-
-    if (!verification) {
-      return res.status(404).json({ error: "No verification submission found" });
-    }
 
     res.json({ verification });
   } catch (error) {
@@ -121,6 +118,8 @@ const approveVerification = async (req, res) => {
       body: "Your verification documents have been approved. You are now a verified user!",
     }).catch((e) => console.error("Notification error:", e));
 
+    emitVerificationStatus(verification.userId, { id: verification.id, status: "approved", userId: verification.userId });
+
     res.json({ message: "Verification approved", verification });
   } catch (error) {
     console.error("Approve verification error:", error);
@@ -146,10 +145,25 @@ const rejectVerification = async (req, res) => {
         : "Your verification documents were rejected. Please submit new documents.",
     }).catch((e) => console.error("Notification error:", e));
 
+    emitVerificationStatus(verification.userId, { id: verification.id, status: "rejected", userId: verification.userId, adminNote });
+
     res.json({ message: "Verification rejected", verification });
   } catch (error) {
     console.error("Reject verification error:", error);
     res.status(500).json({ error: "Failed to reject verification" });
+  }
+};
+
+const markVerificationViewed = async (req, res) => {
+  try {
+    await prisma.verification.updateMany({
+      where: { viewed_at: null },
+      data: { viewed_at: new Date() },
+    });
+    res.json({ message: "Verifications marked as viewed" });
+  } catch (error) {
+    console.error("Mark verification viewed error:", error);
+    res.status(500).json({ error: "Failed to mark verifications as viewed" });
   }
 };
 
@@ -160,4 +174,5 @@ module.exports = {
   getAllVerifications,
   approveVerification,
   rejectVerification,
+  markVerificationViewed,
 };

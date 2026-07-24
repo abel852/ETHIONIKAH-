@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search, CreditCard, DollarSign, Users, TrendingUp,
   CheckCircle, XCircle, Clock, Eye, ArrowUpRight,
@@ -11,6 +10,7 @@ import { Card, Button, Badge } from "@/components/common";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
 import { formatDate } from "@/lib/utils";
+import { useI18n } from "@/context/I18nContext";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell,
@@ -21,6 +21,7 @@ import toast from "react-hot-toast";
 const COLORS = ["#D4AF37", "#10B981", "#F59E0B", "#8B5CF6"];
 
 export default function AdminSubscriptionsPage() {
+  const { t } = useI18n();
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [revenue, setRevenue] = useState<any>(null);
@@ -28,7 +29,7 @@ export default function AdminSubscriptionsPage() {
   const [tab, setTab] = useState<"subscriptions" | "payments">("subscriptions");
   const [search, setSearch] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [subRes, payRes, revRes] = await Promise.all([
@@ -41,9 +42,20 @@ export default function AdminSubscriptionsPage() {
       setRevenue(revRes.data.data);
     } catch { toast.error("Failed to fetch data"); }
     finally { setLoading(false); }
-  };
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+    const id = setInterval(fetchData, 45000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
+  // Listen for real-time payment status changes
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener("payment-status-changed", handler);
+    return () => window.removeEventListener("payment-status-changed", handler);
+  }, [fetchData]);
 
   const rev = revenue || {};
   const filteredSubs = subscriptions.filter((s: any) =>
@@ -83,35 +95,35 @@ export default function AdminSubscriptionsPage() {
   ];
 
   const planData = [
-    { name: "Premium", value: rev.premiumSubscriptions ?? 0 },
-    { name: "Basic", value: rev.basicSubscriptions ?? 0 },
+    { name: "Platinum", value: rev.premiumSubscriptions ?? 0 },
+    { name: "Gold", value: rev.basicSubscriptions ?? 0 },
   ];
 
   const statCards = [
     { label: "Total Revenue", value: `$${(rev.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "text-accent", bg: "bg-amber-50 dark:bg-amber-500/10" },
     { label: "Active Subscriptions", value: rev.activeSubscriptions ?? 0, icon: Activity, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
-    { label: "Premium", value: rev.premiumSubscriptions ?? 0, icon: Users, color: "text-accent-dark", bg: "bg-amber-50 dark:bg-amber-500/10" },
+    { label: "Platinum", value: rev.premiumSubscriptions ?? 0, icon: Users, color: "text-accent-dark", bg: "bg-amber-50 dark:bg-amber-500/10" },
     { label: "Total Payments", value: payments.length, icon: CreditCard, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
   ];
 
   return (
     <AdminLayout>
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+      <div className="mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
             <CreditCard className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white">Membership & Revenue</h1>
-            <p className="text-sm text-charcoal-500 dark:text-charcoal-400">Track subscriptions, payments, and platform revenue</p>
+            <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white">{t('admin.nav.plansCredits')}</h1>
+            <p className="text-sm text-charcoal-500 dark:text-white">{t('admin.analytics.subscriptionStats')}</p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {statCards.map((stat, i) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+        {statCards.map((stat) => (
+          <div key={stat.label}>
             <Card hover={false}>
               <div className="flex items-center justify-between mb-2">
                 <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
@@ -122,9 +134,9 @@ export default function AdminSubscriptionsPage() {
                 )}
               </div>
               <p className="text-2xl font-bold text-charcoal-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs text-charcoal-400">{stat.label}</p>
+              <p className="text-xs text-charcoal-400 dark:text-white">{stat.label}</p>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -134,7 +146,7 @@ export default function AdminSubscriptionsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold text-charcoal-900 dark:text-white">Revenue Overview</h3>
-              <p className="text-xs text-charcoal-400">Monthly revenue in USD</p>
+              <p className="text-xs text-charcoal-400 dark:text-white">Monthly revenue in USD</p>
             </div>
           </div>
           <div className="h-64">
@@ -160,7 +172,7 @@ export default function AdminSubscriptionsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold text-charcoal-900 dark:text-white">Plan Distribution</h3>
-              <p className="text-xs text-charcoal-400">Active plans breakdown</p>
+              <p className="text-xs text-charcoal-400 dark:text-white">Active plans breakdown</p>
             </div>
           </div>
           <div className="h-64 flex items-center justify-center">
@@ -183,10 +195,10 @@ export default function AdminSubscriptionsPage() {
           </div>
           <div className="flex justify-center gap-4 mt-2">
             <span className="flex items-center gap-1.5 text-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" /> Premium: {rev.premiumSubscriptions ?? 0}
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" /> Platinum: {rev.premiumSubscriptions ?? 0}
             </span>
             <span className="flex items-center gap-1.5 text-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" /> Basic: {rev.basicSubscriptions ?? 0}
+              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" /> Gold: {rev.basicSubscriptions ?? 0}
             </span>
           </div>
         </Card>
@@ -236,20 +248,20 @@ export default function AdminSubscriptionsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-charcoal-100 dark:border-charcoal-700 bg-charcoal-50/50 dark:bg-charcoal-800/50">
-                  <th className="text-left py-3.5 px-4 text-xs font-medium text-charcoal-400 uppercase tracking-wider">User</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Plan</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider hidden md:table-cell">Start</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider hidden md:table-cell">End</th>
-                  <th className="text-center py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Auto-Renew</th>
-                  <th className="text-right py-3.5 px-4 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Actions</th>
+                  <th className="text-left py-3.5 px-4 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">User</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Plan</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Status</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider hidden md:table-cell">Start</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider hidden md:table-cell">End</th>
+                  <th className="text-center py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Auto-Renew</th>
+                  <th className="text-right py-3.5 px-4 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSubs.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-12 text-sm text-charcoal-400">No subscriptions found</td></tr>
-                ) : filteredSubs.map((sub: any, i: number) => (
-                  <motion.tr key={sub.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                  <tr><td colSpan={7} className="text-center py-12 text-sm text-charcoal-400 dark:text-white">No subscriptions found</td></tr>
+                ) : filteredSubs.map((sub: any) => (
+                  <tr key={sub.id}
                     className="border-b border-charcoal-50 dark:border-charcoal-700/50 hover:bg-charcoal-50 dark:hover:bg-charcoal-700/20 transition-colors"
                   >
                     <td className="py-3.5 px-4">
@@ -259,14 +271,16 @@ export default function AdminSubscriptionsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-charcoal-900 dark:text-white">{sub.user?.firstName} {sub.user?.lastName}</p>
-                          <p className="text-xs text-charcoal-400">{sub.user?.email}</p>
+                          <p className="text-xs text-charcoal-400 dark:text-white">{sub.user?.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        sub.planType === "premium"
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        sub.planType === "platinum"
                           ? "bg-accent/15 text-accent-dark dark:text-accent-light"
+                          : sub.planType === "gold"
+                          ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
                           : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
                       }`}>
                         {sub.planType}
@@ -284,8 +298,8 @@ export default function AdminSubscriptionsPage() {
                         {sub.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-charcoal-500 hidden md:table-cell">{formatDate(sub.startDate)}</td>
-                    <td className="py-3.5 px-3 text-xs text-charcoal-500 hidden md:table-cell">{formatDate(sub.endDate)}</td>
+                    <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white hidden md:table-cell">{formatDate(sub.startDate)}</td>
+                    <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white hidden md:table-cell">{formatDate(sub.endDate)}</td>
                     <td className="py-3.5 px-3 text-center">
                       <button
                         onClick={() => handleToggleAutoRenew(sub.id, sub.autoRenew)}
@@ -305,7 +319,7 @@ export default function AdminSubscriptionsPage() {
                         </Button>
                       )}
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -313,19 +327,19 @@ export default function AdminSubscriptionsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-charcoal-100 dark:border-charcoal-700 bg-charcoal-50/50 dark:bg-charcoal-800/50">
-                  <th className="text-left py-3.5 px-4 text-xs font-medium text-charcoal-400 uppercase tracking-wider">User</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Amount</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Currency</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Method</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 uppercase tracking-wider hidden md:table-cell">Date</th>
+                  <th className="text-left py-3.5 px-4 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">User</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Amount</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Currency</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Method</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Status</th>
+                  <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider hidden md:table-cell">Date</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPayments.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center py-12 text-sm text-charcoal-400">No payments found</td></tr>
-                ) : filteredPayments.map((pay: any, i: number) => (
-                  <motion.tr key={pay.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                  <tr><td colSpan={6} className="text-center py-12 text-sm text-charcoal-400 dark:text-white">No payments found</td></tr>
+                ) : filteredPayments.map((pay: any) => (
+                  <tr key={pay.id}
                     className="border-b border-charcoal-50 dark:border-charcoal-700/50 hover:bg-charcoal-50 dark:hover:bg-charcoal-700/20 transition-colors"
                   >
                     <td className="py-3.5 px-4">
@@ -335,13 +349,13 @@ export default function AdminSubscriptionsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-charcoal-900 dark:text-white">{pay.user?.firstName} {pay.user?.lastName}</p>
-                          <p className="text-xs text-charcoal-400">{pay.user?.email}</p>
+                          <p className="text-xs text-charcoal-400 dark:text-white">{pay.user?.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-3 font-semibold text-charcoal-900 dark:text-white">${pay.amount}</td>
-                    <td className="py-3.5 px-3 text-xs text-charcoal-500">{pay.currency || "USD"}</td>
-                    <td className="py-3.5 px-3 text-xs text-charcoal-500 capitalize">{pay.paymentMethod || "N/A"}</td>
+                    <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white">{pay.currency || "USD"}</td>
+                    <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white capitalize">{pay.paymentMethod || "N/A"}</td>
                     <td className="py-3.5 px-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
                         pay.status === "completed" ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400" :
@@ -354,8 +368,8 @@ export default function AdminSubscriptionsPage() {
                         {pay.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-xs text-charcoal-500 hidden md:table-cell">{formatDate(pay.createdAt)}</td>
-                  </motion.tr>
+                    <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white hidden md:table-cell">{formatDate(pay.createdAt)}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>

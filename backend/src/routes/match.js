@@ -1,15 +1,23 @@
 const express = require("express");
 const router = express.Router();
 const matchController = require("../controllers/matchController");
-const { authenticate } = require("../middleware/auth");
+const { authenticate, requireActive } = require("../middleware/auth");
+const { matchActionLimiter } = require("../middleware/rateLimiter");
+const { validate } = require("../validators/auth");
+const { sendInterestSchema, respondToInterestSchema, addFavoriteSchema, searchSchema } = require("../validators/match");
 
-router.get("/recommended", authenticate, matchController.getRecommendedMatches);
-router.get("/search", authenticate, matchController.searchProfiles);
-router.post("/interest", authenticate, matchController.sendInterest);
-router.put("/:id/respond", authenticate, matchController.respondToInterest);
-router.get("/my-matches", authenticate, matchController.getMyMatches);
-router.post("/favorites", authenticate, matchController.addToFavorites);
-router.get("/favorites", authenticate, matchController.getFavorites);
-router.delete("/favorites/:favoritedUserId", authenticate, matchController.removeFromFavorites);
+router.get("/recommended", authenticate, requireActive, matchController.getRecommendedMatches);
+router.get("/suggested", authenticate, requireActive, matchController.getSuggestedMatches);
+router.get("/search", authenticate, requireActive, validate(searchSchema), matchController.searchProfiles);
+router.post("/interest", authenticate, requireActive, matchActionLimiter, validate(sendInterestSchema), matchController.sendInterest);
+router.put("/:id/respond", authenticate, requireActive, matchActionLimiter, validate(respondToInterestSchema), matchController.respondToInterest);
+router.get("/my-matches", authenticate, requireActive, matchController.getMyMatches);
+router.get("/likes-received", authenticate, requireActive, matchController.getLikesReceived);
+router.get("/likes-sent", authenticate, requireActive, matchController.getLikesSent);
+router.get("/visitors", authenticate, requireActive, matchController.getVisitors);
+router.post("/favorites", authenticate, requireActive, matchActionLimiter, validate(addFavoriteSchema), matchController.addToFavorites);
+router.get("/favorites", authenticate, requireActive, matchController.getFavorites);
+router.delete("/favorites/:favoritedUserId", authenticate, requireActive, matchController.removeFromFavorites);
+router.post("/remove-interest", authenticate, requireActive, matchActionLimiter, matchController.removeInterest);
 
 module.exports = router;

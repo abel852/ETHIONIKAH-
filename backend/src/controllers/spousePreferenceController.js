@@ -5,12 +5,31 @@ const createOrUpdateSpousePreference = async (req, res) => {
     const userId = req.user.userId;
     const data = req.body;
 
+    // Validate age range
+    if (data.preferredAgeMin != null && (data.preferredAgeMin < 18 || data.preferredAgeMin > 120)) {
+      return res.status(400).json({ error: "Minimum age must be between 18 and 120" });
+    }
+    if (data.preferredAgeMax != null && (data.preferredAgeMax < 18 || data.preferredAgeMax > 120)) {
+      return res.status(400).json({ error: "Maximum age must be between 18 and 120" });
+    }
+    if (data.preferredAgeMin != null && data.preferredAgeMax != null && data.preferredAgeMax < data.preferredAgeMin) {
+      return res.status(400).json({ error: "Maximum age cannot be less than minimum age" });
+    }
+
     const profile = await prisma.profile.findUnique({
       where: { userId },
     });
 
     if (!profile) {
-      return res.status(404).json({ error: "Profile not found. Please complete your profile first." });
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return res.status(404).json({ error: "User not found" });
+      const newProfile = await prisma.profile.create({
+        data: { userId, isProfileComplete: false },
+      });
+      const preference = await prisma.spousePreference.create({
+        data: { profileId: newProfile.id, ...data },
+      });
+      return res.json({ message: "Spouse preferences saved successfully", preference });
     }
 
     const existingPreference = await prisma.spousePreference.findUnique({
@@ -49,7 +68,7 @@ const getSpousePreference = async (req, res) => {
     });
 
     if (!profile) {
-      return res.status(404).json({ error: "Profile not found" });
+      return res.json({ spousePreference: null });
     }
 
     res.json({ spousePreference: profile.spousePreference });

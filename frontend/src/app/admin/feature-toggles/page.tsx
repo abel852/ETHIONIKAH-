@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
 import { Puzzle, Power, PowerOff, RefreshCw } from "lucide-react";
+import { useI18n } from "@/context/I18nContext";
 
 const HIDDEN_KEYS = ["video_calls"];
 
 export default function FeatureTogglesPage() {
+  const { t } = useI18n();
   const [toggles, setToggles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,8 +33,8 @@ export default function FeatureTogglesPage() {
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feature Toggles</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Enable or disable platform modules and features</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.featureToggles.title')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('admin.featureToggles.subtitle')}</p>
         </div>
         <button onClick={fetchToggles} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors" title="Refresh">
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />

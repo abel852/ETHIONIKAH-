@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
 import { Activity, Filter, Search, Download } from "lucide-react";
+import { useI18n } from "@/context/I18nContext";
 
 export default function AuditLogsPage() {
+  const { t } = useI18n();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -32,17 +34,22 @@ export default function AuditLogsPage() {
   const actionColors: Record<string, string> = {
     suspend_user: "text-red-600 bg-red-50 dark:bg-red-900/20", activate_user: "text-green-600 bg-green-50 dark:bg-green-900/20",
     delete_user: "text-red-600 bg-red-50 dark:bg-red-900/20", verify_user: "text-green-600 bg-green-50 dark:bg-green-900/20",
-    ban_user: "text-red-600 bg-red-50 dark:bg-red-900/20", reset_password: "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
+    ban_user: "text-red-600 bg-red-50 dark:bg-red-900/20", unban_user: "text-green-600 bg-green-50 dark:bg-green-900/20",
+    reset_password: "text-amber-600 bg-amber-50 dark:bg-amber-900/20", restrict_chat: "text-orange-600 bg-orange-50 dark:bg-orange-900/20",
+    remove_restriction: "text-green-600 bg-green-50 dark:bg-green-900/20", reject_verification: "text-red-600 bg-red-50 dark:bg-red-900/20",
     toggle_feature: "text-blue-600 bg-blue-50 dark:bg-blue-900/20", grant_permission: "text-purple-600 bg-purple-50 dark:bg-purple-900/20",
     revoke_permission: "text-purple-600 bg-purple-50 dark:bg-purple-900/20", update_setting: "text-gray-600 bg-gray-50 dark:bg-gray-800",
+    payment_approved: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20", payment_rejected: "text-red-600 bg-red-50 dark:bg-red-900/20",
+    create_promotion: "text-teal-600 bg-teal-50 dark:bg-teal-900/20", content_approved: "text-green-600 bg-green-50 dark:bg-green-900/20",
+    content_rejected: "text-red-600 bg-red-50 dark:bg-red-900/20",
   };
 
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track every admin action across the platform</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.auditLogs.title')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('admin.auditLogs.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
@@ -53,10 +60,19 @@ export default function AuditLogsPage() {
             <option value="activate_user">Activate</option>
             <option value="delete_user">Delete</option>
             <option value="verify_user">Verify</option>
+            <option value="reject_verification">Reject Verification</option>
             <option value="ban_user">Ban</option>
+            <option value="unban_user">Unban</option>
+            <option value="reset_password">Reset Password</option>
+            <option value="restrict_chat">Restrict Chat</option>
+            <option value="remove_restriction">Remove Restriction</option>
             <option value="toggle_feature">Feature Toggle</option>
-            <option value="update_setting">Settings</option>
-            <option value="grant_permission">Permissions</option>
+            <option value="update_setting">Settings Update</option>
+            <option value="grant_permission">Grant Permission</option>
+            <option value="revoke_permission">Revoke Permission</option>
+            <option value="payment_approved">Payment Approved</option>
+            <option value="payment_rejected">Payment Rejected</option>
+            <option value="create_promotion">Create Promotion</option>
           </select>
         </div>
       </div>

@@ -6,11 +6,16 @@ interface Conversation {
   id: string;
   userId: string;
   name: string;
+  username?: string;
   avatar?: string;
+  membershipPlan?: "gold" | "platinum" | null;
+  isVerified?: boolean;
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
   isOnline: boolean;
+  lastLoginAt?: string;
+  compatibilityReason?: string;
 }
 
 interface MessageState {
@@ -19,11 +24,19 @@ interface MessageState {
   messages: Message[];
   isLoading: boolean;
   error: string | null;
+  matchReason: string | null;
+  blockedUsers: string[];
   fetchConversations: () => Promise<void>;
   fetchMessages: (conversationId: string) => Promise<void>;
-  sendMessage: (conversationId: string, content: string) => Promise<void>;
+  sendMessage: (conversationId: string, content: string, replyToId?: string | null) => Promise<void>;
+  deleteMessage: (messageId: string, deleteFor?: "me" | "both") => Promise<void>;
+  deleteConversation: (otherUserId: string, deleteFor?: "me" | "both") => Promise<void>;
+  blockUser: (blockedUserId: string) => Promise<void>;
+  unblockUser: (blockedUserId: string) => Promise<void>;
   setActiveConversation: (id: string | null) => void;
   addMessage: (message: Message) => void;
+  removeMessage: (messageId: string) => void;
+  setMessageRead: (messageId: string) => void;
   markAsRead: (conversationId: string) => Promise<void>;
 }
 
@@ -33,28 +46,109 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   messages: [],
   isLoading: false,
   error: null,
+  matchReason: null,
+  blockedUsers: [],
   fetchConversations: async () => {
     try {
       const { data } = await messageService.getConversations();
-      set({ conversations: data.conversations || [] });
+      const raw = data.conversations || [];
+      const mapped: Conversation[] = raw.map((c: any) => ({
+        id: c.user?.id || c.id,
+        userId: c.user?.id || c.userId,
+        name: [c.user?.firstName, c.user?.lastName].filter(Boolean).join(" ") || c.name || "User",
+        username: c.user?.username || c.username,
+        avatar: c.user?.profile?.photos?.[0] || c.avatar,
+        membershipPlan: c.user?.membershipPlan || c.membershipPlan || null,
+        isVerified: c.user?.isVerified || c.isVerified || false,
+        lastMessage: c.lastMessage?.content || c.lastMessage || "",
+        lastMessageAt: c.lastMessage?.createdAt || c.lastMessageAt || "",
+        unreadCount: c.unreadCount || 0,
+        isOnline: c.isOnline || false,
+        lastLoginAt: c.user?.lastLoginAt || undefined,
+        compatibilityReason: c.compatibilityReason || undefined,
+      }));
+      set({ conversations: mapped });
     } catch { set({ error: "Failed to load conversations" }); }
   },
   fetchMessages: async (conversationId) => {
+    const currentId = get().activeConversation;
+    if (currentId !== conversationId) return;
     set({ isLoading: true, error: null });
     try {
       const { data } = await messageService.getMessages(conversationId);
-      set({ messages: data.messages || [], isLoading: false });
+      if (get().activeConversation !== conversationId) return;
+      const msgs = (data.messages || []).filter((m: any) => {
+        const uid = get().activeConversation;
+        const userId = uid;
+        if (!userId) return true;
+        return !(m.senderId === userId && m.deletedForSender) && !(m.receiverId === userId && m.deletedForReceiver);
+      });
+      set({ messages: msgs, matchReason: data.matchReason || null, isLoading: false });
     } catch { set({ error: "Failed to load messages", isLoading: false }); }
   },
-  sendMessage: async (conversationId, content) => {
+  sendMessage: async (conversationId, content, replyToId) => {
     try {
-      const { data } = await messageService.sendMessage(conversationId, content);
-      set((s) => ({ messages: [...s.messages, data] }));
-    } catch { set({ error: "Failed to send message" }); }
+      const { data } = await messageService.sendMessage(conversationId, content, replyToId);
+      const msg = data.message || data;
+      set((s) => ({ messages: [...s.messages, msg] }));
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || "Failed to send message";
+      set({ error: msg });
+      throw err;
+    }
   },
-  setActiveConversation: (id) => set({ activeConversation: id }),
-  addMessage: (message) => set((s) => ({ messages: [...s.messages, message] }),
-  ),
+  deleteMessage: async (messageId, deleteFor = "me") => {
+    try {
+      await messageService.deleteMessage(messageId, deleteFor);
+      set((s) => ({ messages: s.messages.filter((m) => m.id !== messageId) }));
+    } catch { /* ignore */ }
+  },
+  deleteConversation: async (otherUserId, deleteFor = "me") => {
+    try {
+      await messageService.deleteConversation(otherUserId, deleteFor);
+      set((s) => ({
+        messages: [],
+        conversations: s.conversations.filter((c) => c.id !== otherUserId),
+        activeConversation: s.activeConversation === otherUserId ? null : s.activeConversation,
+      }));
+    } catch (err) {
+      console.error("Delete conversation failed:", err);
+    }
+  },
+  blockUser: async (blockedUserId) => {
+    set((s) => ({
+      blockedUsers: s.blockedUsers.includes(blockedUserId) ? s.blockedUsers : [...s.blockedUsers, blockedUserId],
+    }));
+    try {
+      await messageService.blockUser(blockedUserId);
+    } catch (err) {
+      console.error("Block user failed:", err);
+    }
+  },
+  unblockUser: async (blockedUserId) => {
+    set((s) => ({
+      blockedUsers: s.blockedUsers.filter((id) => id !== blockedUserId),
+    }));
+    try {
+      await messageService.unblockUser(blockedUserId);
+    } catch (err) {
+      console.error("Unblock user failed:", err);
+    }
+  },
+  setActiveConversation: (id) => set({ activeConversation: id, matchReason: null }),
+  addMessage: (message) =>
+    set((s) => {
+      if (s.messages.some((m) => m.id === message.id)) return s;
+      return { messages: [...s.messages, message] };
+    }),
+  removeMessage: (messageId) =>
+    set((s) => ({
+      messages: messageId === "all" ? [] : s.messages.filter((m) => m.id !== messageId),
+    })),
+  setMessageRead: (messageId) =>
+    set((s) => ({
+      messages: s.messages.map((m) => m.id === messageId ? { ...m, readAt: new Date().toISOString(), isRead: true } as any : m),
+    })),
   markAsRead: async (conversationId) => {
     try {
       await messageService.markAsRead(conversationId);

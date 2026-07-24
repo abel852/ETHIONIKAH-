@@ -27,18 +27,10 @@ function hashBackupCodes(codes) {
 
 async function send2FAAlert(user, action) {
   try {
-    const { sendEmail } = require("../utils/email");
-    const actionLabels = { enabled: "enabled", disabled: "disabled", regenerated: "regenerated" };
-    const label = actionLabels[action] || action;
-    await sendEmail({
-      to: user.email,
-      subject: `2FA ${label.charAt(0).toUpperCase() + label.slice(1)} — Ethio Nikah`,
-      html: `<p>Hi ${user.firstName},</p><p>Two-factor authentication was <strong>${label}</strong> on your account.</p>
-<p>If you did not do this, please contact support immediately and reset your password.</p>
-<p>— Ethio Nikah Team</p>`,
-    });
+    const { send2FAAlertEmail } = require("../utils/email");
+    await send2FAAlertEmail(user.email, user.firstName, action);
   } catch (e) {
-    console.log(`[DEV] 2FA alert email for ${user.email}: ${action}`);
+    console.error(`[EMAIL] 2FA alert email failed for ${user.email}:`, e.message);
   }
 }
 
@@ -58,10 +50,10 @@ exports.checkLockout = async (req, res) => {
 exports.enable2FA = async (req, res) => {
   try {
     const { force, password } = req.body;
-    const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { googleAuthSecret: true, passwordHash: true } });
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { email: true, googleAuthSecret: true, passwordHash: true } });
 
     if (user?.googleAuthSecret && !force) {
-      const existingSecret = speakeasy.otpauthURL({ secret: user.googleAuthSecret, label: `Ethio Nikah (${req.user.userId.slice(0, 8)})`, encoding: "base32" });
+      const existingSecret = speakeasy.otpauthURL({ secret: user.googleAuthSecret, label: "Ethio-Nikah", issuer: "Ethio-Nikah", encoding: "base32" });
       const qrDataUrl = await qrcode.toDataURL(existingSecret);
       return res.json({ secret: user.googleAuthSecret, qrCode: qrDataUrl, existing: true });
     }
@@ -72,7 +64,7 @@ exports.enable2FA = async (req, res) => {
       if (!validPassword) return res.status(401).json({ error: "Invalid password" });
     }
 
-    const secret = speakeasy.generateSecret({ name: `Ethio Nikah (${req.user.userId.slice(0, 8)})` });
+    const secret = speakeasy.generateSecret({ name: "Ethio-Nikah", issuer: "Ethio-Nikah" });
     const qrDataUrl = await qrcode.toDataURL(secret.otpauth_url);
     res.json({ secret: secret.base32, qrCode: qrDataUrl, existing: false });
   } catch (error) {
@@ -106,6 +98,8 @@ exports.confirm2FA = async (req, res) => {
       },
     });
 
+    try { require("../middleware/auth").invalidateAuthCache(req.user.userId); } catch {}
+
     const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { email: true, firstName: true } });
     send2FAAlert(user, "enabled");
 
@@ -127,20 +121,10 @@ exports.disable2FA = async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) return res.status(401).json({ error: "Invalid password" });
 
-    let validToken = false;
-    if (user.googleAuthSecret) validToken = speakeasy.totp.verify({ secret: user.googleAuthSecret, encoding: "base32", token, window: 1 });
+    if (!user.googleAuthSecret) return res.status(400).json({ error: "No 2FA secret configured" });
 
-    if (!validToken && user.backupCodes) {
-      const codes = JSON.parse(user.backupCodes);
-      const idx = codes.findIndex((h) => bcrypt.compareSync(token, h));
-      if (idx !== -1) {
-        validToken = true;
-        codes.splice(idx, 1);
-        await prisma.user.update({ where: { id: user.id }, data: { backupCodes: JSON.stringify(codes) } });
-      }
-    }
-
-    if (!validToken) return res.status(400).json({ error: "Invalid authenticator code or backup code" });
+    const validToken = speakeasy.totp.verify({ secret: user.googleAuthSecret, encoding: "base32", token, window: 1 });
+    if (!validToken) return res.status(400).json({ error: "Invalid authenticator code. Use a live code from your authenticator app." });
 
     await prisma.user.update({
       where: { id: req.user.userId },
@@ -177,7 +161,7 @@ exports.get2FAStatus = async (req, res) => {
 exports.verify2FALogin = async (req, res) => {
   try {
     const { tempToken, token, trustDevice } = req.body;
-    if (!tempToken || !token) return res.status(400).json({ error: "Temp token and code are required" });
+    if (!tempToken || !token) return res.status(400).json({ error: "Temp token and authenticator code are required" });
 
     let decoded;
     try { decoded = verifyTempToken(tempToken); } catch { return res.status(400).json({ error: "Session expired. Please login again." }); }
@@ -238,10 +222,10 @@ exports.verify2FALogin = async (req, res) => {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: now, twoFactorFailedAttempts: 0, twoFactorLockedUntil: null, twoFactorPermanentlyLocked: false },
+      data: { lastLoginAt: now, twoFactorFailedAttempts: 0, twoFactorLockedUntil: null, twoFactorPermanentlyLocked: false, resetToken: null, resetTokenExpiry: null },
     });
 
-    const accessToken = generateAccessToken({ userId: user.id, role: user.role, tokenVersion: user.tokenVersion });
+    const accessToken = generateAccessToken({ userId: user.id, role: user.role, adminRole: user.adminRole, tokenVersion: user.tokenVersion });
     const refreshToken = generateRefreshToken({ userId: user.id, tokenVersion: user.tokenVersion });
     const { passwordHash, ...userWithoutPassword } = user;
 
@@ -315,6 +299,15 @@ exports.regenerateBackupCodes = async (req, res) => {
 
 exports.trustedDevice = async (req, res) => {
   try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: "Password is required to trust a device" });
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { passwordHash: true } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const validPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!validPassword) return res.status(401).json({ error: "Invalid password" });
+
     const deviceToken = jwt.sign(
       { userId: req.user.userId, purpose: "trusted_device" },
       process.env.JWT_SECRET,

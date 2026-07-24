@@ -17,6 +17,10 @@ const mockPrisma = {
     createMany: jest.fn(),
     deleteMany: jest.fn(),
   },
+  auditLog: {
+    findMany: jest.fn(),
+    deleteMany: jest.fn(),
+  },
 };
 
 jest.mock("@prisma/client", () => ({
@@ -33,6 +37,11 @@ jest.mock("otplib", () => ({
     keyuri: jest.fn(() => "otpauth://totp/test?secret=MOCK_SECRET"),
     verify: jest.fn(() => true),
   },
+}));
+
+jest.mock("bcryptjs", () => ({
+  hash: jest.fn(() => Promise.resolve("$2a$12$mocked_hash")),
+  compare: jest.fn(() => Promise.resolve(true)),
 }));
 
 const { logAudit } = require("../src/utils/auditLogger");
@@ -440,6 +449,7 @@ describe("GET /api/admin/admins", () => {
         createdAt: new Date("2024-01-01"),
         lastLoginAt: null,
         googleAuthSecret: null,
+        permissions: [],
         _count: { permissions: 0, auditLogs: 0 },
       },
       {
@@ -452,10 +462,12 @@ describe("GET /api/admin/admins", () => {
         createdAt: new Date("2024-02-01"),
         lastLoginAt: null,
         googleAuthSecret: "secret123",
+        permissions: [],
         _count: { permissions: 3, auditLogs: 5 },
       },
     ];
     mockPrisma.user.findMany.mockResolvedValue(mockAdmins);
+    mockPrisma.auditLog.findMany.mockResolvedValue([]);
 
     const res = await request(app)
       .get("/api/admin/admins")
@@ -471,6 +483,7 @@ describe("GET /api/admin/admins", () => {
         id: true, email: true, firstName: true, lastName: true,
         adminRole: true, isActive: true, createdAt: true,
         lastLoginAt: true, googleAuthSecret: true,
+        permissions: { select: { permission: true } },
         _count: { select: { permissions: true, auditLogs: true } },
       },
       orderBy: { createdAt: "asc" },
@@ -583,21 +596,20 @@ describe("PUT /api/admin/admins/:id/permissions", () => {
 describe("DELETE /api/admin/admins/:id", () => {
   it("deletes an admin", async () => {
     const deleteId = "delete-target-id";
-    mockPrisma.user.findUnique.mockResolvedValue({
-      id: deleteId,
-      role: "admin",
-      adminRole: "admin",
-    });
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce({ id: deleteId, role: "admin", adminRole: "admin" })
+      .mockResolvedValueOnce({ id: "super-admin-id", role: "admin", adminRole: "super_admin", passwordHash: "$2a$12$dummy" });
 
     const res = await request(app)
       .delete(`/api/admin/admins/${deleteId}`)
-      .set("Authorization", `Bearer ${adminToken}`);
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ password: "test123" });
 
     expect(res.status).toBe(200);
     expect(res.body.message).toBe("Admin deleted");
-    expect(mockPrisma.user.delete).toHaveBeenCalledWith({
-      where: { id: deleteId },
-    });
+    expect(mockPrisma.auditLog.deleteMany).toHaveBeenCalledWith({ where: { adminId: deleteId } });
+    expect(mockPrisma.adminPermission.deleteMany).toHaveBeenCalledWith({ where: { adminId: deleteId } });
+    expect(mockPrisma.user.delete).toHaveBeenCalledWith({ where: { id: deleteId } });
     expect(logAudit).toHaveBeenCalledWith({
       adminId: "super-admin-id",
       action: "delete_admin",
@@ -611,51 +623,44 @@ describe("DELETE /api/admin/admins/:id", () => {
 
     const res = await request(app)
       .delete("/api/admin/admins/nonexistent")
-      .set("Authorization", `Bearer ${adminToken}`);
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ password: "test123" });
 
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Admin not found");
   });
 
   it("returns 404 when target is not an admin", async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({
-      id: "regular-user-id",
-      role: "user",
-    });
+    mockPrisma.user.findUnique.mockResolvedValue({ id: "regular-user-id", role: "user" });
 
     const res = await request(app)
       .delete("/api/admin/admins/regular-user-id")
-      .set("Authorization", `Bearer ${adminToken}`);
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ password: "test123" });
 
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Admin not found");
   });
 
   it("returns 403 when target is super admin", async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({
-      id: "super-admin-to-delete",
-      role: "admin",
-      adminRole: "super_admin",
-    });
+    mockPrisma.user.findUnique.mockResolvedValue({ id: "super-admin-to-delete", role: "admin", adminRole: "super_admin" });
 
     const res = await request(app)
       .delete("/api/admin/admins/super-admin-to-delete")
-      .set("Authorization", `Bearer ${adminToken}`);
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ password: "test123" });
 
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("Cannot delete super admin");
   });
 
   it("returns 403 when super admin tries to delete themselves (super_admin check takes precedence)", async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({
-      id: "super-admin-id",
-      role: "admin",
-      adminRole: "super_admin",
-    });
+    mockPrisma.user.findUnique.mockResolvedValue({ id: "super-admin-id", role: "admin", adminRole: "super_admin" });
 
     const res = await request(app)
       .delete("/api/admin/admins/super-admin-id")
-      .set("Authorization", `Bearer ${adminToken}`);
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ password: "test123" });
 
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("Cannot delete super admin");

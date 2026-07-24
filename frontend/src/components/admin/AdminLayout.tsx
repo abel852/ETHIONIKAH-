@@ -3,77 +3,169 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
-  LayoutDashboard, Users, Shield, Settings, Activity,
+  LayoutDashboard, Users, Shield, ShieldCheck, Settings, Activity,
   LogOut, Sun, Moon, ChevronDown,
   FileText, CreditCard, BarChart3,
-  ShieldAlert, Sliders, Puzzle, Bot,
-  Globe, HeartHandshake, UserCheck,
-  Flag, Scale, Bell, Menu,
+  ShieldAlert, Sliders, Puzzle,
+  Flag, Menu, Languages, Search,
+  Crown, Wallet, Heart, Bot, Trash2,
+  Database, BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n, type Lang } from "@/context/I18nContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
 const navSections = [
   {
-    label: "Main",
+    labelKey: "admin.nav.overview",
     items: [
-      { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-      { href: "/admin/activity", icon: Activity, label: "Activity" },
-      { href: "/admin/users", icon: Users, label: "Users" },
-      { href: "/admin/admins", icon: Shield, label: "Admins" },
-      { href: "/admin/verifications", icon: Shield, label: "Verifications" },
+      { href: "/admin", icon: LayoutDashboard, labelKey: "admin.nav.dashboard", perm: "overview.dashboard" },
+      { href: "/admin/activity", icon: Activity, labelKey: "admin.nav.activity", perm: "overview.activity" },
     ],
   },
   {
-    label: "Community",
+    labelKey: "admin.nav.management",
     items: [
-      { href: "/admin/complaints", icon: FileText, label: "Complaints" },
-      { href: "/admin/reports", icon: Flag, label: "Reports" },
-      { href: "/admin/community", icon: UserCheck, label: "Community Oversight" },
+      { href: "/admin/users", icon: Users, labelKey: "admin.nav.users", perm: "users.view" },
+      { href: "/admin/verifications", icon: ShieldCheck, labelKey: "admin.nav.verifications", perm: "verifications.view" },
+      { href: "/admin/admins", icon: Shield, labelKey: "admin.nav.admins", perm: "admins.view" },
+      { href: "/admin/recycle-bin", icon: Trash2, labelKey: "admin.nav.recycleBin", perm: "recycle_bin.view" },
     ],
   },
   {
-    label: "Business",
+    labelKey: "admin.nav.moderation",
     items: [
-      { href: "/admin/payments", icon: CreditCard, label: "Payments" },
-      { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
-      { href: "/admin/affiliates", icon: HeartHandshake, label: "Affiliates" },
-      { href: "/admin/promotions", icon: FileText, label: "Promotions" },
+      { href: "/admin/complaints", icon: FileText, labelKey: "admin.nav.complaints", perm: "complaints.view" },
+      { href: "/admin/reports", icon: Flag, labelKey: "admin.nav.reports", perm: "reports.view" },
     ],
   },
   {
-    label: "Security",
+    labelKey: "admin.nav.revenue",
     items: [
-      { href: "/admin/security", icon: ShieldAlert, label: "Security" },
-      { href: "/admin/audit-logs", icon: Activity, label: "Audit Logs" },
+      { href: "/admin/payments", icon: CreditCard, labelKey: "admin.nav.payments", perm: "payments.view" },
+      { href: "/admin/membership-plans", icon: Crown, labelKey: "admin.nav.plansCredits", perm: "membership_plans.view" },
+      { href: "/admin/payment-methods", icon: Wallet, labelKey: "admin.nav.paymentMethods", perm: "payment_methods.view" },
+      { href: "/admin/analytics", icon: BarChart3, labelKey: "admin.nav.analytics", perm: "analytics.view" },
     ],
   },
   {
-    label: "System",
+    labelKey: "admin.nav.security",
     items: [
-      { href: "/admin/settings", icon: Sliders, label: "System Settings" },
-      { href: "/admin/feature-toggles", icon: Puzzle, label: "Feature Toggles" },
-      { href: "/admin/integrations", icon: Globe, label: "Integrations" },
-      { href: "/admin/ai-automation", icon: Bot, label: "AI & Automation" },
+      { href: "/admin/security", icon: ShieldAlert, labelKey: "admin.nav.security", perm: "security.view" },
+      { href: "/admin/audit-logs", icon: FileText, labelKey: "admin.nav.auditLogs", perm: "security.audit_logs" },
+    ],
+  },
+  {
+    labelKey: "admin.nav.matchmaking",
+    items: [
+      { href: "/admin/matchmaking", icon: Heart, labelKey: "admin.nav.matchmaking", perm: "matchmaking.view" },
+      { href: "/admin/ai-automation", icon: Bot, labelKey: "admin.nav.aiAutomation", perm: "ai.fraud" },
+    ],
+  },
+  {
+    labelKey: "admin.nav.system",
+    items: [
+      { href: "/admin/settings", icon: Sliders, labelKey: "admin.nav.settings", perm: "settings.view" },
+      { href: "/admin/feature-toggles", icon: Puzzle, labelKey: "admin.nav.featureToggles", perm: "settings.feature_toggles" },
+      { href: "/admin/backup", icon: Database, labelKey: "admin.nav.backup", perm: "backup.view" },
+      { href: "/admin/books", icon: BookOpen, labelKey: "admin.nav.books", perm: "books.view" },
     ],
   },
 ];
 
+// Map each href to its required permission for page-level access control
+const hrefToPerm: Record<string, string> = {
+  "/admin": "overview.dashboard",
+  "/admin/activity": "overview.activity",
+  "/admin/users": "users.view",
+  "/admin/verifications": "verifications.view",
+  "/admin/admins": "admins.view",
+  "/admin/recycle-bin": "recycle_bin.view",
+  "/admin/complaints": "complaints.view",
+  "/admin/reports": "reports.view",
+  "/admin/payments": "payments.view",
+  "/admin/membership-plans": "membership_plans.view",
+  "/admin/payment-methods": "payment_methods.view",
+  "/admin/analytics": "analytics.view",
+  "/admin/security": "security.view",
+  "/admin/audit-logs": "security.audit_logs",
+  "/admin/matchmaking": "matchmaking.view",
+  "/admin/ai-automation": "ai.fraud",
+  "/admin/settings": "settings.view",
+  "/admin/feature-toggles": "settings.feature_toggles",
+  "/admin/backup": "backup.view",
+  "/admin/books": "books.view",
+};
+
 const allNavItems = navSections.flatMap((s) => s.items);
+
+const s = {
+  bg: "#0c0a1a",
+  surface: "#151028",
+  sidebar: "#1a1230",
+  sidebarBorder: "#2a1e4a",
+  gold: "#D4AF37",
+  goldLight: "#E6C878",
+  goldDark: "#B8860B",
+  textMuted: "#8b80a8",
+  text: "#ffffff",
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { lang, setLang, t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dark, setDark] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>(navSections.map((s) => s.label));
+  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+  const [langOpen, setLangOpen] = useState(false);
+
+  const isSuperAdmin = user?.adminRole === "super_admin";
+  const userPerms = new Set(user?.permissions || []);
+  const hasPerm = (perm?: string) => isSuperAdmin || !perm || userPerms.has(perm);
+  const filteredSections = navSections.map((s) => ({
+    ...s,
+    items: s.items.filter((i) => hasPerm(i.perm)),
+  })).filter((s) => s.items.length > 0);
+  const filteredNavItems = filteredSections.flatMap((s) => s.items);
+  const [expandedSections, setExpandedSections] = useState<string[]>(navSections.map((s) => s.labelKey));
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
   }, []);
+
+  const fetchBadgeCounts = async () => {
+    try {
+      const { data } = await (await import("@/lib/api")).default.get("/admin/badge-counts");
+      setBadgeCounts(data.counts || {});
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (user?.role !== "admin") return;
+    fetchBadgeCounts();
+    const onRefresh = () => fetchBadgeCounts();
+    window.addEventListener("refresh-badge-counts", onRefresh);
+    const interval = setInterval(fetchBadgeCounts, 60000);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("refresh-badge-counts", onRefresh);
+    };
+  }, [user]);
+
+  const badgeForHref = (href: string): number | null => {
+    const map: Record<string, string> = {
+      "/admin/users": "users",
+      "/admin/verifications": "verifications",
+      "/admin/complaints": "complaints",
+      "/admin/reports": "reports",
+      "/admin/payments": "payments",
+    };
+    const key = map[href];
+    return key && badgeCounts[key] > 0 ? badgeCounts[key] : null;
+  };
 
   const toggleDark = () => {
     const next = !document.documentElement.classList.contains("dark");
@@ -88,45 +180,112 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return pathname.startsWith(href + "/") || pathname === href;
   };
 
+  // Redirect non-super-admins away from pages they don't have permission for
+  useEffect(() => {
+    if (!user || user.role !== "admin") return;
+    if (isSuperAdmin) return;
+    const requiredPerm = hrefToPerm[pathname];
+    if (requiredPerm && !userPerms.has(requiredPerm)) {
+      router.replace("/admin");
+    }
+  }, [pathname, user, isSuperAdmin, router]);
+
   const toggleSection = (label: string) => {
     setExpandedSections((prev) =>
       prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
     );
   };
 
+  const d = dark;
+
   return (
-    <div className="min-h-screen flex bg-white dark:bg-[#1a1a2e]">
+    <div
+      className="h-screen flex overflow-hidden"
+      style={{
+        background: d
+          ? `radial-gradient(ellipse at 50% 0%, #1a1240 0%, ${s.bg} 70%)`
+          : "#f0f1f4",
+      }}
+    >
       {/* Mobile Overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden bg-black/30 dark:bg-black/50" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ background: d ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.3)" }}
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Desktop Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col w-[260px] transition-all duration-300 shadow-sm bg-[#e8eaed] dark:bg-[#2e2e42] ${
+        className={`fixed lg:fixed inset-y-0 left-0 z-50 flex flex-col w-[260px] shrink-0 transition-all duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
+        style={{
+          background: d
+            ? `linear-gradient(180deg, ${s.sidebar} 0%, ${s.bg} 100%)`
+            : "linear-gradient(180deg, #ffffff 0%, #f0f1f4 100%)",
+          boxShadow: d
+            ? "4px 0 30px rgba(0,0,0,0.5), inset -1px 0 0 rgba(212,175,55,0.15)"
+            : "1px 0 3px rgba(0,0,0,0.08)",
+        }}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center px-5 border-b border-[#d0d3d6] dark:border-[#3d3d55]">
+        <div
+          className="h-16 flex items-center px-5 shrink-0"
+          style={{
+            borderBottom: d
+              ? `1px solid ${s.sidebarBorder}`
+              : "1px solid #e5e7eb",
+            boxShadow: d ? "inset 0 -1px 0 rgba(212,175,55,0.08)" : "none",
+          }}
+        >
           <Link href="/admin" className="flex items-center gap-2">
-            <span className="text-lg font-bold text-[#1a1a2e] dark:text-white">Ethio Nikah</span>
-            <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md text-[#e8eaed] dark:text-[#2e2e42] bg-[#1a1a2e] dark:bg-white">ADMIN</span>
+            <span
+              className="text-lg font-bold tracking-tight"
+              style={{
+                color: d ? s.gold : "#1a1a2e",
+                textShadow: d ? "0 0 20px rgba(212,175,55,0.3)" : "none",
+              }}
+            >
+              Ethio Nikah
+            </span>
+            <span
+              className="px-2 py-0.5 text-[10px] font-semibold rounded-md tracking-wider"
+              style={{
+                background: d
+                  ? `linear-gradient(135deg, ${s.gold}, ${s.goldDark})`
+                  : "#1a1a2e",
+                color: d ? s.bg : "#e8eaed",
+                boxShadow: d
+                  ? "0 2px 8px rgba(212,175,55,0.3), inset 0 1px 0 rgba(255,255,255,0.3)"
+                  : "none",
+              }}
+            >
+              ADMIN
+            </span>
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-4 px-3 space-y-4 overflow-y-auto">
-          {navSections.map((section) => {
-            const sectionOpen = expandedSections.includes(section.label);
+        <nav className="flex-1 py-4 px-3 space-y-3 overflow-y-auto admin-sidebar-scroll">
+          {filteredSections.map((section) => {
+            const sectionOpen = expandedSections.includes(section.labelKey);
             const sectionActive = section.items.some((i) => isActive(i.href));
             return (
-              <div key={section.label}>
+              <div key={section.labelKey}>
                 <button
-                  onClick={() => toggleSection(section.label)}
-                  className="flex items-center justify-between w-full px-2 py-1 text-[11px] font-semibold uppercase tracking-widest text-[#777] dark:text-[#999] hover:text-[#1a1a2e] dark:hover:text-white transition-colors"
+                  onClick={() => toggleSection(section.labelKey)}
+                  className="flex items-center justify-between w-full px-2 py-1 text-[11px] font-semibold uppercase tracking-widest transition-colors"
+                  style={{
+                    color: d
+                      ? sectionActive
+                        ? s.gold
+                        : s.textMuted
+                      : "#777",
+                  }}
                 >
-                  {section.label}
+                  {t(section.labelKey)}
                   <ChevronDown className={`w-3 h-3 transition-transform ${sectionOpen ? "rotate-0" : "-rotate-90"}`} />
                 </button>
                 {sectionOpen && (
@@ -135,15 +294,62 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       const active = isActive(item.href);
                       return (
                         <Link
-                          key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+                          style={
                             active
-                              ? "bg-[#1a1a2e] dark:bg-white text-white dark:text-[#2e2e42]"
-                              : "text-[#1a1a2e] dark:text-white hover:bg-black/5 dark:hover:bg-white/10"
-                          }`}
+                              ? d
+                                ? {
+                                    background: `linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)`,
+                                    color: s.gold,
+                                    boxShadow: `inset 0 1px 0 rgba(212,175,55,0.2), 0 2px 12px rgba(212,175,55,0.1)`,
+                                    border: `1px solid rgba(212,175,55,0.2)`,
+                                  }
+                                : {
+                                    background: "#1a1a2e",
+                                    color: "white",
+                                  }
+                              : d
+                              ? {
+                                  color: s.text,
+                                }
+                              : {
+                                  color: "#1a1a2e",
+                                }
+                          }
+                          onMouseEnter={(e) => {
+                            if (!active) {
+                              if (d) {
+                                e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                              } else {
+                                e.currentTarget.style.background = "rgba(0,0,0,0.03)";
+                              }
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!active) {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
                           <item.icon className="w-4.5 h-4.5 shrink-0" />
-                          <span>{item.label}</span>
+                          <span className="flex-1">{t(item.labelKey)}</span>
+                          {badgeForHref(item.href) !== null && (
+                            <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 leading-none"
+                              style={{
+                                background: d
+                                  ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                                  : "#dc2626",
+                                color: "#fff",
+                                boxShadow: d
+                                  ? "0 2px 6px rgba(239,68,68,0.4)"
+                                  : "0 1px 3px rgba(0,0,0,0.2)",
+                              }}>
+                              {badgeForHref(item.href)}
+                            </span>
+                          )}
                         </Link>
                       );
                     })}
@@ -154,16 +360,114 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Toggle */}
-        <div className="px-4 py-3 border-t border-[#d0d3d6] dark:border-[#3d3d55]">
+        {/* Language Switcher */}
+        <div
+          className="px-4 py-3 shrink-0"
+          style={{
+            borderTop: d
+              ? `1px solid ${s.sidebarBorder}`
+              : "1px solid #e5e7eb",
+          }}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[#555] dark:text-[#b0b0c0]">Dark Mode</span>
+            <span
+              className="text-xs font-medium"
+              style={{ color: d ? s.textMuted : "#555" }}
+            >
+              {t('admin.language')}
+            </span>
+            <div className="relative">
+              <button
+                onClick={() => setLangOpen(!langOpen)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
+                style={{
+                  background: d ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                  color: d ? s.gold : "#1a1a2e",
+                }}
+              >
+                <Languages className="w-3.5 h-3.5" />
+                {lang.toUpperCase()}
+                <ChevronDown className={`w-3 h-3 transition-transform ${langOpen ? "rotate-180" : ""}`} />
+              </button>
+              {langOpen && (
+                <div
+                  className="absolute bottom-full right-0 mb-1 rounded-lg overflow-hidden z-50 min-w-[120px]"
+                  style={{
+                    background: d ? s.surface : "#fff",
+                    border: d ? `1px solid ${s.sidebarBorder}` : "1px solid #d0d3d6",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {([
+                    { code: "en", label: "English" },
+                    { code: "am", label: "አማርኛ" },
+                    { code: "ar", label: "العربية" },
+                    { code: "om", label: "Afaan Oromoo" },
+                  ] as { code: Lang; label: string }[]).map((l) => (
+                    <button
+                      key={l.code}
+                      onClick={() => { setLang(l.code); setLangOpen(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium transition-colors text-left"
+                      style={{
+                        background: lang === l.code ? (d ? "rgba(212,175,55,0.15)" : "rgba(0,0,0,0.04)") : "transparent",
+                        color: lang === l.code ? (d ? s.gold : "#1a1a2e") : (d ? s.text : "#333"),
+                      }}
+                    >
+                      {l.label}
+                      {lang === l.code && <span className="ml-auto">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Dark Mode Toggle */}
+        <div
+          className="px-4 py-3 shrink-0"
+          style={{
+            borderTop: d
+              ? `1px solid ${s.sidebarBorder}`
+              : "1px solid #e5e7eb",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span
+              className="text-xs font-medium"
+              style={{ color: d ? s.textMuted : "#555" }}
+            >
+              {t('admin.darkMode')}
+            </span>
             <button
               onClick={toggleDark}
-              className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${dark ? "bg-white" : "bg-[#bbb]"}`}
+              className="relative rounded-full transition-all duration-300"
+              style={{
+                width: "44px",
+                height: "24px",
+                background: d
+                  ? `linear-gradient(135deg, ${s.gold}, ${s.goldDark})`
+                  : "#bbb",
+                boxShadow: d
+                  ? "inset 0 1px 3px rgba(0,0,0,0.3), 0 0 10px rgba(212,175,55,0.2)"
+                  : "inset 0 1px 2px rgba(0,0,0,0.1)",
+              }}
             >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full shadow-sm bg-white flex items-center justify-center transition-transform duration-200 ${dark ? "translate-x-[20px]" : "translate-x-0"}`}>
-                {dark ? <Moon className="w-3 h-3 text-[#2e2e42]" /> : <Sun className="w-3 h-3 text-amber-500" />}
+              <span
+                className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full flex items-center justify-center transition-transform duration-300"
+                style={{
+                  transform: d ? "translateX(20px)" : "translateX(0)",
+                  background: d ? s.bg : "#fff",
+                  boxShadow: d
+                    ? "0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"
+                    : "0 1px 3px rgba(0,0,0,0.15)",
+                }}
+              >
+                {d ? (
+                  <Moon className="w-3 h-3" style={{ color: s.gold }} />
+                ) : (
+                  <Sun className="w-3 h-3 text-amber-500" />
+                )}
               </span>
             </button>
           </div>
@@ -171,62 +475,203 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1a1a2e]">
+      <div
+        className="flex-1 flex flex-col min-w-0 lg:ml-[260px] h-screen"
+        style={{
+          background: d
+            ? `radial-gradient(ellipse at 50% 0%, #1a1240 0%, ${s.bg} 70%)`
+            : "#f0f1f4",
+        }}
+      >
         {/* Top bar */}
-        <header className="h-16 flex items-center justify-between px-4 lg:px-6 shadow-sm bg-[#e8eaed] dark:bg-[#2e2e42]">
+        <header
+          className="h-16 flex items-center justify-between px-4 lg:px-6 shrink-0"
+          style={{
+            background: d
+              ? `linear-gradient(180deg, ${s.sidebar} 0%, ${s.surface} 100%)`
+              : "rgba(255,255,255,0.8)",
+            backdropFilter: "blur(12px)",
+            boxShadow: d
+              ? `0 1px 0 rgba(212,175,55,0.12), 0 4px 20px rgba(0,0,0,0.3)`
+              : "0 1px 3px rgba(0,0,0,0.06)",
+          }}
+        >
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg text-[#1a1a2e] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-lg transition-colors"
+              style={{ color: d ? s.text : "#1a1a2e" }}
+            >
               <Menu className="w-5 h-5" />
             </button>
             <div className="hidden lg:block">
               <div className="relative">
-                <input type="text" placeholder="Search anything..." className="w-64 pl-9 pr-3 py-1.5 text-sm rounded-lg bg-white/80 dark:bg-[#1a1a2e]/80 border border-[#d0d3d6] dark:border-[#3d3d55] text-[#1a1a2e] dark:text-white placeholder-[#999] dark:placeholder-[#777] focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]/20 dark:focus:ring-white/20" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: d ? s.textMuted : "#999" }} />
+                <input
+                  type="text"
+                  placeholder={t('admin.search')}
+                  className="w-72 pl-9 pr-3 py-2 text-sm rounded-xl transition-all duration-200 focus:outline-none"
+                  style={{
+                    background: d
+                      ? "rgba(255,255,255,0.05)"
+                      : "rgba(255,255,255,0.6)",
+                    border: d
+                      ? `1px solid ${s.sidebarBorder}`
+                      : "1px solid #e5e7eb",
+                    color: d ? s.text : "#1a1a2e",
+                    boxShadow: d
+                      ? "inset 0 2px 4px rgba(0,0,0,0.2)"
+                      : "inset 0 1px 2px rgba(0,0,0,0.04)",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = d ? s.gold : "#1a1a2e";
+                    e.currentTarget.style.boxShadow = d
+                      ? "inset 0 2px 4px rgba(0,0,0,0.2), 0 0 12px rgba(212,175,55,0.15)"
+                      : "inset 0 1px 2px rgba(0,0,0,0.04), 0 0 0 3px rgba(26,26,46,0.08)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = d ? s.sidebarBorder : "#e5e7eb";
+                    e.currentTarget.style.boxShadow = d
+                      ? "inset 0 2px 4px rgba(0,0,0,0.2)"
+                      : "inset 0 1px 2px rgba(0,0,0,0.04)";
+                  }}
+                />
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <button onClick={toggleDark} className="lg:hidden relative w-9 h-5 rounded-full transition-colors duration-200 ${dark ? 'bg-white' : 'bg-[#bbb]'}">
-              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow-sm bg-white flex items-center justify-center transition-transform duration-200 ${dark ? 'translate-x-[14px]' : 'translate-x-0'}`}>
-                {dark ? <Moon className="w-2.5 h-2.5 text-[#2e2e42]" /> : <Sun className="w-2.5 h-2.5 text-amber-500" />}
+            <button
+              onClick={toggleDark}
+              className="lg:hidden relative rounded-full transition-all duration-300"
+              style={{
+                width: "36px",
+                height: "20px",
+                background: d
+                  ? `linear-gradient(135deg, ${s.gold}, ${s.goldDark})`
+                  : "#bbb",
+                boxShadow: d
+                  ? "inset 0 1px 3px rgba(0,0,0,0.3)"
+                  : "inset 0 1px 2px rgba(0,0,0,0.1)",
+              }}
+            >
+              <span
+                className="absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center transition-transform duration-300"
+                style={{
+                  transform: d ? "translateX(14px)" : "translateX(0)",
+                  background: d ? s.bg : "#fff",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                }}
+              >
+                {d ? (
+                  <Moon className="w-2 h-2" style={{ color: s.gold }} />
+                ) : (
+                  <Sun className="w-2 h-2 text-amber-500" />
+                )}
               </span>
             </button>
             <div className="flex items-center gap-2 text-sm">
-              <div className="w-8 h-8 rounded-full bg-[#1a1a2e] flex items-center justify-center text-white font-semibold text-xs">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs"
+                style={{
+                  background: d
+                    ? `linear-gradient(135deg, ${s.gold}, ${s.goldDark})`
+                    : "#1a1a2e",
+                  color: d ? s.bg : "#fff",
+                  boxShadow: d
+                    ? "0 2px 8px rgba(212,175,55,0.3), inset 0 1px 0 rgba(255,255,255,0.3)"
+                    : "none",
+                }}
+              >
                 {user?.firstName?.charAt(0) || "A"}
               </div>
-              <span className="hidden sm:block font-medium text-[#1a1a2e] dark:text-white">
+              <span
+                className="hidden sm:flex items-center gap-2 font-medium"
+                style={{ color: d ? s.text : "#1a1a2e" }}
+              >
                 {user?.firstName} {user?.lastName}
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${
+                  user?.adminRole === "super_admin"
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                }`}>
+                  {user?.adminRole === "super_admin" ? "Super Admin (owner)" : "Admin"}
+                </span>
               </span>
             </div>
-            <button onClick={() => { logout(); router.push("/login"); }}
-              className="p-2 rounded-lg text-[#1a1a2e] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors" title="Sign out"
+            <button
+              onClick={() => { logout(); router.push("/login"); }}
+              className="p-2 rounded-xl transition-all duration-200 hover:scale-105"
+              style={{ color: d ? s.textMuted : "#666" }}
+              title={t('admin.logout')}
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6 overflow-auto pb-24 lg:pb-6">{children}</main>
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto pb-24 lg:pb-8 admin-main-scroll">
+          {children}
+        </main>
       </div>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#e8eaed]/95 dark:bg-[#2e2e42]/95 backdrop-blur-xl border-t border-[#d0d3d6] dark:border-[#3d3d55] safe-area-bottom">
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t safe-area-bottom"
+        style={{
+          background: d
+            ? "rgba(26,18,48,0.95)"
+            : "rgba(232,234,237,0.95)",
+          borderColor: d ? s.sidebarBorder : "#d0d3d6",
+        }}
+      >
         <div className="flex items-center justify-around px-2 py-1 overflow-x-auto">
-          {allNavItems.slice(0, 5).map((link) => {
+          {filteredNavItems.slice(0, 5).map((link) => {
             const active = isActive(link.href);
             return (
-              <Link key={link.href} href={link.href}
-                className={`flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl ${
-                  active ? "text-[#1a1a2e] dark:text-white" : "text-[#555] dark:text-[#b0b0c0]"
-                }`}
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl"
+                style={{
+                  color: active
+                    ? d
+                      ? s.gold
+                      : "#1a1a2e"
+                    : d
+                    ? s.textMuted
+                    : "#555",
+                }}
               >
                 {active && (
-                  <motion.div layoutId="admin-nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-[#1a1a2e] dark:bg-white" />
+                  <div
+                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full"
+                    style={{
+                      background: d
+                        ? `linear-gradient(90deg, ${s.gold}, ${s.goldLight})`
+                        : "#1a1a2e",
+                    }}
+                  />
                 )}
-                <link.icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium">{link.label}</span>
+                <div className="relative">
+                  <link.icon className="w-5 h-5" />
+                  {badgeForHref(link.href) !== null && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold px-0.5 leading-none"
+                      style={{
+                        background: d
+                          ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                          : "#dc2626",
+                        color: "#fff",
+                        boxShadow: d
+                          ? "0 2px 4px rgba(239,68,68,0.4)"
+                          : "0 1px 2px rgba(0,0,0,0.2)",
+                      }}>
+                      {badgeForHref(link.href)}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium">{t(link.labelKey)}</span>
               </Link>
             );
           })}

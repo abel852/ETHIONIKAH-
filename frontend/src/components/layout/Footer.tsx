@@ -3,29 +3,41 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, Phone, MapPin } from "lucide-react";
-
-const footerLinks = {
-  Platform: [
-    { href: "/matches", label: "Browse Matches" },
-    { href: "/search", label: "Search" },
-    { href: "/verification", label: "Verification" },
-    { href: "/settings", label: "Privacy Settings" },
-  ],
-  Support: [
-    { href: "/faq", label: "FAQ" },
-    { href: "/contact", label: "Contact Us" },
-    { href: "/report", label: "Report Abuse" },
-    { href: "/safety", label: "Safety Tips" },
-  ],
-  Legal: [
-    { href: "/terms", label: "Terms & Conditions" },
-    { href: "/privacy", label: "Privacy Policy" },
-    { href: "/guidelines", label: "Community Guidelines" },
-    { href: "/sharia", label: "Sharia Compliance" },
-  ],
-};
+import { useI18n } from "@/context/I18nContext";
 
 export default function Footer() {
+  const { t } = useI18n();
+
+  const footerGroups = [
+    {
+      title: t("footer.platform"),
+      links: [
+        { href: "/matches", label: t("footer.browseMatches") },
+        { href: "/search", label: t("footer.search") },
+        { href: "/verification", label: t("footer.verification") },
+        { href: "/settings", label: t("footer.privacySettings") },
+      ],
+    },
+    {
+      title: t("footer.support"),
+      links: [
+        { href: "/faq", label: t("footer.faq") },
+        { href: "/contact", label: t("footer.contactUs") },
+        { href: "/report", label: t("footer.reportAbuse") },
+        { href: "/safety", label: t("footer.safetyTips") },
+      ],
+    },
+    {
+      title: t("footer.legal"),
+      links: [
+        { href: "/terms", label: t("footer.terms") },
+        { href: "/privacy", label: t("footer.privacyPolicy") },
+        { href: "/guidelines", label: t("footer.communityGuidelines") },
+        { href: "/sharia", label: t("footer.shariaCompliance") },
+      ],
+    },
+  ];
+
   return (
     <footer className="bg-charcoal-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -38,8 +50,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-charcoal-400 text-sm leading-relaxed mb-6">
-              Find your righteous spouse in a safe, Sharia-compliant environment.
-              Premium matchmaking for the Muslim community.
+              {t("footer.tagline")}
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-charcoal-400 text-sm">
@@ -57,13 +68,13 @@ export default function Footer() {
             </div>
           </div>
 
-          {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title}>
+          {footerGroups.map((group) => (
+            <div key={group.title}>
               <h4 className="font-display font-semibold text-sm text-charcoal-300 mb-4 uppercase tracking-wider">
-                {title}
+                {group.title}
               </h4>
               <ul className="space-y-2.5">
-                {links.map((link) => (
+                {group.links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
@@ -80,7 +91,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-charcoal-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-charcoal-500 text-sm">
-            © {new Date().getFullYear()} Ethio Nikah. All rights reserved.
+            © {new Date().getFullYear()} {t("app.name")}. {t("footer.rights")}
           </p>
         </div>
       </div>

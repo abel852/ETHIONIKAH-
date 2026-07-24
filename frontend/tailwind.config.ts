@@ -68,6 +68,7 @@ const config: Config = {
         shimmer: "shimmer 3s infinite",
         "gold-shine": "goldShine 4s ease-in-out infinite",
         "spin-slow": "spin 20s linear infinite",
+        "slide-down": "slideDown 0.3s ease-out",
       },
       keyframes: {
         fadeIn: {
@@ -101,6 +102,10 @@ const config: Config = {
         goldShine: {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
+        },
+        slideDown: {
+          "0%": { opacity: "0", transform: "translateY(-20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
       backgroundImage: {

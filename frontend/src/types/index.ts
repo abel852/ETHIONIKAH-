@@ -4,9 +4,12 @@ export interface User {
   phone: string;
   firstName: string;
   lastName: string;
+  username?: string;
   gender: "male" | "female";
   dateOfBirth: string;
   role: "user" | "admin";
+  adminRole?: "super_admin" | "admin" | null;
+  permissions?: string[];
   isVerified: boolean;
   isActive: boolean;
   isBanned: boolean;
@@ -14,6 +17,7 @@ export interface User {
   membershipPlan?: string;
   membershipExpiry?: string;
   verificationStatus: "unverified" | "pending" | "verified" | "rejected";
+  language?: string;
   createdAt: string;
   updatedAt: string;
   photos?: string[];
@@ -101,12 +105,23 @@ export interface Message {
   id: string;
   senderId: string;
   receiverId: string;
-  conversationId: string;
+  conversationId?: string;
   content: string;
+  imageUrl?: string | null;
+  replyToId?: string | null;
+  replyTo?: {
+    id: string;
+    content: string;
+    senderId: string;
+    sender: { id: string; firstName: string; lastName: string };
+  } | null;
   readAt: string | null;
+  deliveredAt?: string | null;
   createdAt: string;
-  isReported: boolean;
-  isBlocked: boolean;
+  isReported?: boolean;
+  isBlocked?: boolean;
+  deletedForSender?: boolean;
+  deletedForReceiver?: boolean;
 }
 
 export interface Conversation {

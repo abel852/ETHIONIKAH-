@@ -2,15 +2,46 @@ import { create } from "zustand";
 import type { Match, RecommendedProfile } from "@/types";
 import { matchService } from "@/services/matches";
 
+interface SuggestedProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  username?: string;
+  age: number;
+  city: string | null;
+  country: string | null;
+  occupation: string | null;
+  educationLevel: string | null;
+  maritalStatus: string | null;
+  religiousCommitment: string | null;
+  bio: string | null;
+  photos: string[];
+  selfDescription: string | null;
+  height: number | null;
+  smokingHabits: string | null;
+  childrenStatus: string | null;
+  isVerified: boolean;
+  compatibilityScore?: number;
+  recommendationLevel?: string;
+  strengths?: string[];
+  potentialDifferences?: string[];
+}
+
 interface MatchState {
   matches: Match[];
   recommendations: RecommendedProfile[];
+  suggestedMatches: SuggestedProfile[];
+  suggestedTotal: number;
+  suggestedPage: number;
+  suggestedTotalPages: number;
+  needsProfile: boolean;
   favorites: string[];
   favoriteProfiles: Match[];
   isLoading: boolean;
   error: string | null;
   fetchMatches: (params?: Record<string, unknown>) => Promise<void>;
   fetchRecommendations: () => Promise<void>;
+  fetchSuggested: (page?: number) => Promise<void>;
   fetchFavorites: () => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
   sendInterest: (id: string) => Promise<void>;
@@ -19,9 +50,14 @@ interface MatchState {
 export const useMatchStore = create<MatchState>((set, get) => ({
   matches: [],
   recommendations: [],
+  suggestedMatches: [],
+  suggestedTotal: 0,
+  suggestedPage: 1,
+  suggestedTotalPages: 0,
+  needsProfile: false,
   favorites: [],
   favoriteProfiles: [],
-  isLoading: false,
+  isLoading: true,
   error: null,
   fetchMatches: async (params) => {
     set({ isLoading: true, error: null });
@@ -34,8 +70,25 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await matchService.getRecommended();
-      set({ recommendations: data.matches || data, isLoading: false });
+      set({ recommendations: data.matches || data, needsProfile: data.needsProfile || false, isLoading: false });
     } catch { set({ error: "Failed to load recommendations", isLoading: false }); }
+  },
+  fetchSuggested: async (page = 1) => {
+    set({ isLoading: page === 1, error: null });
+    try {
+      const { data } = await matchService.getSuggested({ page, limit: 12 });
+      set((s) => ({
+        suggestedMatches: page <= 1 ? (data.matches || []) : [...s.suggestedMatches, ...(data.matches || [])],
+        suggestedTotal: data.total || 0,
+        suggestedPage: data.page || 1,
+        suggestedTotalPages: data.totalPages || 0,
+        needsProfile: data.needsProfile || false,
+        isLoading: false,
+      }));
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || "Failed to load suggestions";
+      set({ error: msg, isLoading: false });
+    }
   },
   fetchFavorites: async () => {
     try {
@@ -52,6 +105,6 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     } catch { /* ignore */ }
   },
   sendInterest: async (id) => {
-    try { await matchService.sendInterest(id); } catch { /* ignore */ }
+    await matchService.sendInterest(id);
   },
 }));
