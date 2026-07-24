@@ -14,25 +14,6 @@ export default function LoginPage() {
   const { t } = useI18n();
   const router = useRouter();
 
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      document.cookie = `accessToken=${token}; path=/; max-age=${60*60*24*3}; SameSite=Lax`;
-      try {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        if (user?.role === "admin" || user?.adminRole) {
-          window.location.href = "/admin";
-        } else if (!user?.isEmailVerified || !user?.isPhoneVerified || !user?.isVerified) {
-          window.location.href = "/verification";
-        } else {
-          window.location.href = "/matches";
-        }
-      } catch {
-        window.location.href = "/matches";
-      }
-    }
-  }, []);
-
   const [showPassword, setShowPassword] = useState(false);
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");

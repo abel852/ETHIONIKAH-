@@ -56,9 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("user", JSON.stringify(u));
       }).catch((err) => {
         if (isNetworkError(err)) {
+          // Server down — do NOT fall back to cached user data (security risk).
+          // Show the server-down banner but keep user as null so RouteGuard
+          // blocks access to protected pages.
           setConnectionError("server_down");
-          const cached = localStorage.getItem("user");
-          if (cached) { try { setUser(JSON.parse(cached)); } catch { /* ignore */ } }
+          setUser(null);
         } else {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
@@ -143,6 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("rememberMeTimestamp");
+    localStorage.removeItem("trustedDeviceToken");
     setUser(null);
   }, []);
 
