@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="30%" stop-color="#2d5a8f"/>
+      <stop offset="70%" stop-color="#6a9fd8"/>
+      <stop offset="100%" stop-color="#d4af37" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="goldGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="domeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a72b5"/>
+      <stop offset="60%" stop-color="#2d4a7a"/>
+      <stop offset="100%" stop-color="#1a2f50"/>
+    </linearGradient>
+    <linearGradient id="minaretGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a72b5"/>
+      <stop offset="100%" stop-color="#1a2f50"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#f5e6c8" stop-opacity="0.5"/>
+      <stop offset="40%" stop-color="#D4AF37" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6a9fd8" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#2d5a8f" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+
+  <!-- Sun glow -->
+  <circle cx="1500" cy="250" r="300" fill="url(#sunGlow)"/>
+  <circle cx="1500" cy="250" r="50" fill="#f5e6c8" opacity="0.4"/>
+  <circle cx="1500" cy="250" r="35" fill="#fff8e7" opacity="0.3"/>
+
+  <!-- Soft clouds -->
+  <ellipse cx="300" cy="180" rx="120" ry="25" fill="white" opacity="0.12"/>
+  <ellipse cx="600" cy="120" rx="100" ry="20" fill="white" opacity="0.10"/>
+  <ellipse cx="1100" cy="200" rx="140" ry="28" fill="white" opacity="0.10"/>
+  <ellipse cx="1700" cy="150" rx="90" ry="18" fill="white" opacity="0.08"/>
+
+  <!-- Gold ambient glow at bottom -->
+  <rect x="0" y="600" width="1920" height="480" fill="url(#goldGlow)"/>
+
+  <!-- Distant mountains -->
+  <path d="M0,720 Q200,650 400,690 T800,670 T1200,680 T1600,660 T1920,690 L1920,1080 L0,1080 Z" fill="#1a2f50" opacity="0.4"/>
+  <path d="M0,760 Q300,700 600,740 T1200,720 T1920,750 L1920,1080 L0,1080 Z" fill="#15263d" opacity="0.3"/>
+
+  <!-- Water reflection -->
+  <rect x="0" y="800" width="1920" height="100" fill="url(#waterGrad)" opacity="0.3"/>
+
+  <!-- Left minaret -->
+  <g>
+    <rect x="280" y="320" width="40" height="480" fill="url(#minaretGrad)"/>
+    <rect x="270" y="310" width="60" height="20" rx="4" fill="#4a72b5"/>
+    <circle cx="300" cy="290" r="18" fill="#4a72b5"/>
+    <rect x="292" y="260" width="16" height="35" fill="#4a72b5"/>
+    <circle cx="300" cy="250" r="10" fill="#D4AF37" opacity="0.5"/>
+    <rect x="265" y="450" width="70" height="8" rx="3" fill="#4a72b5"/>
+    <rect x="265" y="580" width="70" height="8" rx="3" fill="#4a72b5"/>
+  </g>
+
+  <!-- Right minaret -->
+  <g>
+    <rect x="1600" y="320" width="40" height="480" fill="url(#minaretGrad)"/>
+    <rect x="1590" y="310" width="60" height="20" rx="4" fill="#4a72b5"/>
+    <circle cx="1620" cy="290" r="18" fill="#4a72b5"/>
+    <rect x="1612" y="260" width="16" height="35" fill="#4a72b5"/>
+    <circle cx="1620" cy="250" r="10" fill="#D4AF37" opacity="0.5"/>
+    <rect x="1585" y="450" width="70" height="8" rx="3" fill="#4a72b5"/>
+    <rect x="1585" y="580" width="70" height="8" rx="3" fill="#4a72b5"/>
+  </g>
+
+  <!-- Main mosque building -->
+  <g>
+    <rect x="480" y="550" width="960" height="250" fill="url(#domeGrad)"/>
+    <ellipse cx="960" cy="400" rx="200" ry="180" fill="url(#domeGrad)"/>
+    <ellipse cx="960" cy="400" rx="200" ry="180" fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.3"/>
+    <rect x="952" y="200" width="16" height="40" fill="#4a72b5"/>
+    <circle cx="960" cy="190" r="12" fill="#D4AF37" opacity="0.5"/>
+    <circle cx="960" cy="190" r="8" fill="#4a72b5"/>
+    <ellipse cx="680" cy="480" rx="110" ry="100" fill="url(#domeGrad)"/>
+    <rect x="675" y="370" width="10" height="25" fill="#4a72b5"/>
+    <circle cx="680" cy="365" r="7" fill="#D4AF37" opacity="0.4"/>
+    <ellipse cx="1240" cy="480" rx="110" ry="100" fill="url(#domeGrad)"/>
+    <rect x="1235" y="370" width="10" height="25" fill="#4a72b5"/>
+    <circle cx="1240" cy="365" r="7" fill="#D4AF37" opacity="0.4"/>
+    <path d="M900,800 L900,680 Q900,620 960,620 Q1020,620 1020,680 L1020,800 Z" fill="#0a1525"/>
+    <path d="M900,800 L900,680 Q900,620 960,620 Q1020,620 1020,680 L1020,800 Z" fill="none" stroke="#D4AF37" stroke-width="2.5" opacity="0.4"/>
+    <path d="M560,800 L560,720 Q560,680 600,680 Q640,680 640,720 L640,800 Z" fill="#0a1525" opacity="0.9"/>
+    <path d="M700,800 L700,720 Q700,680 740,680 Q780,680 780,720 L780,800 Z" fill="#0a1525" opacity="0.9"/>
+    <path d="M1140,800 L1140,720 Q1140,680 1180,680 Q1220,680 1220,720 L1220,800 Z" fill="#0a1525" opacity="0.9"/>
+    <path d="M1280,800 L1280,720 Q1280,680 1320,680 Q1360,680 1360,720 L1360,800 Z" fill="#0a1525" opacity="0.9"/>
+  </g>
+
+  <rect x="0" y="800" width="1920" height="280" fill="#0a1525"/>
+  <ellipse cx="960" cy="750" rx="100" ry="50" fill="#D4AF37" opacity="0.12"/>
+
+  <g opacity="0.15" stroke="#D4AF37" stroke-width="1.5" fill="none">
+    <g transform="translate(200,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+    <g transform="translate(400,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+    <g transform="translate(600,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+    <g transform="translate(800,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+    <g transform="translate(1000,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+    <g transform="translate(1200,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+    <g transform="translate(1400,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+    <g transform="translate(1600,850)"><path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/><path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/></g>
+  </g>
+</svg>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <defs>
+    <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d5a8f"/>
+      <stop offset="50%" stop-color="#4a72b5"/>
+      <stop offset="100%" stop-color="#1a2f50"/>
+    </linearGradient>
+    <linearGradient id="domeG1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a72b5"/>
+      <stop offset="100%" stop-color="#1a2f50"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0.5" cy="0.3" r="0.4">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lanternGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#f5e6c8" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#sky1)"/>
+  <rect width="400" height="500" fill="url(#glow1)"/>
+
+  <!-- Stars -->
+  <circle cx="80" cy="60" r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="320" cy="80" r="1.2" fill="white" opacity="0.3"/>
+  <circle cx="200" cy="40" r="1.8" fill="white" opacity="0.35"/>
+  <circle cx="350" cy="120" r="1" fill="white" opacity="0.25"/>
+
+  <!-- Crescent moon -->
+  <circle cx="320" cy="100" r="28" fill="#D4AF37" opacity="0.2"/>
+  <circle cx="320" cy="100" r="20" fill="#4a72b5"/>
+  <circle cx="326" cy="94" r="17" fill="#D4AF37" opacity="0.15"/>
+
+  <!-- Mosque silhouette -->
+  <rect x="60" y="200" width="16" height="300" fill="#2d4a7a"/>
+  <circle cx="68" cy="195" r="10" fill="#2d4a7a"/>
+  <rect x="64" y="175" width="8" height="25" fill="#2d4a7a"/>
+  <rect x="324" y="200" width="16" height="300" fill="#2d4a7a"/>
+  <circle cx="332" cy="195" r="10" fill="#2d4a7a"/>
+  <rect x="328" y="175" width="8" height="25" fill="#2d4a7a"/>
+
+  <rect x="120" y="320" width="160" height="180" fill="url(#domeG1)"/>
+  <ellipse cx="200" cy="250" rx="80" ry="75" fill="url(#domeG1)"/>
+  <ellipse cx="200" cy="250" rx="80" ry="75" fill="none" stroke="#D4AF37" stroke-width="1.5" opacity="0.3"/>
+  <rect x="195" y="165" width="10" height="25" fill="#2d4a7a"/>
+  <circle cx="200" cy="160" r="6" fill="#D4AF37" opacity="0.4"/>
+
+  <ellipse cx="140" cy="300" rx="40" ry="35" fill="url(#domeG1)"/>
+  <ellipse cx="260" cy="300" rx="40" ry="35" fill="url(#domeG1)"/>
+
+  <!-- Arched entrance with warm light -->
+  <path d="M175,500 L175,420 Q175,390 200,390 Q225,390 225,420 L225,500 Z" fill="#0a1525"/>
+  <path d="M175,500 L175,420 Q175,390 200,390 Q225,390 225,420 L225,500 Z" fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.4"/>
+  <ellipse cx="200" cy="460" rx="35" ry="25" fill="#D4AF37" opacity="0.15"/>
+
+  <!-- Side windows -->
+  <path d="M135,500 L135,460 Q135,445 147,445 Q159,445 159,460 L159,500 Z" fill="#0a1525" opacity="0.9"/>
+  <path d="M241,500 L241,460 Q241,445 253,445 Q265,445 265,460 L265,500 Z" fill="#0a1525" opacity="0.9"/>
+
+  <!-- Hanging lantern -->
+  <g transform="translate(200,340)">
+    <circle cx="0" cy="0" r="40" fill="url(#lanternGlow)"/>
+    <rect x="-1" y="-40" width="2" height="15" fill="#D4AF37" opacity="0.5"/>
+    <path d="M-12,-25 L12,-25 L10,-5 L-10,-5 Z" fill="#D4AF37" opacity="0.35"/>
+    <path d="M-10,-5 L10,-5 L8,10 L-8,10 Z" fill="#D4AF37" opacity="0.25"/>
+    <rect x="-2" y="10" width="4" height="5" fill="#D4AF37" opacity="0.3"/>
+    <circle cx="0" cy="-12" r="6" fill="#f5e6c8" opacity="0.4"/>
+  </g>
+
+  <!-- Geometric star -->
+  <g opacity="0.15" stroke="#D4AF37" stroke-width="1" fill="none" transform="translate(200,490)">
+    <path d="M0,-10 L7,-7 L10,0 L7,7 L0,10 L-7,7 L-10,0 L-7,-7 Z"/>
+  </g>
+</svg>

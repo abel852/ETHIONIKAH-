@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <defs>
+    <linearGradient id="sky3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d5a8f"/>
+      <stop offset="50%" stop-color="#4a72b5"/>
+      <stop offset="100%" stop-color="#1a2f50"/>
+    </linearGradient>
+    <linearGradient id="domeG3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a72b5"/>
+      <stop offset="100%" stop-color="#1a2f50"/>
+    </linearGradient>
+    <radialGradient id="glow3" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="archFrame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#sky3)"/>
+  <rect width="400" height="500" fill="url(#glow3)"/>
+
+  <!-- Stars -->
+  <circle cx="50" cy="40" r="1.2" fill="white" opacity="0.3"/>
+  <circle cx="180" cy="60" r="1.5" fill="white" opacity="0.35"/>
+  <circle cx="300" cy="50" r="1" fill="white" opacity="0.25"/>
+  <circle cx="120" cy="100" r="1.3" fill="white" opacity="0.3"/>
+  <circle cx="350" cy="90" r="1.5" fill="white" opacity="0.3"/>
+
+  <!-- Full moon -->
+  <circle cx="200" cy="120" r="35" fill="#D4AF37" opacity="0.12"/>
+  <circle cx="200" cy="120" r="25" fill="#f5e6c8" opacity="0.08"/>
+  <circle cx="200" cy="120" r="20" fill="#D4AF37" opacity="0.06"/>
+
+  <!-- Ornate Islamic archway doorway -->
+  <g>
+    <!-- Outer arch -->
+    <path d="M80,500 L80,280 Q80,160 200,160 Q320,160 320,280 L320,500 Z" fill="none" stroke="url(#archFrame)" stroke-width="3"/>
+    <path d="M90,500 L90,285 Q90,175 200,175 Q310,175 310,285 L310,500 Z" fill="none" stroke="#D4AF37" stroke-width="1.5" opacity="0.15"/>
+
+    <!-- Inner arch -->
+    <path d="M110,500 L110,300 Q110,200 200,200 Q290,200 290,300 L290,500 Z" fill="#0a1525" opacity="0.6"/>
+
+    <!-- Arch decorative top -->
+    <path d="M80,280 Q80,160 200,160 Q320,160 320,280" fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.25"/>
+
+    <!-- Ornamental points on arch -->
+    <circle cx="200" cy="160" r="5" fill="#D4AF37" opacity="0.3"/>
+    <circle cx="140" cy="195" r="3" fill="#D4AF37" opacity="0.2"/>
+    <circle cx="260" cy="195" r="3" fill="#D4AF37" opacity="0.2"/>
+
+    <!-- Warm glow from doorway -->
+    <ellipse cx="200" cy="400" rx="60" ry="80" fill="#D4AF37" opacity="0.08"/>
+  </g>
+
+  <!-- Minarets flanking the arch -->
+  <rect x="50" y="220" width="14" height="280" fill="#2d4a7a"/>
+  <circle cx="57" cy="215" r="9" fill="#2d4a7a"/>
+  <rect x="53" y="198" width="8" height="22" fill="#2d4a7a"/>
+  <circle cx="57" cy="193" r="5" fill="#D4AF37" opacity="0.4"/>
+
+  <rect x="336" y="220" width="14" height="280" fill="#2d4a7a"/>
+  <circle cx="343" cy="215" r="9" fill="#2d4a7a"/>
+  <rect x="339" y="198" width="8" height="22" fill="#2d4a7a"/>
+  <circle cx="343" cy="193" r="5" fill="#D4AF37" opacity="0.4"/>
+
+  <!-- Distant dome above arch -->
+  <ellipse cx="200" cy="170" rx="50" ry="40" fill="url(#domeG3)" opacity="0.5"/>
+  <rect x="197" y="125" width="6" height="20" fill="#2d4a7a" opacity="0.5"/>
+  <circle cx="200" cy="120" r="4" fill="#D4AF37" opacity="0.3"/>
+
+  <!-- Palm trees -->
+  <g opacity="0.5">
+    <path d="M25,500 L25,420 M25,420 Q12,408 5,414 M25,420 Q38,408 45,414 M25,420 Q18,400 14,394 M25,420 Q32,400 36,394 M25,420 Q25,398 25,392" stroke="#2d4a3a" stroke-width="2.5" fill="none"/>
+  </g>
+  <g opacity="0.5">
+    <path d="M375,500 L375,410 M375,410 Q362,398 355,404 M375,410 Q388,398 395,404 M375,410 Q368,390 364,384 M375,410 Q382,390 386,384 M375,410 Q375,388 375,382" stroke="#2d4a3a" stroke-width="2.5" fill="none"/>
+  </g>
+
+  <!-- Geometric pattern above arch -->
+  <g opacity="0.1" stroke="#D4AF37" stroke-width="1" fill="none">
+    <g transform="translate(200,80)">
+      <path d="M0,-25 L17,-17 L25,0 L17,17 L0,25 L-17,17 L-25,0 L-17,-17 Z"/>
+      <path d="M0,-15 L10,-10 L15,0 L10,10 L0,15 L-10,10 L-15,0 L-10,-10 Z"/>
+    </g>
+  </g>
+</svg>

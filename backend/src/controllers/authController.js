@@ -66,6 +66,8 @@ const register = async (req, res) => {
         lastName,
         gender,
         dateOfBirth: new Date(dateOfBirth),
+        isEmailVerified: true,
+        isPhoneVerified: true,
       },
       select: {
         id: true,

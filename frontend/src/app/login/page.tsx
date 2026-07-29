@@ -87,10 +87,13 @@ export default function LoginPage() {
 
     if (data.user?.role === "admin" || data.user?.adminRole) {
       window.location.href = "/admin";
-    } else if (!data.user?.isEmailVerified || !data.user?.isPhoneVerified || !data.user?.isVerified) {
-      window.location.href = "/verification";
     } else {
-      window.location.href = "/matches";
+      const identityVerified = data.user?.isVerified || data.user?.verification?.status === "approved";
+      if (!identityVerified) {
+        window.location.href = "/verification";
+      } else {
+        window.location.href = "/matches";
+      }
     }
   };
 

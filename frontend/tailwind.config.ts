@@ -13,6 +13,8 @@ const config: Config = {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-inter)", "system-ui", "sans-serif"],
         body: ["var(--font-inter)", "system-ui", "sans-serif"],
+        cursive: ["var(--font-dancing)", "cursive"],
+        script: ["var(--font-great-vibes)", "cursive"],
       },
       colors: {
         background: "#F5F5F5",

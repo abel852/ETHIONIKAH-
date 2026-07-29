@@ -10,7 +10,5 @@ export const authService = {
   forgotPassword: (data: ForgotPasswordFormData) => api.post("/auth/forgot-password", data),
   resetPassword: (data: ResetPasswordFormData) => api.post("/auth/reset-password", data),
   verifyEmail: (token: string) => api.post("/auth/verify-email", { token }),
-  verifyPhone: (otp: string) => api.post("/auth/verify-phone", { otp }),
-  sendPhoneOtp: () => api.post("/auth/send-phone-otp"),
   getProfile: () => api.get("/auth/me"),
 };

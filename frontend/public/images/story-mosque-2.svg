@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <defs>
+    <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d6b9f"/>
+      <stop offset="40%" stop-color="#5a8bc5"/>
+      <stop offset="100%" stop-color="#2d4a7a"/>
+    </linearGradient>
+    <linearGradient id="gardenGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a8b5c" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#2d5a3a" stop-opacity="0.8"/>
+    </linearGradient>
+    <radialGradient id="glow2" cx="0.3" cy="0.4" r="0.5">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#sky2)"/>
+  <rect width="400" height="500" fill="url(#glow2)"/>
+
+  <!-- Sun -->
+  <circle cx="80" cy="90" r="30" fill="#f5e6c8" opacity="0.3"/>
+  <circle cx="80" cy="90" r="20" fill="#D4AF37" opacity="0.2"/>
+
+  <!-- Birds -->
+  <path d="M150,70 Q155,65 160,70 Q165,65 170,70" stroke="white" stroke-width="1.5" fill="none" opacity="0.3"/>
+  <path d="M250,50 Q255,45 260,50 Q265,45 270,50" stroke="white" stroke-width="1.5" fill="none" opacity="0.25"/>
+  <path d="M310,80 Q315,75 320,80 Q325,75 330,80" stroke="white" stroke-width="1.5" fill="none" opacity="0.2"/>
+
+  <!-- Arabic-style arch frame -->
+  <path d="M100,500 L100,300 Q100,200 200,200 Q300,200 300,300 L300,500 Z" fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.2"/>
+  <path d="M110,500 L110,305 Q110,215 200,215 Q290,215 290,305 L290,500 Z" fill="none" stroke="#D4AF37" stroke-width="1.5" opacity="0.15"/>
+
+  <!-- Garden / nature inside arch -->
+  <!-- Rolling hills -->
+  <path d="M110,400 Q170,360 230,380 T290,370 L290,500 L110,500 Z" fill="url(#gardenGrad)"/>
+
+  <!-- Trees -->
+  <g opacity="0.5">
+    <!-- Tree 1 -->
+    <rect x="135" y="370" width="6" height="40" fill="#2d4a3a"/>
+    <circle cx="138" cy="365" r="18" fill="#4a8b5c" opacity="0.6"/>
+    <circle cx="130" cy="358" r="12" fill="#4a8b5c" opacity="0.5"/>
+    <circle cx="146" cy="358" r="12" fill="#4a8b5c" opacity="0.5"/>
+    <!-- Tree 2 -->
+    <rect x="255" y="375" width="6" height="35" fill="#2d4a3a"/>
+    <circle cx="258" cy="370" r="16" fill="#4a8b5c" opacity="0.6"/>
+    <circle cx="251" cy="363" r="10" fill="#4a8b5c" opacity="0.5"/>
+    <circle cx="265" cy="363" r="10" fill="#4a8b5c" opacity="0.5"/>
+  </g>
+
+  <!-- Pathway -->
+  <path d="M180,500 L190,420 L210,420 L220,500 Z" fill="#D4AF37" opacity="0.08"/>
+
+  <!-- Fountain -->
+  <g transform="translate(200,410)" opacity="0.4">
+    <ellipse cx="0" cy="10" rx="25" ry="8" fill="#6a9fd8" opacity="0.3"/>
+    <ellipse cx="0" cy="8" rx="20" ry="6" fill="#8ab5e0" opacity="0.2"/>
+    <rect x="-3" y="-5" width="6" height="15" fill="#4a72b5" opacity="0.4"/>
+    <circle cx="0" cy="-8" r="4" fill="#8ab5e0" opacity="0.3"/>
+    <path d="M-8,-8 Q-5,-15 0,-12" stroke="#8ab5e0" stroke-width="1" fill="none" opacity="0.3"/>
+    <path d="M8,-8 Q5,-15 0,-12" stroke="#8ab5e0" stroke-width="1" fill="none" opacity="0.3"/>
+  </g>
+
+  <!-- Flowers -->
+  <g opacity="0.3">
+    <circle cx="150" cy="395" r="3" fill="#D4AF37"/>
+    <circle cx="165" cy="400" r="2.5" fill="#D4AF37"/>
+    <circle cx="240" cy="398" r="3" fill="#D4AF37"/>
+    <circle cx="255" cy="402" r="2.5" fill="#D4AF37"/>
+    <circle cx="175" cy="410" r="2" fill="#f5e6c8"/>
+    <circle cx="230" cy="412" r="2" fill="#f5e6c8"/>
+  </g>
+
+  <!-- Decorative geometric stars -->
+  <g opacity="0.12" stroke="#D4AF37" stroke-width="1" fill="none">
+    <g transform="translate(200,150)">
+      <path d="M0,-20 L14,-14 L20,0 L14,14 L0,20 L-14,14 L-20,0 L-14,-14 Z"/>
+      <path d="M0,-12 L8.5,-8.5 L12,0 L8.5,8.5 L0,12 L-8.5,8.5 L-12,0 L-8.5,-8.5 Z"/>
+    </g>
+    <g transform="translate(140,170)">
+      <path d="M0,-15 L10,-10 L15,0 L10,10 L0,15 L-10,10 L-15,0 L-10,-10 Z"/>
+    </g>
+    <g transform="translate(260,170)">
+      <path d="M0,-15 L10,-10 L15,0 L10,10 L0,15 L-10,10 L-15,0 L-10,-10 Z"/>
+    </g>
+  </g>
+</svg>
