@@ -12,6 +12,18 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
+// Decode JWT payload without verifying (verification happens on backend)
+function getJwtRole(token: string): string | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.role || null;
+  } catch {
+    return null;
+  }
+}
+
 const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone", "/contact-support"];
 const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
 const adminRoutes = ["/admin"];
@@ -23,15 +35,33 @@ export function proxy(request: NextRequest) {
   // --- Auth routing ---
   const isPublic = publicRoutes.some((route) => pathname.startsWith(route));
   const isAdmin = adminRoutes.some((route) => pathname.startsWith(route));
+  const isAuthRoute = authRoutes.some((route) => pathname === route);
 
+  // No token + protected route → redirect to login
   if (!token && !isPublic) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAdmin && !token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  // Token exists + on auth routes (login/register) → redirect to appropriate dashboard
+  if (token && isAuthRoute) {
+    const role = getJwtRole(token);
+    if (role === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    } else if (role === "user") {
+      return NextResponse.redirect(new URL("/matches", request.url));
+    }
+  }
+
+  // Admin route + token exists but role is not admin → redirect to login
+  if (isAdmin && token) {
+    const role = getJwtRole(token);
+    if (role !== "admin") {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("error", "access_denied");
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   // --- CSP nonce + security headers ---

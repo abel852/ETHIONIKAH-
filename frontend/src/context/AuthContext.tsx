@@ -56,15 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("user", JSON.stringify(u));
       }).catch((err) => {
         if (isNetworkError(err)) {
-          // Server down — do NOT fall back to cached user data (security risk).
-          // Show the server-down banner but keep user as null so RouteGuard
-          // blocks access to protected pages.
           setConnectionError("server_down");
           setUser(null);
         } else {
           sessionStorage.removeItem("accessToken");
           sessionStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
+          localStorage.removeItem("trustedDeviceToken");
+          if (typeof document !== "undefined") {
+            document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          }
           setUser(null);
           if (typeof window !== "undefined" && window.location.pathname !== "/login") {
             window.location.href = "/login";
@@ -75,6 +76,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem("refreshToken");
       setIsLoading(false);
     }
+
+    // Prevent back button access after logout — if page is restored from
+    // bfcache and there's no token, force redirect to login
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        const t = sessionStorage.getItem("accessToken");
+        if (!t && typeof window !== "undefined" && window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -111,14 +125,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // Clear all session storage
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("refreshToken");
+    // Clear all local storage auth-related items
     localStorage.removeItem("user");
     localStorage.removeItem("trustedDeviceToken");
+    // Clear any other auth-related keys
+    sessionStorage.removeItem("user");
+    // Clear cookie
     if (typeof document !== "undefined") {
       document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "refreshToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
+    // Reset state
     setUser(null);
+    // Prevent back button access — replace current history entry
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "/login");
+    }
   }, []);
 
   const updateUser = useCallback((data: Partial<User>) => {

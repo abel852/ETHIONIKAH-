@@ -31,6 +31,9 @@ api.interceptors.response.use(
         sessionStorage.removeItem("accessToken");
         sessionStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
+        if (typeof document !== "undefined") {
+          document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";
         }
@@ -54,6 +57,9 @@ api.interceptors.response.use(
         sessionStorage.removeItem("accessToken");
         sessionStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
+        if (typeof document !== "undefined") {
+          document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";
         }
@@ -82,6 +88,9 @@ api.interceptors.response.use(
       sessionStorage.removeItem("accessToken");
       sessionStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
+      if (typeof document !== "undefined") {
+        document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
       if (typeof window !== "undefined" && window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
@@ -98,11 +107,20 @@ api.interceptors.response.use(
       }
       return Promise.reject(error);
     } else if (status === 403) {
-      // Suspended/deleted account — redirect to login
-      if (serverMsg?.includes("suspended") || serverMsg?.includes("deleted") || error.response.data?.code === "ACCOUNT_DELETED") {
+      // Suspended/deleted account or insufficient permissions — clear auth and redirect
+      if (
+        serverMsg?.includes("suspended") ||
+        serverMsg?.includes("deleted") ||
+        serverMsg?.includes("Insufficient permissions") ||
+        error.response.data?.code === "ACCOUNT_DELETED"
+      ) {
         sessionStorage.removeItem("accessToken");
         sessionStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
+        localStorage.removeItem("trustedDeviceToken");
+        if (typeof document !== "undefined") {
+          document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";
         }

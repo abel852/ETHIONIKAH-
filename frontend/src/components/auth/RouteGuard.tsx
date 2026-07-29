@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone", "/contact-support"];
 
@@ -14,22 +15,58 @@ function isAdminRoute(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
+// Routes that only regular users (not admins) should access
+const USER_ONLY_ROUTES = [
+  "/matches", "/discover", "/search", "/favorites", "/liked-interest",
+  "/messages", "/notifications", "/profile", "/preferences",
+  "/verification", "/health-info", "/settings", "/membership",
+];
+function isUserOnlyRoute(pathname: string): boolean {
+  return USER_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
+}
+
 export function RouteGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout, connectionError } = useAuth();
 
   const isPublic = isPublicRoute(pathname);
   const isAdmin = isAdminRoute(pathname);
+  const isUserOnly = isUserOnlyRoute(pathname);
 
   useEffect(() => {
-    if (!isLoading && !user && !isPublic) {
+    if (isLoading || isPublic) return;
+
+    // Server down — don't redirect, let the banner show
+    if (connectionError === "server_down") return;
+
+    // No user — clear cookie then redirect to login
+    if (!user) {
+      sessionStorage.removeItem("accessToken");
+      sessionStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      if (typeof document !== "undefined") {
+        document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
       window.location.href = "/login";
+      return;
     }
-    // Redirect non-admin users away from admin routes
-    if (!isLoading && user && isAdmin && user.role !== "admin") {
-      window.location.href = "/matches";
+
+    // Admin accessing user-only routes — block account and logout
+    if (isUserOnly && user.role === "admin") {
+      api.post("/auth/security-block", { reason: `Admin accessing user route: ${pathname}` }, { _noRedirect: true, _noToast: true } as any).catch(() => {});
+      logout();
+      window.location.href = "/login";
+      return;
     }
-  }, [isLoading, user, isPublic, isAdmin, pathname]);
+
+    // Non-admin accessing admin routes — block account and logout
+    if (isAdmin && user.role !== "admin") {
+      api.post("/auth/security-block", { reason: `User accessing admin route: ${pathname}` }, { _noRedirect: true, _noToast: true } as any).catch(() => {});
+      logout();
+      window.location.href = "/login";
+      return;
+    }
+  }, [isLoading, user, isPublic, isAdmin, isUserOnly, pathname, logout, connectionError]);
 
   // Show loading spinner while auth is being verified on protected routes
   if (!isPublic && isLoading) {
@@ -40,8 +77,8 @@ export function RouteGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  // Block rendering of protected pages when no user
-  if (!isPublic && !user) {
+  // Block rendering of protected pages when no user (but allow if server is down)
+  if (!isPublic && !user && connectionError !== "server_down") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-charcoal-900">
         <div className="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
@@ -55,7 +92,19 @@ export function RouteGuard({ children }: { children: ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-charcoal-900">
         <div className="text-center">
           <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Access Denied</p>
-          <p className="text-sm text-gray-500 mt-1">You do not have permission to view this page.</p>
+          <p className="text-sm text-gray-500 mt-1">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Block admin users from user-only pages
+  if (isUserOnly && user && user.role === "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-charcoal-900">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Access Denied</p>
+          <p className="text-sm text-gray-500 mt-1">Redirecting to login...</p>
         </div>
       </div>
     );

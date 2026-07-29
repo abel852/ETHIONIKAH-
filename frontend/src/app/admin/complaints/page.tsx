@@ -15,13 +15,22 @@ import { useI18n } from "@/context/I18nContext";
 const glass = "bg-white dark:bg-white/[0.06] backdrop-blur-xl border-charcoal-100 dark:border-white/10";
 
 type Complaint = any;
-type UserGroup = { user: { id: string; firstName: string; lastName: string; email: string; isActive: boolean; restrictions: { type: string; reason?: string; expiresAt?: string }[] }; complaints: Complaint[] };
+type UserGroup = { user: { id: string; firstName: string; lastName: string; email: string; isActive: boolean; restrictions: { type: string; reason?: string; expiresAt?: string }[] } | null; complaints: Complaint[] };
+
+const ANON_USER: UserGroup["user"] = {
+  id: "anonymous",
+  firstName: "Anonymous",
+  lastName: "",
+  email: "",
+  isActive: true,
+  restrictions: [],
+};
 
 function groupByUser(complaints: Complaint[]): UserGroup[] {
   const map: Record<string, UserGroup> = {};
   for (const c of complaints) {
-    const uid = c.userId;
-    if (!map[uid]) map[uid] = { user: c.user, complaints: [] };
+    const uid = c.userId || "anonymous";
+    if (!map[uid]) map[uid] = { user: c.user || ANON_USER, complaints: [] };
     map[uid].complaints.push(c);
   }
   return Object.values(map).sort((a, b) => {
@@ -35,7 +44,8 @@ function groupByUser(complaints: Complaint[]): UserGroup[] {
   });
 }
 
-function userStatusBadge(user: { isActive: boolean; restrictions: { type: string; reason?: string; expiresAt?: string }[] }) {
+function userStatusBadge(user: UserGroup["user"]) {
+  if (!user) return null;
   const ban = user.restrictions?.[0];
   if (!user.isActive) {
     if (ban?.expiresAt) {
@@ -84,7 +94,8 @@ export default function AdminComplaintsPage() {
 
   useEffect(() => {
     if (selectedUser) {
-      const updated = groupByUser(complaints).find((g) => g.user.id === selectedUser.user.id);
+      const currentId = selectedUser.user?.id || "anonymous";
+      const updated = groupByUser(complaints).find((g) => (g.user?.id || "anonymous") === currentId);
       setSelectedUser(updated || null);
     }
   }, [complaints]);
@@ -92,10 +103,11 @@ export default function AdminComplaintsPage() {
   const userGroups = groupByUser(complaints);
 
   const filtered = userGroups.filter((g) =>
-    !search || g.user.firstName?.toLowerCase().includes(search.toLowerCase()) ||
-    g.user.lastName?.toLowerCase().includes(search.toLowerCase()) ||
-    g.user.email?.toLowerCase().includes(search.toLowerCase()) ||
-    g.complaints.some((c) => c.subject?.toLowerCase().includes(search.toLowerCase()))
+    !search || g.user?.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+    g.user?.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+    g.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
+    g.complaints.some((c) => c.subject?.toLowerCase().includes(search.toLowerCase())) ||
+    g.complaints.some((c) => c.description?.toLowerCase().includes(search.toLowerCase()))
   );
 
   const stats = {
@@ -251,14 +263,14 @@ export default function AdminComplaintsPage() {
                 <ChevronLeft className="w-5 h-5 text-charcoal-500" />
               </button>
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {(selectedUser.user.firstName || "U").charAt(0)}
+                {(selectedUser.user?.firstName || "U").charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold text-charcoal-900 dark:text-white text-sm truncate">{selectedUser.user.firstName} {selectedUser.user.lastName}</p>
+                  <p className="font-semibold text-charcoal-900 dark:text-white text-sm truncate">{selectedUser.user ? `${selectedUser.user.firstName} ${selectedUser.user.lastName}` : "Anonymous User"}</p>
                   {(() => { const b = userStatusBadge(selectedUser.user); return b ? <span className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${b.color}`}><Ban className="w-2.5 h-2.5 inline mr-0.5" />{b.label}</span> : null; })()}
                 </div>
-                <p className="text-xs text-charcoal-400 truncate">{selectedUser.user.email}</p>
+                <p className="text-xs text-charcoal-400 truncate">{selectedUser.user?.email || "No email on file"}</p>
               </div>
               <span className="text-[11px] text-charcoal-400 shrink-0">{selectedUser.complaints.length} msg{selectedUser.complaints.length !== 1 ? "s" : ""}</span>
               {allResolved(selectedUser) ? (
@@ -371,7 +383,7 @@ export default function AdminComplaintsPage() {
             const last = group.complaints.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b);
             const status = userStatusBadge(group.user);
             return (
-              <div key={group.user.id}>
+              <div key={group.user?.id || "anonymous"}>
                 <Card
                   hover={false}
                   className={`${glass} cursor-pointer transition-all duration-200 hover:border-accent/30`}
@@ -379,12 +391,15 @@ export default function AdminComplaintsPage() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                      {(group.user.firstName || "U").charAt(0)}
+                      {(group.user?.firstName || "U").charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="font-semibold text-charcoal-900 dark:text-white text-sm truncate">
-                          {group.user.firstName} {group.user.lastName}
+                          {group.user ? `${group.user.firstName} ${group.user.lastName}` : "Anonymous User"}
+                          {!group.user && (
+                            <span className="text-[10px] text-charcoal-400 ml-1">(Contact Support)</span>
+                          )}
                         </span>
                         {group.complaints.some((c) => c.isPinned) && (
                           <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400 flex items-center gap-0.5">

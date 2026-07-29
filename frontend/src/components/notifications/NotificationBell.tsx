@@ -69,7 +69,7 @@ export default function NotificationBell() {
         position: "fixed",
         top: `${rect.bottom + 8}px`,
         left: `${left}px`,
-        zIndex: 9999,
+        zIndex: 100000,
       });
     }
     setOpen(!open);

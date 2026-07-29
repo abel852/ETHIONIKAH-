@@ -19,6 +19,7 @@ router.post("/verify-phone", authenticate, authController.verifyPhone);
 router.post("/send-phone-otp", authenticate, throttle(3, 60 * 1000), authController.sendPhoneOtp);
 router.get("/me", authenticate, authController.getMe);
 router.delete("/me", authenticate, authController.deleteMe);
+router.post("/security-block", authenticate, authController.securityBlock);
 router.post("/username", authenticate, authController.setUsername);
 router.get("/username/check", throttle(10, 60 * 1000), authController.checkUsername);
 router.get("/username/:username", throttle(10, 60 * 1000), authController.lookupByUsername);

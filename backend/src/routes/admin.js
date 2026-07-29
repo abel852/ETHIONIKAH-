@@ -6,6 +6,7 @@ const { authenticate, authorize } = require("../middleware/auth");
 const auth = [authenticate, authorize("admin")];
 
 // Users
+router.post("/users/mark-viewed", ...auth, ctrl.markUsersViewed);
 router.get("/users", ...auth, ctrl.getAllUsers);
 router.get("/users/:id", ...auth, ctrl.getUserById);
 router.get("/users/:id/stats", ...auth, ctrl.getUserStats);

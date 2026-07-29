@@ -577,7 +577,18 @@ const resetPassword = async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash, resetToken: null, resetTokenExpiry: null, tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash,
+        resetToken: null,
+        resetTokenExpiry: null,
+        tokenVersion: { increment: 1 },
+        twoFactorEnabled: false,
+        googleAuthSecret: null,
+        twoFactorFailedAttempts: 0,
+        twoFactorLockedUntil: null,
+        twoFactorPermanentlyLocked: false,
+        backupCodes: null,
+      },
     });
 
     // Invalidate auth cache so old sessions are rejected immediately
@@ -817,6 +828,47 @@ const deleteMe = async (req, res) => {
   }
 };
 
+// Security violation — block and soft-delete account immediately
+// Called when a user attempts cross-role access (privilege escalation)
+const securityBlock = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: "Account not found" });
+
+    const reason = req.body.reason || "Cross-role access violation — privilege escalation attempt";
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+        tokenVersion: { increment: 1 },
+        isFlaggedForReview: true,
+      },
+    });
+
+    // Create a restriction record
+    await prisma.userRestriction.create({
+      data: {
+        userId,
+        type: "ban",
+        reason: `SECURITY: ${reason}`,
+        createdBy: userId,
+      },
+    }).catch(() => {});
+
+    // Invalidate auth cache so all sessions are rejected immediately
+    try { require("../middleware/auth").invalidateAuthCache(userId); } catch {}
+
+    await logAudit({ userId, action: "SECURITY_BLOCK", details: reason });
+    res.json({ message: "Account blocked due to security violation" });
+  } catch (error) {
+    console.error("Security block error:", error);
+    res.status(500).json({ error: "Failed to block account" });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -834,4 +886,5 @@ module.exports = {
   checkUsername,
   lookupByUsername,
   deleteMe,
+  securityBlock,
 };

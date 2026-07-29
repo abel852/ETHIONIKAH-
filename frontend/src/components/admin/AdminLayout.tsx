@@ -180,6 +180,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return pathname.startsWith(href + "/") || pathname === href;
   };
 
+  // Security: if a non-admin somehow reaches AdminLayout, block account and logout immediately
+  useEffect(() => {
+    if (!user) return;
+    if (user.role !== "admin") {
+      import("@/lib/api").then(({ default: api }) => {
+        api.post("/auth/security-block", { reason: `Non-admin accessing AdminLayout: ${pathname}` }, { _noRedirect: true, _noToast: true } as any).catch(() => {});
+      });
+      logout();
+      window.location.href = "/login";
+      return;
+    }
+  }, [user, logout, pathname]);
+
   // Redirect non-super-admins away from pages they don't have permission for
   useEffect(() => {
     if (!user || user.role !== "admin") return;
@@ -462,15 +475,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         {/* Top bar */}
         <header
-          className="h-16 flex items-center justify-between px-4 lg:px-6 shrink-0"
+          className="h-16 flex items-center justify-between px-4 lg:px-6 shrink-0 relative"
           style={{
             background: d
               ? `linear-gradient(180deg, ${s.sidebar} 0%, ${s.surface} 100%)`
               : "rgba(255,255,255,0.8)",
-            backdropFilter: "blur(12px)",
             boxShadow: d
               ? `0 1px 0 rgba(212,175,55,0.12), 0 4px 20px rgba(0,0,0,0.3)`
               : "0 1px 3px rgba(0,0,0,0.06)",
+            zIndex: 60,
           }}
         >
           <div className="flex items-center gap-3">
