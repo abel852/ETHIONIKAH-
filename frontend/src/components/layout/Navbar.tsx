@@ -83,7 +83,7 @@ export default function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
         scrolled
-          ? "bg-white/80 backdrop-blur-xl border-b border-charcoal-100/50 shadow-soft"
+          ? "bg-transparent backdrop-blur-2xl border-b border-accent/10"
           : "bg-transparent"
       )}
     >
@@ -91,8 +91,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link href="/" className="flex items-center gap-2 group">
             <Image src="/images/logo.png" alt="Ethio Nikah" width={48} height={48} className="rounded-xl border-2 border-accent ring-2 ring-charcoal-900 transition-transform duration-300 group-hover:scale-105" />
-            <span className="font-cursive font-bold text-2xl text-charcoal-900 [-webkit-text-stroke:0.5px_#D4AF37]">
-              Ethio <span className="text-accent [-webkit-text-stroke:0.5px_#111]">Nikah</span>
+            <span className="font-cursive font-bold text-2xl text-white [-webkit-text-stroke:0.5px_#D4AF37]">
+              Ethio <span className="text-accent [-webkit-text-stroke:0.5px_#fff]">Nikah</span>
             </span>
           </Link>
 
@@ -102,8 +102,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative font-bold text-base font-cursive transition-colors after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full",
-                  scrolled ? "text-charcoal-600 hover:text-charcoal-900" : "text-white/80 hover:text-white"
+                  "relative font-bold text-xl font-cursive transition-colors after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full text-white [-webkit-text-stroke:0.6px_#D4AF37] hover:text-accent"
                 )}
               >
                 {link.label}
@@ -133,13 +132,13 @@ export default function Navbar() {
                   <Button
                     variant="ghost"
                     size="md"
-                    className={cn("font-cursive font-bold text-lg px-6 py-2.5 transition-all duration-300", scrolled ? "" : "text-white/90 hover:text-white hover:bg-white/10")}
+                    className={cn("font-cursive font-bold text-lg px-6 py-2.5 transition-all duration-300 text-white [-webkit-text-stroke:0.4px_#D4AF37] hover:text-accent")}
                   >
                     {t('nav.signIn')}
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="primary" size="md" className="font-cursive font-bold text-lg px-6 py-2.5 shadow-glow hover:shadow-glow-lg transition-shadow duration-300">{t('nav.getStarted')}</Button>
+                  <Button variant="primary" size="md" className={cn("font-cursive font-bold text-lg px-6 py-2.5 shadow-glow hover:shadow-glow-lg transition-shadow duration-300", scrolled && "[-webkit-text-stroke:0.4px_#fff]")}>{t('nav.getStarted')}</Button>
                 </Link>
               </>
             )}
