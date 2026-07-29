@@ -3,6 +3,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { logAudit } = require("../utils/auditLogger");
 const { createNotification } = require("../utils/notification");
+const { emitNewMessage } = require("../utils/messageSocket");
 const { invalidateWeightsCache } = require("./matchController");
 
 // === USER MANAGEMENT ===
@@ -745,13 +746,12 @@ exports.sendUserMessage = async (req, res) => {
     const message = await prisma.message.create({
       data: { senderId: req.user.userId, receiverId, content },
       include: {
-        sender: { select: { id: true, firstName: true, lastName: true } },
+        sender: { select: { id: true, firstName: true, lastName: true, role: true } },
         receiver: { select: { id: true, firstName: true, lastName: true } },
       },
     });
-    await prisma.notification.create({
-      data: { userId: receiverId, type: "admin_message", title: "New message from admin", body: content },
-    });
+    await createNotification({ userId: receiverId, type: "admin_message", title: "New message from admin", body: content });
+    emitNewMessage(message, receiverId);
     await logAudit({ adminId: req.user.userId, action: "send_message", resource: "user", resourceId: receiverId });
     res.status(201).json({ message });
   } catch (error) {
@@ -850,8 +850,8 @@ exports.seedDefaults = async (req, res) => {
     // Seed membership plans
     const plans = [
       { key: "free", name: "Free Membership", description: "Basic access - browse and receive messages", price: 0, currency: "ETB", durationDays: 0, planType: "free", features: ["create_profile", "upload_photos", "browse_profiles", "receive_messages", "limited_daily_profiles"], isActive: true, sortOrder: 0 },
-      { key: "gold", name: "Gold Membership", description: "Unlimited messaging and advanced features", price: 2400, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges"], isActive: true, sortOrder: 1 },
-      { key: "platinum", name: "Platinum Membership", description: "All Gold benefits plus VIP features", price: 4800, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges", "featured_placement", "highest_search_ranking", "vip_badge", "personalized_matches", "vip_support", "early_access"], isActive: true, sortOrder: 2 },
+      { key: "gold", name: "Gold Membership", description: "Unlimited messaging and advanced features (no polygamy access)", price: 2400, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges"], isActive: true, sortOrder: 1 },
+      { key: "platinum", name: "Platinum Membership", description: "All Gold benefits plus polygamy chat, last seen visibility, and VIP features", price: 4800, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges", "polygamy_chat", "last_seen_visibility", "featured_placement", "highest_search_ranking", "vip_badge", "personalized_matches", "vip_support", "early_access"], isActive: true, sortOrder: 2 },
       { key: "verification", name: "Identity Verification", description: "One-time verification fee for verified badge", price: 300, currency: "ETB", durationDays: 0, planType: "verification", features: ["verified_badge", "increased_trust", "higher_visibility"], isActive: true, sortOrder: 3 },
       { key: "boost", name: "Profile Boost", description: "7-day profile boost for maximum exposure", price: 100, currency: "ETB", durationDays: 7, planType: "boost", features: ["featured_placement", "top_search_ranking", "increased_exposure"], isActive: true, sortOrder: 4 },
     ];

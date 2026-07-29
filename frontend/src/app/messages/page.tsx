@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Send, MoreVertical, ChevronLeft, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download } from "lucide-react";
+import { Search, Send, MoreVertical, ChevronLeft, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
 import { Input, Button, Avatar } from "@/components/common";
 import { useMessageStore } from "@/store/messages";
@@ -33,6 +33,7 @@ function MessagesContent() {
   const fetchConversations = store.fetchConversations;
   const fetchMessages = store.fetchMessages;
   const sendMessage = store.sendMessage;
+  const editMessage = store.editMessage;
   const deleteMessage = store.deleteMessage;
   const deleteConversation = store.deleteConversation;
   const blockUser = store.blockUser;
@@ -67,6 +68,8 @@ function MessagesContent() {
   const [urlUsername, setUrlUsername] = useState<string | null>(null);
   const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imagePreview, setImagePreview] = useState<File | null>(null);
@@ -421,6 +424,32 @@ function MessagesContent() {
     await deleteMessage(msgId, delFor);
     setMenuMsgId(null);
   }, [deleteMessage]);
+
+  const handleEditClick = useCallback((msg: Message) => {
+    const rawContent = msg.content?.startsWith("IMG:") || msg.content?.startsWith("FILE:") ? "" : (msg.content || "");
+    setEditingMsgId(msg.id);
+    setEditText(rawContent);
+    setMenuMsgId(null);
+  }, []);
+
+  const handleEditSubmit = useCallback(async () => {
+    if (!editingMsgId || !editText.trim()) return;
+    try {
+      await editMessage(editingMsgId, editText.trim());
+      setEditingMsgId(null);
+      setEditText("");
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.error || "Failed to edit message";
+      setToastError(true);
+      setToast(errMsg);
+      setTimeout(() => { setToast(null); setToastError(false); }, 5000);
+    }
+  }, [editingMsgId, editText, editMessage]);
+
+  const handleEditCancel = useCallback(() => {
+    setEditingMsgId(null);
+    setEditText("");
+  }, []);
 
   const handleMsgTouchStart = useCallback((e: React.TouchEvent, msg: Message) => {
     const touch = e.touches[0];
@@ -911,7 +940,7 @@ function MessagesContent() {
                       </div>
                     </div>
                   ) : (
-                    [...messages].reverse().map((msg) => {
+                    [...messages].map((msg) => {
                       const otherId = activeConversation;
                       const isOwn = otherId ? msg.senderId !== otherId : true;
                       const otherAvatar = mediaUrl(activeConv?.avatar);
@@ -925,15 +954,15 @@ function MessagesContent() {
                         <div
                           key={msg.id}
                           ref={(el) => { messageRefs.current[msg.id] = el; }}
-                          className={`relative group flex items-end gap-1.5 mb-2 flex-row rounded-2xl transition-all duration-500 ${isOwn ? "justify-end flex-row-reverse" : "justify-start"} ${highlightMsgId === msg.id ? "bg-amber-400/20 dark:bg-amber-400/10 ring-2 ring-amber-400/50" : ""}`}
+                          className={`relative group flex items-end mb-2 px-6 rounded-2xl transition-all duration-500 ${isOwn ? "justify-end" : "justify-start"} ${highlightMsgId === msg.id ? "bg-amber-400/20 dark:bg-amber-400/10 ring-2 ring-amber-400/50" : ""}`}
                           onTouchStart={(e) => handleMsgTouchStart(e, msg)}
                           onTouchMove={(e) => handleMsgTouchMove(e, msg)}
                           onTouchEnd={handleMsgTouchEnd}
                         >
-                          {/* 3-dots menu button - left for other, right for own (Telegram style) */}
+                          {/* 3-dots menu button - absolutely positioned so it doesn't affect alignment */}
                           <button
                             onClick={() => setMenuMsgId(menuMsgId === msg.id ? null : msg.id)}
-                            className={`shrink-0 self-center p-1.5 rounded-full transition-all ${menuMsgId === msg.id ? "opacity-100" : "opacity-40 hover:opacity-100"} ${isGoldChat ? "hover:bg-amber-900/40" : "hover:bg-charcoal-100 dark:hover:bg-charcoal-800"}`}
+                            className={`absolute top-1/2 -translate-y-1/2 z-30 shrink-0 p-1.5 rounded-full transition-all ${menuMsgId === msg.id ? "opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"} ${isOwn ? "right-0" : "left-0"} ${isGoldChat ? "hover:bg-amber-900/40" : "hover:bg-charcoal-100 dark:hover:bg-charcoal-800"}`}
                             title="More"
                           >
                             <MoreVertical className={`w-4 h-4 ${isGoldChat ? "text-amber-400/70" : "text-charcoal-400 dark:text-charcoal-500"}`} />
@@ -941,10 +970,15 @@ function MessagesContent() {
 
                           {/* Context menu */}
                           {menuMsgId === msg.id && (
-                            <div ref={menuRef} className={`absolute top-8 z-50 rounded-2xl shadow-2xl border-2 py-1.5 min-w-[175px] overflow-hidden ${isGoldChat ? "bg-black border-amber-600/50" : "bg-white dark:bg-charcoal-800 border-charcoal-300 dark:border-charcoal-600"} ${isOwn ? "right-8" : "left-8"}`}>
+                            <div ref={menuRef} className={`absolute top-8 z-50 rounded-2xl shadow-2xl border-2 py-1.5 min-w-[175px] overflow-hidden ${isGoldChat ? "bg-black border-amber-600/50" : "bg-white dark:bg-charcoal-800 border-charcoal-300 dark:border-charcoal-600"} ${isOwn ? "right-6" : "left-6"}`}>
                               <button onClick={() => { setReplyTo(msg); setMenuMsgId(null); }} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors ${isGoldChat ? "text-amber-200/80 hover:bg-amber-900/40" : "text-charcoal-700 dark:text-charcoal-300 hover:bg-charcoal-100 dark:hover:bg-charcoal-700/50"}`}>
                                 <Reply className="w-4 h-4 shrink-0" /> Reply
                               </button>
+                              {isOwn && !msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
+                                <button onClick={() => handleEditClick(msg)} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors ${isGoldChat ? "text-amber-200/80 hover:bg-amber-900/40" : "text-charcoal-700 dark:text-charcoal-300 hover:bg-charcoal-100 dark:hover:bg-charcoal-700/50"}`}>
+                                  <Pencil className="w-4 h-4 shrink-0" /> Edit
+                                </button>
+                              )}
                               <button onClick={() => handleDelete(msg.id, "me")} className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm transition-colors ${isGoldChat ? "text-amber-200/80 hover:bg-amber-900/40" : "text-charcoal-700 dark:text-charcoal-300 hover:bg-charcoal-100 dark:hover:bg-charcoal-700/50"}`}>
                                 <Trash2 className="w-4 h-4 shrink-0" /> Delete for me
                               </button>
@@ -1036,10 +1070,37 @@ function MessagesContent() {
                                      )}
                                    </div>
                                 ) : msg.content ? (
-                                  <p className="px-4 pt-2.5 pb-1 leading-relaxed font-medium">{msg.content}</p>
+                                  editingMsgId === msg.id ? (
+                                    <div className="px-3 pt-2.5 pb-2 min-w-[200px]">
+                                      <textarea
+                                        autoFocus
+                                        value={editText}
+                                        onChange={(e) => setEditText(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditSubmit(); }
+                                          if (e.key === "Escape") handleEditCancel();
+                                        }}
+                                        className={`w-full resize-none rounded-xl px-3 py-2 text-sm outline-none border-2 ${isGoldChat ? "bg-black/20 text-white border-amber-600/50 focus:border-amber-500" : "bg-white dark:bg-charcoal-900 text-charcoal-900 dark:text-white border-charcoal-200 dark:border-charcoal-600 focus:border-accent"}`}
+                                        rows={2}
+                                      />
+                                      <div className="flex items-center justify-end gap-2 mt-1.5">
+                                        <button onClick={handleEditCancel} className={`text-xs px-2.5 py-1 rounded-lg ${isGoldChat ? "text-amber-200/70 hover:bg-amber-900/40" : "text-charcoal-500 hover:bg-charcoal-100 dark:hover:bg-charcoal-700"}`}>
+                                          Cancel
+                                        </button>
+                                        <button onClick={handleEditSubmit} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${isGoldChat ? "bg-amber-500 text-charcoal-900 hover:bg-amber-400" : "bg-accent text-white hover:bg-accent/90"}`}>
+                                          Save
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="px-4 pt-2.5 pb-1 leading-relaxed font-medium">{msg.content}</p>
+                                  )
                                 ) : null;
                               })()}
                               <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+                                {msg.isEdited && (
+                                  <span className={`text-[10px] italic ${isOwn ? "text-charcoal-700/60" : "text-charcoal-500 dark:text-charcoal-400"}`}>edited</span>
+                                )}
                                 <p className={`text-xs font-semibold ${isOwn ? (isGoldChat ? "text-charcoal-800" : isSoftChat ? "text-charcoal-800" : "text-charcoal-800") : "text-charcoal-600 dark:text-charcoal-300"}`}>
                                   {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                                 </p>

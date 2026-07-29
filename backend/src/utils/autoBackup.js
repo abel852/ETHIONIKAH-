@@ -3,7 +3,6 @@ const { exec } = require("child_process");
 const { promisify } = require("util");
 const fs = require("fs");
 const path = require("path");
-const { sendEmail } = require("./email");
 const { uploadBackup: uploadToS3, deleteS3Backup, isS3Configured } = require("./backupStorage");
 
 const execAsync = promisify(exec);
@@ -79,15 +78,6 @@ async function createAutoBackup() {
     // Clean up old auto-backups (keep last MAX_AUTO_BACKUPS)
     cleanupOldAutoBackups();
 
-    // Send email notification if BACKUP_EMAIL is set
-    const backupEmail = process.env.BACKUP_EMAIL;
-    if (backupEmail) {
-      const attachFile = !s3Uploaded && fs.existsSync(filepath);
-      await sendBackupEmail(backupEmail, filename, sizeMB, attachFile ? filepath : null, s3Uploaded);
-    } else {
-      console.log("[AUTO-BACKUP] BACKUP_EMAIL not set — skipping email notification");
-    }
-
     return { success: true, filename, sizeMB };
   } catch (error) {
     // Clean up temp SQL file on error
@@ -95,16 +85,6 @@ async function createAutoBackup() {
       try { fs.unlinkSync(tempSqlPath); } catch {}
     }
     console.error(`[AUTO-BACKUP] Failed: ${error.message}`);
-
-    // Send failure email if BACKUP_EMAIL is set
-    const backupEmail = process.env.BACKUP_EMAIL;
-    if (backupEmail) {
-      try {
-        await sendBackupFailureEmail(backupEmail, error.message);
-      } catch (e) {
-        console.error(`[AUTO-BACKUP] Failed to send error email: ${e.message}`);
-      }
-    }
 
     return { success: false, error: error.message };
   }
@@ -137,60 +117,6 @@ function cleanupOldAutoBackups() {
   }
 }
 
-async function sendBackupEmail(to, filename, sizeMB, filepath, s3Uploaded) {
-  const date = new Date().toLocaleString();
-  const locationText = s3Uploaded ? "Cloud storage (S3/R2)" : `backups/${filename}`;
-  const attachmentText = filepath ? "<p>The backup file is attached to this email and also stored in cloud storage.</p>" : "<p>The backup has been uploaded to cloud storage (S3/R2). Contact your admin to download it from the backup management panel.</p>";
-  const html = `
-    <p>A daily automatic full backup has been completed successfully.</p>
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:0 0 8px;font-weight:600;color:#15803d;">Backup Details</p>
-      <p style="margin:0 0 4px;color:#444;"><strong>File:</strong> ${filename}</p>
-      <p style="margin:0 0 4px;color:#444;"><strong>Size:</strong> ${sizeMB} MB</p>
-      <p style="margin:0 0 4px;color:#444;"><strong>Date:</strong> ${date}</p>
-      <p style="margin:0;color:#444;"><strong>Location:</strong> ${locationText}</p>
-    </div>
-    ${attachmentText}
-  `;
-
-  const emailParams = {
-    to,
-    subject: `Daily Backup Successful — ${filename}`,
-    text: `Daily full backup completed successfully. File: ${filename}, Size: ${sizeMB} MB, Date: ${date}, Location: ${locationText}`,
-    html,
-  };
-
-  if (filepath) {
-    emailParams.attachments = [{ filename, path: filepath }];
-  }
-
-  await sendEmail(emailParams);
-
-  console.log(`[AUTO-BACKUP] Success email sent to ${to}`);
-}
-
-async function sendBackupFailureEmail(to, errorMessage) {
-  const date = new Date().toLocaleString();
-  const html = `
-    <p style="color:#dc2626;font-weight:600;">The daily automatic database backup has failed.</p>
-    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:0 0 8px;font-weight:600;color:#dc2626;">Error Details</p>
-      <p style="margin:0 0 4px;color:#444;"><strong>Date:</strong> ${date}</p>
-      <p style="margin:0;color:#444;"><strong>Error:</strong> ${errorMessage}</p>
-    </div>
-    <p>Please check the server logs and database configuration to resolve this issue.</p>
-  `;
-
-  await sendEmail({
-    to,
-    subject: `URGENT: Daily Backup FAILED — ${date}`,
-    text: `Daily database backup FAILED on ${date}. Error: ${errorMessage}`,
-    html,
-  });
-
-  console.log(`[AUTO-BACKUP] Failure email sent to ${to}`);
-}
-
 function startAutoBackupScheduler() {
   // Run at midnight (00:00) every day
   const schedule = process.env.BACKUP_CRON || "0 0 * * *";
@@ -207,11 +133,6 @@ function startAutoBackupScheduler() {
   });
 
   console.log(`[AUTO-BACKUP] Scheduler started — runs daily at cron: "${schedule}"`);
-  if (process.env.BACKUP_EMAIL) {
-    console.log(`[AUTO-BACKUP] Email notifications will be sent to: ${process.env.BACKUP_EMAIL}`);
-  } else {
-    console.log("[AUTO-BACKUP] No BACKUP_EMAIL set — email notifications disabled");
-  }
 }
 
 module.exports = {

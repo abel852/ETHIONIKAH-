@@ -13,6 +13,9 @@ const typeIcons: Record<string, string> = {
   verification: "\uD83D\uDEE1\uFE0F",
   system: "\uD83D\uDD14",
   admin: "\uD83D\uDD14",
+  admin_message: "\uD83D\uDCAC",
+  admin_broadcast: "\uD83D\uDD14",
+  payment: "\uD83D\uDCB3",
 };
 
 export default function NotificationBell() {

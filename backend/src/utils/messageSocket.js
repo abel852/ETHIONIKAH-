@@ -22,6 +22,13 @@ function emitMessageRead(messageId, conversationId, userId) {
   io.to(`user:${userId}`).emit("message_read", { messageId, conversationId });
 }
 
+function emitMessageEdited(message, userIds) {
+  if (!io) return;
+  userIds.forEach((uid) => {
+    io.to(`user:${uid}`).emit("message_edited", message);
+  });
+}
+
 function emitTyping(conversationId, userId, isTyping) {
   if (!io) return;
   io.to(`user:${userId}`).emit("typing", { conversationId, isTyping });
@@ -47,4 +54,4 @@ function emitVerificationStatus(userId, verification) {
   io.to(`user:${userId}`).emit("verification_status_changed", verification);
 }
 
-module.exports = { setSocket, emitNewMessage, emitMessageDeleted, emitMessageRead, emitTyping, emitOnlineStatus, emitNotification, emitPaymentStatus, emitVerificationStatus };
+module.exports = { setSocket, emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited, emitTyping, emitOnlineStatus, emitNotification, emitPaymentStatus, emitVerificationStatus };

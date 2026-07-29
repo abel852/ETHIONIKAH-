@@ -31,7 +31,7 @@ export default function UserProfilePage() {
       .then(({ data }) => {
         setProfile(data.profile);
         // Fetch active chat partners
-        api.get(`/messages/active-partners/${params.id}`)
+        api.get(`/messages/active-partners/${params.id}`, { _noToast: true } as any)
           .then(({ data }) => setChatPartners(data.partners || []))
           .catch(() => setChatPartners([]));
       })
@@ -259,13 +259,19 @@ export default function UserProfilePage() {
             </h3>
             {chatPartners.length > 0 ? (
               <div className="flex items-center gap-2 flex-wrap">
-                {chatPartners.map((partner) => (
+                {chatPartners.map((partner) => {
+                  const isMe = partner.id === user?.id;
+                  return (
                   <div
                     key={partner.id}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-charcoal-50 dark:bg-charcoal-800 border border-charcoal-100 dark:border-charcoal-700"
                   >
                     <div className="relative">
-                      {partner.photo ? (
+                      {isMe ? (
+                        <div className="w-6 h-6 rounded-full bg-accent/30 flex items-center justify-center text-[10px] font-bold text-accent">
+                          You
+                        </div>
+                      ) : partner.photo ? (
                         <img src={mediaUrl(partner.photo)} alt="" className="w-6 h-6 rounded-full object-cover" />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
@@ -279,10 +285,11 @@ export default function UserProfilePage() {
                       )}
                     </div>
                     <span className="text-xs font-medium text-charcoal-700 dark:text-charcoal-300">
-                      {partner.firstName} {partner.lastName?.[0]}.
+                      {isMe ? "You" : `${partner.firstName} ${partner.lastName?.[0]}.`}
                     </span>
                   </div>
-                ))}
+                  );
+                })}
                 <span className="text-[11px] text-charcoal-400 dark:text-charcoal-500 ml-1">
                   {chatPartners.length} active {chatPartners.length === 1 ? "chat" : "chats"}
                 </span>

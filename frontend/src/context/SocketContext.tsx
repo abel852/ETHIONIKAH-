@@ -26,16 +26,19 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
   const addMessage = useMessageStore((s) => s.addMessage);
   const removeMessage = useMessageStore((s) => s.removeMessage);
+  const updateMessage = useMessageStore((s) => s.updateMessage);
   const setMessageRead = useMessageStore((s) => s.setMessageRead);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
 
   // Refs to keep latest store functions without triggering effect re-runs
   const addMessageRef = useRef(addMessage);
   const removeMessageRef = useRef(removeMessage);
+  const updateMessageRef = useRef(updateMessage);
   const setMessageReadRef = useRef(setMessageRead);
   const fetchUnreadCountRef = useRef(fetchUnreadCount);
   addMessageRef.current = addMessage;
   removeMessageRef.current = removeMessage;
+  updateMessageRef.current = updateMessage;
   setMessageReadRef.current = setMessageRead;
   fetchUnreadCountRef.current = fetchUnreadCount;
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
@@ -96,6 +99,23 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         const store = useMessageStore.getState();
         // Ignore messages from blocked users
         if (store.blockedUsers?.includes(msg.senderId)) return;
+
+        // Admin messages: don't show message badge, only notification bell
+        if (msg.sender?.role === "admin") {
+          fetchUnreadCountRef.current();
+          if (store.activeConversation === msg.senderId) {
+            addMessageRef.current(msg);
+          }
+          setNotif({ name: senderName, content: preview });
+          setTimeout(() => setNotif(null), 3000);
+          playMessageSound("receive");
+          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+            new Notification(`Message from ${senderName}`, { body: preview, icon: "/favicon.ico" });
+          }
+          return;
+        }
+
+        // Regular user messages: show message badge
         if (store.activeConversation === msg.senderId) {
           addMessageRef.current(msg);
         } else {
@@ -123,6 +143,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     socket.on("message_read", ({ messageId }) => {
       setMessageReadRef.current(messageId);
+    });
+
+    socket.on("message_edited", (message) => {
+      updateMessageRef.current(message);
     });
 
     socket.on("typing", ({ conversationId, isTyping }) => {

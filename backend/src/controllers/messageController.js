@@ -1,5 +1,5 @@
 const prisma = require("../config/database");
-const { emitNewMessage, emitMessageDeleted, emitMessageRead } = require("../utils/messageSocket");
+const { emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited } = require("../utils/messageSocket");
 const { ensureContactCredits } = require("./membershipPlanController");
 
 const blockedWords = [
@@ -186,9 +186,10 @@ async function checkAndDeductCredit(senderId, isNew) {
 }
 
 /**
- * Enforce one active conversation at a time for free users.
+ * Enforce one active conversation at a time for free and Gold users.
  * - Accepted matches bypass the rule.
- * - Gold/Platinum subscriptions bypass the rule.
+ * - Platinum subscriptions bypass the rule (polygamy access).
+ * - Gold subscriptions do NOT bypass — Gold users need permission for multiple conversations.
  * - Contact credits do NOT bypass the one-conversation rule — they only
  *   allow messaging unmatched users (the credit is consumed per new conversation).
  * - Polygamy: if sender has approved permission from current partner(s), allowed.
@@ -261,12 +262,13 @@ async function checkOneConversationRule(senderId, receiverId) {
     });
     if (match) return { allowed: true };
 
-    // Gold/Platinum subscription — bypass one-conversation rule
+    // Platinum subscription — bypass one-conversation rule (polygamy access)
+    // Gold members still need permission for multiple conversations
     const senderSubscription = await prisma.subscription.findFirst({
       where: {
         userId: senderId,
         status: "active",
-        planType: { in: ["gold", "platinum"] },
+        planType: "platinum",
         endDate: { gte: new Date() },
       },
       select: { planType: true },
@@ -378,7 +380,7 @@ const sendMessage = async (req, res) => {
         replyToId: replyToId || null,
       },
       include: {
-        sender: { select: { id: true, firstName: true, lastName: true } },
+        sender: { select: { id: true, firstName: true, lastName: true, role: true } },
         receiver: { select: { id: true, firstName: true, lastName: true } },
         replyTo: { select: { id: true, content: true, senderId: true, sender: { select: { id: true, firstName: true, lastName: true } } } },
       },
@@ -419,7 +421,7 @@ const getConversation = async (req, res) => {
         receiver: { select: { id: true, firstName: true, lastName: true, username: true } },
         replyTo: { select: { id: true, content: true, senderId: true, sender: { select: { id: true, firstName: true, lastName: true, username: true } } } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
       take: limit,
     });
 
@@ -505,6 +507,13 @@ const getConversations = async (req, res) => {
     const conversations = {};
     const otherUserIds = new Set();
 
+    // Check if the requesting user has Platinum membership (can see last seen)
+    const requesterSub = await prisma.subscription.findFirst({
+      where: { userId, status: "active", planType: "platinum", endDate: { gte: new Date() } },
+      select: { planType: true },
+    });
+    const canSeeLastSeen = !!requesterSub;
+
     // First pass: collect unique other-user IDs and build conversation list
     for (const msg of messages) {
       const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
@@ -518,7 +527,7 @@ const getConversations = async (req, res) => {
         const membershipPlan = otherUser.subscriptions?.length > 0 ? otherUser.subscriptions[0].planType : null;
         delete otherUser.subscriptions;
         conversations[otherUserId] = {
-          user: { ...otherUser, lastLoginAt: otherUser.lastLoginAt || undefined, membershipPlan },
+          user: { ...otherUser, lastLoginAt: canSeeLastSeen ? (otherUser.lastLoginAt || undefined) : undefined, membershipPlan },
           lastMessage: msg,
           unreadCount: 0,
           isOnline: false,
@@ -584,6 +593,65 @@ const markAsRead = async (req, res) => {
   } catch (error) {
     console.error("Mark as read error:", error);
     res.status(500).json({ error: "Failed to mark message as read" });
+  }
+};
+
+const editMessage = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { messageId } = req.params;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Message content cannot be empty" });
+    }
+
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    if (message.senderId !== userId) {
+      return res.status(403).json({ error: "You can only edit your own messages" });
+    }
+
+    if (message.deletedForSender || message.deletedForReceiver) {
+      return res.status(400).json({ error: "Cannot edit a deleted message" });
+    }
+
+    // Block contact info in edited messages
+    if (containsContactInfo(content || "")) {
+      return res.status(400).json({ error: "For your safety, sharing phone numbers, social media handles, or external links is not allowed." });
+    }
+
+    // Block profanity in edited messages
+    if (containsProfanity(content)) {
+      return res.status(400).json({ error: "Message contains inappropriate language and cannot be edited." });
+    }
+
+    const updated = await prisma.message.update({
+      where: { id: messageId },
+      data: {
+        content: content.trim(),
+        isEdited: true,
+        editedAt: new Date(),
+      },
+      include: {
+        sender: { select: { id: true, firstName: true, lastName: true, username: true } },
+        receiver: { select: { id: true, firstName: true, lastName: true, username: true } },
+        replyTo: { select: { id: true, content: true, senderId: true, sender: { select: { id: true, firstName: true, lastName: true, username: true } } } },
+      },
+    });
+
+    emitMessageEdited(updated, [message.senderId, message.receiverId]);
+
+    res.json({ message: "Message edited successfully", updatedMessage: updated });
+  } catch (error) {
+    console.error("Edit message error:", error);
+    res.status(500).json({ error: "Failed to edit message" });
   }
 };
 
@@ -903,42 +971,53 @@ const unblockUser = async (req, res) => {
 };
 
 // Get active chat partners for a specific user (public, for profile/match display)
+// Only counts two-way conversations where both users messaged each other within the last 7 days
 const getActiveChatPartners = async (req, res) => {
   try {
     const { userId } = req.params;
+    const activeSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    // Find all users this person has non-deleted messages with
-    const sentMessages = await prisma.message.findMany({
-      where: { senderId: userId, deletedForSender: false },
+    // Step 1: Users that this person sent messages to recently
+    const sentRecent = await prisma.message.findMany({
+      where: {
+        senderId: userId,
+        createdAt: { gte: activeSince },
+      },
       select: { receiverId: true },
       distinct: ["receiverId"],
     });
+    const sentTo = new Set(sentRecent.map((m) => m.receiverId));
 
-    const receivedMessages = await prisma.message.findMany({
-      where: { receiverId: userId, deletedForReceiver: false },
+    // Step 2: Users that sent messages to this person recently
+    const receivedRecent = await prisma.message.findMany({
+      where: {
+        receiverId: userId,
+        createdAt: { gte: activeSince },
+      },
       select: { senderId: true },
       distinct: ["senderId"],
     });
+    const receivedFrom = new Set(receivedRecent.map((m) => m.senderId));
 
-    const partnerIds = Array.from(new Set([
-      ...sentMessages.map((m) => m.receiverId),
-      ...receivedMessages.map((m) => m.senderId),
-    ]));
+    // Step 3: Only keep partners where BOTH sides messaged (two-way conversation)
+    const partnerIds = [...sentTo].filter((id) => receivedFrom.has(id));
+
+    console.log(`[ActivePartners] userId=${userId} sentTo=${sentTo.size} receivedFrom=${receivedFrom.size} mutual=${partnerIds.length}`);
 
     if (partnerIds.length === 0) {
       return res.json({ partners: [], count: 0 });
     }
 
-    // Get partner details
+    // Step 4: Get partner details — exclude admin users
     const partners = await prisma.user.findMany({
-      where: { id: { in: partnerIds } },
+      where: { id: { in: partnerIds }, role: { not: "admin" } },
       select: {
         id: true,
         firstName: true,
         lastName: true,
         username: true,
         isVerified: true,
-        membershipPlan: true,
+        subscriptions: { where: { status: "active", endDate: { gte: new Date() } }, select: { planType: true }, take: 1 },
         profile: { select: { photos: true } },
       },
     });
@@ -950,7 +1029,7 @@ const getActiveChatPartners = async (req, res) => {
         lastName: p.lastName,
         username: p.username,
         isVerified: p.isVerified,
-        membershipPlan: p.membershipPlan,
+        membershipPlan: p.subscriptions?.length > 0 ? p.subscriptions[0].planType : null,
         photo: p.profile?.photos?.[0] || null,
       })),
       count: partners.length,
@@ -970,6 +1049,7 @@ module.exports = {
   getConversations,
   getActiveChatPartners,
   markAsRead,
+  editMessage,
   deleteMessage,
   blockUser,
   unblockUser,

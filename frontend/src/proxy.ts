@@ -12,7 +12,7 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone"];
+const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone", "/contact-support"];
 const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
 const adminRoutes = ["/admin"];
 

@@ -16,10 +16,11 @@ router.post("/admin", authenticate, requireActive, messageConcurrencyLimiter, me
 router.get("/conversations", authenticate, requireActive, messageController.getConversations);
 router.get("/conversation/:otherUserId", authenticate, requireActive, messageController.getConversation);
 router.put("/:messageId/read", authenticate, requireActive, messageController.markAsRead);
+router.put("/:messageId/edit", authenticate, requireActive, messageLimiter, messageController.editMessage);
 router.delete("/:messageId", authenticate, requireActive, messageController.deleteMessage);
 router.post("/block", authenticate, requireActive, validate(blockUserSchema), messageController.blockUser);
 router.post("/unblock", authenticate, requireActive, validate(blockUserSchema), messageController.unblockUser);
 router.post("/conversation/:otherUserId/delete", authenticate, requireActive, validate(deleteConversationSchema), messageController.deleteConversation);
-router.get("/active-partners/:userId", authenticate, requireActive, messageController.getActiveChatPartners);
+router.get("/active-partners/:userId", authenticate, messageController.getActiveChatPartners);
 
 module.exports = router;

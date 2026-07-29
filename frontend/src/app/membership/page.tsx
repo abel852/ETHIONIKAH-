@@ -93,8 +93,18 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   { feature: "Contact information", free: false, ppc: "After unlock", gold: "Unlimited", platinum: "Unlimited" },
   { feature: "Advanced search filters", free: false, ppc: false, gold: true, platinum: true },
   { feature: "Messaging", free: "Requires credits", ppc: "Credits per new contact", gold: "Unlimited", platinum: "Unlimited" },
+  { feature: "Multiple conversations", free: "Permission required", ppc: "Permission required", gold: "Permission required", platinum: "Without permission" },
+  { feature: "Polygamy chat", free: false, ppc: false, gold: false, platinum: true },
+  { feature: "Last seen visibility", free: false, ppc: false, gold: false, platinum: true },
   { feature: "Profile visitors", free: false, ppc: false, gold: "Full list", platinum: "Full list" },
   { feature: "Likes received", free: false, ppc: false, gold: "Full list", platinum: "Full list" },
+  { feature: "Priority profile visibility", free: false, ppc: false, gold: true, platinum: true },
+  { feature: "Featured profile placement", free: false, ppc: false, gold: false, platinum: true },
+  { feature: "Highest search ranking", free: false, ppc: false, gold: false, platinum: true },
+  { feature: "Verified VIP badge", free: false, ppc: false, gold: false, platinum: true },
+  { feature: "Personalized match recommendations", free: false, ppc: false, gold: false, platinum: true },
+  { feature: "VIP customer support", free: false, ppc: false, gold: false, platinum: true },
+  { feature: "Early access to new features", free: false, ppc: false, gold: false, platinum: true },
 ];
 
 function renderCell(value: CellValue) {
@@ -403,6 +413,46 @@ export default function MembershipPage() {
                   </div>
                 )}
 
+                {/* ─── BUY CONTACT CREDITS ─── */}
+                {creditPackages.length > 0 && (
+                  <div className="mb-10">
+                    <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white mb-1">Buy Contact Credits</h2>
+                    <p className="text-sm text-charcoal-500 dark:text-charcoal-400 mb-4">No subscription needed. Credits never expire.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {creditPackages.map((pkg) => (
+                        <div
+                          key={pkg.id}
+                          className="relative rounded-2xl border border-charcoal-100 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 p-5 text-center hover:shadow-elevated transition-all premium-shimmer"
+                        >
+                          {pkg.credits === 5 && (
+                            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-teal-500 text-white text-[10px] font-bold shadow-md">
+                              BEST VALUE
+                            </span>
+                          )}
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-3">
+                            <WalletIcon className="w-5 h-5 text-white" />
+                          </div>
+                          <p className="text-2xl font-bold text-charcoal-900 dark:text-white">{pkg.credits}</p>
+                          <p className="text-xs text-charcoal-400 mb-3">contact credit{pkg.credits === 1 ? "" : "s"}</p>
+                          <p className="text-lg font-bold text-teal-600 dark:text-teal-400 mb-3">{pkg.currency || "ETB"} {pkg.price.toLocaleString()}</p>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => handleSelectPlan({
+                              ...pkg, key: pkg.key || "pay_per_contact", name: pkg.name || `${pkg.credits} Credits`,
+                              currency: "ETB", period: "one-time", icon: WalletIcon, color: "text-teal-500",
+                              gradient: "from-teal-500 to-cyan-500", features: [`${pkg.credits} contact credits`], planType: "credit",
+                            } as Plan)}
+                          >
+                            Buy Now
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* ─── PLAN TIERS ─── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                   {/* Free */}
@@ -453,7 +503,7 @@ export default function MembershipPage() {
                     color="text-amber-500"
                     priceLabel={plans.find(p => p.key === "gold") ? `${plans.find(p => p.key === "gold")!.currency} ${plans.find(p => p.key === "gold")!.price.toLocaleString()}` : "ETB —"}
                     subLabel={plans.find(p => p.key === "gold")?.period || "per month"}
-                    highlights={["Everything in Pay-Per-Contact", "Unlimited browsing", "Unlimited messaging", "Advanced search filters", "See profile visitors", "See who liked you"]}
+                    highlights={["Everything in Pay-Per-Contact", "Unlimited browsing", "Unlimited messaging", "Advanced search filters", "See profile visitors", "See who liked you", "No contact credit charges"]}
                     isPopular
                     isCurrent={activeMembership.activePlan === "gold"}
                     isDisabled={activeMembership.isPremium && (activeMembership.activePlan === "gold" || activeMembership.activePlan === "platinum")}
@@ -472,7 +522,7 @@ export default function MembershipPage() {
                     color="text-purple-500"
                     priceLabel={plans.find(p => p.key === "platinum") ? `${plans.find(p => p.key === "platinum")!.currency} ${plans.find(p => p.key === "platinum")!.price.toLocaleString()}` : "ETB —"}
                     subLabel={plans.find(p => p.key === "platinum")?.period || "per month"}
-                    highlights={["Everything in Gold", "Priority profile listing", "Premium badge", "Unlimited everything", "See profile visitors", "See who liked you"]}
+                    highlights={["Everything in Gold", "Polygamy chat (no permission needed)", "Last seen visibility", "Featured profile placement", "Highest search ranking", "VIP badge", "Personalized matches", "VIP support", "Early access"]}
                     isCurrent={activeMembership.activePlan === "platinum"}
                     isDisabled={activeMembership.activePlan === "platinum"}
                     onSelect={() => {
@@ -517,46 +567,6 @@ export default function MembershipPage() {
                     </table>
                   </div>
                 </div>
-
-                {/* Credit packages quick-buy */}
-                {creditPackages.length > 0 && (
-                  <div className="mt-8">
-                    <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white mb-1">Buy Contact Credits</h2>
-                    <p className="text-sm text-charcoal-500 dark:text-charcoal-400 mb-4">No subscription needed. Credits never expire.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {creditPackages.map((pkg) => (
-                        <div
-                          key={pkg.id}
-                          className="relative rounded-2xl border border-charcoal-100 dark:border-charcoal-700 bg-white dark:bg-charcoal-800 p-5 text-center hover:shadow-elevated transition-all premium-shimmer"
-                        >
-                          {pkg.credits === 5 && (
-                            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-teal-500 text-white text-[10px] font-bold shadow-md">
-                              BEST VALUE
-                            </span>
-                          )}
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-3">
-                            <WalletIcon className="w-5 h-5 text-white" />
-                          </div>
-                          <p className="text-2xl font-bold text-charcoal-900 dark:text-white">{pkg.credits}</p>
-                          <p className="text-xs text-charcoal-400 mb-3">contact credit{pkg.credits === 1 ? "" : "s"}</p>
-                          <p className="text-lg font-bold text-teal-600 dark:text-teal-400 mb-3">{pkg.currency || "ETB"} {pkg.price.toLocaleString()}</p>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="w-full"
-                            onClick={() => handleSelectPlan({
-                              ...pkg, key: pkg.key || "pay_per_contact", name: pkg.name || `${pkg.credits} Credits`,
-                              currency: "ETB", period: "one-time", icon: WalletIcon, color: "text-teal-500",
-                              gradient: "from-teal-500 to-cyan-500", features: [`${pkg.credits} contact credits`], planType: "credit",
-                            } as Plan)}
-                          >
-                            Buy Now
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Payment history */}
                 {payments.length > 0 && (

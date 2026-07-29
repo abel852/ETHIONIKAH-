@@ -204,6 +204,7 @@ cron.schedule("0 3 * * *", () => {
   cleanupOldReceipts();
   expireSubscriptions();
   send2FAReminders();
+  sendRenewalReminders();
 });
 
 // Run every hour to catch expiring subscriptions more quickly
@@ -222,4 +223,56 @@ cleanupOldReceipts();
 expireSubscriptions();
 expireBans();
 
-module.exports = { cleanupOldVerificationImages, cleanupOldReceipts, expireSubscriptions, expireBans, send2FAReminders };
+async function sendRenewalReminders() {
+  try {
+    const { sendRenewalReminderEmail } = require("./email");
+    const { createNotification } = require("./notification");
+    const now = new Date();
+
+    // Send reminders at 7 days and 3 days before expiry
+    const reminderDays = [7, 3];
+    let sent = 0;
+
+    for (const days of reminderDays) {
+      const targetDate = new Date(now);
+      targetDate.setDate(targetDate.getDate() + days);
+      const dayStart = new Date(targetDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(targetDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const subscriptions = await prisma.subscription.findMany({
+        where: {
+          status: "active",
+          endDate: { gte: dayStart, lte: dayEnd },
+          planType: { in: ["gold", "platinum"] },
+        },
+        include: { user: { select: { id: true, firstName: true, email: true } } },
+      });
+
+      for (const s of subscriptions) {
+        const planName = s.planType.charAt(0).toUpperCase() + s.planType.slice(1);
+        try {
+          await sendRenewalReminderEmail(s.user.email, s.user.firstName, planName, s.endDate, days);
+          createNotification({
+            userId: s.userId,
+            type: "payment",
+            title: `${planName} Renewal Reminder`,
+            body: `Your ${planName} membership expires in ${days} days. Renew now to keep your premium benefits.`,
+          }).catch(() => {});
+          sent++;
+        } catch (e) {
+          console.error(`[Renewal-Reminder] Failed for ${s.user.email}:`, e.message);
+        }
+      }
+    }
+
+    if (sent > 0) {
+      console.log(`[Renewal-Reminder] Sent ${sent} reminder email(s)`);
+    }
+  } catch (error) {
+    console.error("[Renewal-Reminder] Error:", error);
+  }
+}
+
+module.exports = { cleanupOldVerificationImages, cleanupOldReceipts, expireSubscriptions, expireBans, send2FAReminders, sendRenewalReminders };

@@ -88,7 +88,7 @@ const contactSupport = async (req, res) => {
 
     const complaint = await prisma.complaint.create({
       data: {
-        userId: user ? user.id : undefined,
+        userId: user ? user.id : null,
         subject: subject.trim(),
         description: `[Contact from: ${email}] ${description.trim()}`,
         isPinned,

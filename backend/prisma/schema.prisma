@@ -197,6 +197,8 @@ model Message {
   isRead               Boolean   @default(false) @map("is_read")
   readAt               DateTime? @map("read_at")
   createdAt            DateTime  @default(now()) @map("created_at")
+  isEdited             Boolean   @default(false) @map("is_edited")
+  editedAt             DateTime? @map("edited_at")
   deletedForReceiver  Boolean   @default(false) @map("deleted_for_receiver")
   deletedForSender    Boolean   @default(false) @map("deleted_for_sender")
   replyToId           String?   @map("reply_to_id") @db.Uuid
@@ -415,7 +417,7 @@ model PaymentReceipt {
 
 model Complaint {
   id            String    @id @default(uuid()) @db.Uuid
-  userId        String    @map("user_id") @db.Uuid
+  userId        String?   @map("user_id") @db.Uuid
   subject       String
   description   String
   status        String    @default("open")
@@ -426,7 +428,7 @@ model Complaint {
   updatedAt     DateTime  @updatedAt @map("updated_at")
   viewed_at     DateTime?
   admin         User?     @relation("AdminComplaint", fields: [adminId], references: [id])
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@index([status, createdAt])

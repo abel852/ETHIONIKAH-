@@ -171,10 +171,45 @@ async function send2FAAlertEmail(to, firstName, action) {
   });
 }
 
+async function sendRenewalReminderEmail(to, firstName, planName, endDate, daysLeft) {
+  const formattedDate = new Date(endDate).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const urgencyText = daysLeft <= 3
+    ? `<p style="margin-top:16px;padding:12px 16px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca;font-size:14px;color:#dc2626;"><strong>Urgent:</strong> Your membership expires in just ${daysLeft} day${daysLeft !== 1 ? "s" : ""}. Renew now to avoid losing your premium benefits.</p>`
+    : `<p>Your membership will expire in ${daysLeft} days. Renew now to continue enjoying all your premium features without interruption.</p>`;
+  const html = emailTemplate(
+    `${planName} Membership Renewal Reminder`,
+    `<p>Hi ${firstName},</p>
+     <p>This is a friendly reminder that your <strong>${planName}</strong> membership on Ethio Nikah is coming up for renewal.</p>
+     <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin:16px 0;">
+       <p style="margin:0 0 8px;font-weight:600;color:#1a1a2e;">Renewal Details</p>
+       <p style="margin:0 0 4px;color:#444;"><strong>Plan:</strong> ${planName}</p>
+       <p style="margin:0 0 4px;color:#444;"><strong>Expires on:</strong> ${formattedDate}</p>
+       <p style="margin:0;color:#444;"><strong>Days remaining:</strong> ${daysLeft}</p>
+     </div>
+     ${urgencyText}
+     <p style="margin:24px 0;">
+       <a href="${process.env.APP_URL || "http://localhost:3000"}/membership" style="display:inline-block;background:linear-gradient(135deg,#D4AF37,#B8860B);color:#0c0a1a;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:15px;">Renew Now</a>
+     </p>
+     <p>If you have any questions, feel free to reach out to our support team.</p>`
+  );
+  await sendEmail({
+    to,
+    subject: `${planName} Membership Expiring in ${daysLeft} Day${daysLeft !== 1 ? "s" : ""} — Ethio Nikah`,
+    text: `Hi ${firstName}, your ${planName} membership expires on ${formattedDate} (${daysLeft} days left). Renew now at ${process.env.APP_URL || "http://localhost:3000"}/membership to keep your premium benefits.`,
+    html,
+  });
+}
+
 module.exports = {
   sendEmail,
   sendPasswordResetEmail,
   sendOtpEmail,
   sendNotificationEmail,
   send2FAAlertEmail,
+  sendRenewalReminderEmail,
 };

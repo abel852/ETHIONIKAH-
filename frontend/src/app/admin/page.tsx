@@ -143,7 +143,7 @@ export default function AdminDashboard() {
                 {[
                   { href: "/admin/users", label: t('admin.dashboard.manageUsers'), desc: t('admin.dashboard.manageUsersDesc'), icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20" },
                   { href: "/admin/verifications", label: t('admin.dashboard.verificationRequests'), desc: t('admin.dashboard.verificationRequestsDesc'), icon: Shield, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-900/20" },
-                  { href: "/admin/activities", label: t('admin.dashboard.activityLog'), desc: t('admin.dashboard.activityLogDesc'), icon: Activity, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-900/20" },
+                  { href: "/admin/activity", label: t('admin.dashboard.activityLog'), desc: t('admin.dashboard.activityLogDesc'), icon: Activity, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-900/20" },
                 ].map((item) => (
                   <a key={item.href} href={item.href}
                     className="group flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-all"
@@ -311,7 +311,7 @@ export default function AdminDashboard() {
             <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{t('admin.dashboard.recentActivity')}</h2>
-                <a href="/admin/activities" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                <a href="/admin/activity" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
                   {t('admin.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
                 </a>
               </div>

@@ -35,7 +35,7 @@ export default function ContactSupportPage() {
 
     setIsSubmitting(true);
     try {
-      await api.post("/complaints/contact", { email, subject, message }, { _noRedirect: true } as any);
+      await api.post("/complaints/contact", { email, subject, description: message }, { _noRedirect: true } as any);
       setSubmitted(true);
     } catch (err: any) {
       const msg = err?.response?.data?.error || "Failed to send message. Please try again.";

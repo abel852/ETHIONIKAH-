@@ -77,17 +77,24 @@ function SwipeCard({ profile, onSwipe, isTop, zIndex, chatCount }: {
   }
 
   const exitTransform = exitDir === "right"
-    ? "translateX(150%) rotate(30deg)"
+    ? "translateX(150%) translateY(-30%) rotate(25deg) scale(0.7)"
     : exitDir === "left"
-    ? "translateX(-150%) rotate(-30deg)"
+    ? "translateX(-40%) translateY(10%) rotate(-10deg) scale(0.2)"
     : undefined;
   const cardTransform = exitTransform || (isDragging ? `translateX(${dragX}px) translateY(${dragY}px) rotate(${rotation}deg)` : undefined);
-  const cardTransition = exitDir ? "transform 0.3s ease-out" : isDragging ? "none" : "transform 0.3s ease-out";
+  const cardTransition = exitDir
+    ? exitDir === "right"
+      ? "transform 0.45s cubic-bezier(0.32, 0, 0.67, 0.36)"
+      : "transform 0.35s cubic-bezier(0.55, 0, 0.45, 1), opacity 0.35s ease-out"
+    : isDragging ? "none" : "transform 0.3s ease-out";
+  const exitOpacity = exitDir === "left" ? 0 : 1;
+  const likeIntensity = Math.max(0, dragX / 120);
+  const nopeIntensity = Math.max(0, -dragX / 120);
 
   return (
     <div
       className={`absolute inset-0 bg-white dark:bg-charcoal-800 rounded-3xl shadow-2xl ${borderClass} overflow-hidden select-none touch-none`}
-      style={{ zIndex, transform: cardTransform, transition: cardTransition, cursor: isTop ? "grab" : "default" }}
+      style={{ zIndex, transform: cardTransform, transition: cardTransition, opacity: exitOpacity, cursor: isTop ? "grab" : "default" }}
       onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
       onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
       onTouchEnd={handleEnd}
@@ -98,7 +105,17 @@ function SwipeCard({ profile, onSwipe, isTop, zIndex, chatCount }: {
     >
       <div className="relative h-full flex flex-col">
         {/* Photo area */}
-        <div className="relative flex-1 bg-gradient-to-br from-pink-100/40 via-amber-50/30 to-orange-100/30 dark:from-pink-900/20 dark:via-amber-900/10 dark:to-charcoal-700 flex items-center justify-center overflow-hidden">
+        <div className="relative flex-1 flex items-center justify-center overflow-hidden transition-colors duration-200"
+          style={{
+            background: exitDir === "right"
+              ? "linear-gradient(135deg, rgba(34,197,94,0.9), rgba(16,185,129,0.9))"
+              : exitDir === "left"
+              ? "linear-gradient(135deg, rgba(239,68,68,0.9), rgba(220,38,38,0.9))"
+              : isDragging
+              ? `linear-gradient(135deg, rgba(${nopeIntensity * 239},${nopeIntensity * 68},${nopeIntensity * 68},${nopeIntensity * 0.6}), rgba(${likeIntensity * 34},${likeIntensity * 197},${likeIntensity * 94},${likeIntensity * 0.6}))`
+              : undefined,
+          }}
+        >
           <div className="absolute inset-0 opacity-[0.08] dark:opacity-[0.12]" style={{
             backgroundImage: `radial-gradient(circle at 20% 30%, rgba(251,207,232,0.5) 1.5px, transparent 1.5px), radial-gradient(circle at 80% 70%, rgba(212,175,55,0.4) 1px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(254,215,170,0.4) 1px, transparent 1px), radial-gradient(circle at 65% 25%, rgba(251,207,232,0.3) 1px, transparent 1px)`,
             backgroundSize: "45px 45px"
@@ -121,12 +138,40 @@ function SwipeCard({ profile, onSwipe, isTop, zIndex, chatCount }: {
           {/* LIKE / NOPE stamps */}
           {isTop && (
             <>
-              <div className="absolute top-8 left-6 border-4 border-green-400 text-green-400 font-bold text-2xl px-4 py-1 rounded-xl rotate-[-20deg] pointer-events-none" style={{ opacity: likeOpacity }}>
+              {/* LIKE stamp - animated heart */}
+              <div
+                className="absolute top-8 left-6 flex items-center gap-2 border-4 border-green-400 text-green-400 font-bold text-2xl px-4 py-1 rounded-xl rotate-[-20deg] pointer-events-none transition-all duration-150"
+                style={{ opacity: likeOpacity, transform: `scale(${0.8 + likeIntensity * 0.5})` }}
+              >
+                <Heart className="w-7 h-7 fill-green-400 animate-pulse" />
                 {t("matches.likeStamp")}
               </div>
-              <div className="absolute top-8 right-6 border-4 border-red-400 text-red-400 font-bold text-2xl px-4 py-1 rounded-xl rotate-[20deg] pointer-events-none" style={{ opacity: nopeOpacity }}>
+
+              {/* NOPE stamp - animated X */}
+              <div
+                className="absolute top-8 right-6 flex items-center gap-2 border-4 border-red-400 text-red-400 font-bold text-2xl px-4 py-1 rounded-xl rotate-[20deg] pointer-events-none transition-all duration-150"
+                style={{ opacity: nopeOpacity, transform: `scale(${0.8 + nopeIntensity * 0.5})` }}
+              >
+                <X className="w-7 h-7 stroke-[3]" />
                 {t("matches.nopeStamp")}
               </div>
+
+              {/* Center X overlay on nope exit */}
+              {exitDir === "left" && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="relative w-24 h-24" style={{ animation: "nope-x-pop 0.35s ease-out forwards" }}>
+                    <div className="absolute top-1/2 left-0 right-0 h-2 bg-white rounded-full -translate-y-1/2 rotate-45" />
+                    <div className="absolute left-1/2 top-0 bottom-0 w-2 bg-white rounded-full -translate-x-1/2 rotate-45" />
+                  </div>
+                </div>
+              )}
+
+              {/* Center heart overlay on like exit */}
+              {exitDir === "right" && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <Heart className="w-28 h-28 fill-white/90 text-white" style={{ animation: "like-heart-pop 0.45s ease-out forwards" }} />
+                </div>
+              )}
             </>
           )}
 
@@ -297,7 +342,7 @@ export default function MatchesPage() {
       setCurrentIndex(0);
       // Fetch chat counts for each profile
       matches.forEach((m: any) => {
-        api.get(`/messages/active-partners/${m.id}`)
+        api.get(`/messages/active-partners/${m.id}`, { _noToast: true } as any)
           .then(({ data }) => setChatCounts((prev) => ({ ...prev, [m.id]: data.count || 0 })))
           .catch(() => {});
       });

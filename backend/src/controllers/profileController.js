@@ -316,7 +316,13 @@ const getUserBadgeCounts = async (req, res) => {
   try {
     const userId = req.user.userId;
     const [unreadMessages, pendingMatchRequests] = await Promise.all([
-      prisma.message.count({ where: { receiverId: userId, isRead: false } }),
+      prisma.message.count({
+        where: {
+          receiverId: userId,
+          isRead: false,
+          sender: { role: { not: "admin" } },
+        },
+      }),
       prisma.match.count({ where: { matchedUserId: userId, status: "pending" } }),
     ]);
     res.json({ counts: { messages: unreadMessages, matches: pendingMatchRequests } });

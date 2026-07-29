@@ -92,7 +92,11 @@ api.interceptors.response.use(
       // Graceful overload — don't show generic "server down" toast; caller handles it
       return Promise.reject(error);
     } else if (status >= 500) {
-      toast.error("Server is down. Please try again later.", { id: "server-down", duration: 5000 });
+      // Only show toast if the server provided a specific error message
+      if (serverMsg && !original._noToast) {
+        toast.error(serverMsg, { id: "server-error", duration: 4000 });
+      }
+      return Promise.reject(error);
     } else if (status === 403) {
       // Suspended/deleted account — redirect to login
       if (serverMsg?.includes("suspended") || serverMsg?.includes("deleted") || error.response.data?.code === "ACCOUNT_DELETED") {

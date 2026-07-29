@@ -29,6 +29,7 @@ interface MessageState {
   fetchConversations: () => Promise<void>;
   fetchMessages: (conversationId: string) => Promise<void>;
   sendMessage: (conversationId: string, content: string, replyToId?: string | null) => Promise<void>;
+  editMessage: (messageId: string, content: string) => Promise<void>;
   deleteMessage: (messageId: string, deleteFor?: "me" | "both") => Promise<void>;
   deleteConversation: (otherUserId: string, deleteFor?: "me" | "both") => Promise<void>;
   blockUser: (blockedUserId: string) => Promise<void>;
@@ -36,6 +37,7 @@ interface MessageState {
   setActiveConversation: (id: string | null) => void;
   addMessage: (message: Message) => void;
   removeMessage: (messageId: string) => void;
+  updateMessage: (message: Message) => void;
   setMessageRead: (messageId: string) => void;
   markAsRead: (conversationId: string) => Promise<void>;
 }
@@ -91,6 +93,17 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       throw err;
     }
   },
+  editMessage: async (messageId, content) => {
+    try {
+      const { data } = await messageService.editMessage(messageId, content);
+      const updated = data.updatedMessage || data;
+      set((s) => ({ messages: s.messages.map((m) => m.id === messageId ? { ...m, ...updated } : m) }));
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || "Failed to edit message";
+      set({ error: msg });
+      throw err;
+    }
+  },
   deleteMessage: async (messageId, deleteFor = "me") => {
     try {
       await messageService.deleteMessage(messageId, deleteFor);
@@ -138,6 +151,10 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   removeMessage: (messageId) =>
     set((s) => ({
       messages: messageId === "all" ? [] : s.messages.filter((m) => m.id !== messageId),
+    })),
+  updateMessage: (message) =>
+    set((s) => ({
+      messages: s.messages.map((m) => m.id === message.id ? { ...m, ...message } : m),
     })),
   setMessageRead: (messageId) =>
     set((s) => ({

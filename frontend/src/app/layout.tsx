@@ -26,9 +26,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth" className={inter.variable} nonce={nonce}>
       <body className="font-sans antialiased bg-background text-charcoal-900 dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300">
         <ThemeInit />
-        <ScreenshotGuard />
         <NetworkBanner />
         <AuthProvider>
+          <ScreenshotGuard />
           <RouteGuard>
             <I18nProvider>
               <SocketProvider>

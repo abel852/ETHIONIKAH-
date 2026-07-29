@@ -118,6 +118,8 @@ export interface Message {
   readAt: string | null;
   deliveredAt?: string | null;
   createdAt: string;
+  isEdited?: boolean;
+  editedAt?: string | null;
   isReported?: boolean;
   isBlocked?: boolean;
   deletedForSender?: boolean;

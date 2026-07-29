@@ -32,6 +32,8 @@ export const messageService = {
     } as any);
   },
   markAsRead: (messageId: string) => api.put(`/messages/${messageId}/read`),
+  editMessage: (messageId: string, content: string) =>
+    api.put(`/messages/${messageId}/edit`, { content }, { _noToast: true } as any),
   deleteMessage: (messageId: string, deleteFor: "me" | "both" = "me") =>
     api.delete(`/messages/${messageId}`, { data: { deleteFor } }),
   blockUser: (blockedUserId: string) => api.post("/messages/block", { blockedUserId }),
