@@ -4,8 +4,8 @@ import Navbar from "@/components/layout/Navbar";
 
 jest.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
+    div: ({ children, whileTap, whileHover, transition, initial, animate, exit, ...props }: any) => <div {...props}>{children}</div>,
+    span: ({ children, whileTap, whileHover, transition, initial, animate, exit, ...props }: any) => <span {...props}>{children}</span>,
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
@@ -19,13 +19,36 @@ jest.mock("next/link", () => ({ children, href, ...props }: any) => <a href={hre
 
 jest.mock("next/image", () => ({ src, alt, ...props }: any) => <img src={src} alt={alt} {...props} />);
 
-jest.mock("@/components/common/ThemeToggle", () => ({
-  ThemeToggle: () => <button data-testid="theme-toggle">Theme</button>,
-}));
-
 jest.mock("@/components/notifications/NotificationBell", () => ({
   __esModule: true,
   default: () => <div data-testid="notification-bell" />,
+}));
+
+jest.mock("@/context/I18nContext", () => ({
+  useI18n: () => ({ t: (key: string) => {
+    const map: Record<string, string> = {
+      "nav.home": "Home",
+      "nav.matches": "Matches",
+      "nav.signIn": "Sign In",
+      "nav.getStarted": "Get Started",
+      "nav.profile": "Profile",
+      "nav.logout": "Logout",
+      "nav.openMenu": "Open menu",
+      "nav.closeMenu": "Close menu",
+      "app.name": "Ethio Nikah",
+      "app.tagline": "Tagline",
+    };
+    return map[key] || key;
+  }, lang: "en", setLang: jest.fn() }),
+  Lang: String,
+}));
+
+jest.mock("@/context/AuthContext", () => ({
+  useAuth: () => ({
+    user: typeof localStorage !== "undefined" && localStorage.getItem("accessToken") ? { name: "Test" } : null,
+    isAuthenticated: typeof localStorage !== "undefined" && !!localStorage.getItem("accessToken"),
+    logout: jest.fn(),
+  }),
 }));
 
 const mockLocalStorage = () => {
@@ -81,12 +104,8 @@ describe("Navbar", () => {
     expect(homeLink).toBeInTheDocument();
   });
 
-  it("renders theme toggle", () => {
-    render(<Navbar />);
-    expect(screen.getByTestId("theme-toggle")).toBeInTheDocument();
-  });
-
-  it("renders notification bell", () => {
+  it("renders notification bell when authenticated", () => {
+    localStorage.setItem("accessToken", "test-token");
     render(<Navbar />);
     expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
   });

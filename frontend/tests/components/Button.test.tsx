@@ -5,7 +5,7 @@ import Button from "@/components/common/Button";
 
 jest.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, whileTap, whileHover, transition, ...props }: any) => <div {...props}>{children}</div>,
   },
 }));
 
@@ -52,25 +52,25 @@ describe("Button", () => {
   it("applies sm size classes", () => {
     const { container } = render(<Button size="sm">Small</Button>);
     const btn = container.querySelector("button");
-    expect(btn).toHaveClass("px-4 py-2 text-sm");
+    expect(btn).toHaveClass("px-4 py-2 text-base");
   });
 
   it("applies md size classes by default", () => {
     const { container } = render(<Button>Medium</Button>);
     const btn = container.querySelector("button");
-    expect(btn).toHaveClass("px-6 py-3");
+    expect(btn).toHaveClass("px-6 py-3 text-base");
   });
 
   it("applies lg size classes", () => {
     const { container } = render(<Button size="lg">Large</Button>);
     const btn = container.querySelector("button");
-    expect(btn).toHaveClass("px-8 py-4");
+    expect(btn).toHaveClass("px-8 py-4 text-lg");
   });
 
   it("applies xl size classes", () => {
     const { container } = render(<Button size="xl">XLarge</Button>);
     const btn = container.querySelector("button");
-    expect(btn).toHaveClass("px-10 py-5");
+    expect(btn).toHaveClass("px-10 py-5 text-xl");
   });
 
   it("shows spinner when loading", () => {

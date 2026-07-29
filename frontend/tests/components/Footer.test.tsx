@@ -8,8 +8,37 @@ jest.mock("next/image", () => ({ src, alt, ...props }: any) => <img src={src} al
 
 jest.mock("lucide-react", () => ({
   Mail: () => <svg data-testid="icon-mail" />,
-  Phone: () => <svg data-testid="icon-phone" />,
   MapPin: () => <svg data-testid="icon-mappin" />,
+}));
+
+jest.mock("@/context/I18nContext", () => ({
+  useI18n: () => ({
+    t: (key: string) => {
+      const map: Record<string, string> = {
+        "app.name": "Ethio Nikah",
+        "footer.tagline": "Find your righteous spouse",
+        "footer.platform": "Platform",
+        "footer.support": "Support",
+        "footer.legal": "Legal",
+        "footer.browseMatches": "Browse Matches",
+        "footer.search": "Search",
+        "footer.verification": "Verification",
+        "footer.privacySettings": "Privacy Settings",
+        "footer.faq": "FAQ",
+        "footer.contactUs": "Contact Us",
+        "footer.reportAbuse": "Report Abuse",
+        "footer.safetyTips": "Safety Tips",
+        "footer.terms": "Terms & Conditions",
+        "footer.privacyPolicy": "Privacy Policy",
+        "footer.communityGuidelines": "Community Guidelines",
+        "footer.shariaCompliance": "Sharia Compliance",
+        "footer.rights": "All rights reserved.",
+      };
+      return map[key] || key;
+    },
+    lang: "en",
+    setLang: jest.fn(),
+  }),
 }));
 
 describe("Footer", () => {
@@ -30,12 +59,12 @@ describe("Footer", () => {
 
   it("renders contact email", () => {
     render(<Footer />);
-    expect(screen.getByText("ethionikah@gmail.com")).toBeInTheDocument();
+    expect(screen.getByText("ethiopianikah@gmail.com")).toBeInTheDocument();
   });
 
-  it("renders contact phone", () => {
+  it("does not render phone number", () => {
     render(<Footer />);
-    expect(screen.getByText("0911348962")).toBeInTheDocument();
+    expect(screen.queryByText("0911348962")).not.toBeInTheDocument();
   });
 
   it("renders contact location", () => {
@@ -46,7 +75,6 @@ describe("Footer", () => {
   it("renders all contact icons", () => {
     render(<Footer />);
     expect(screen.getByTestId("icon-mail")).toBeInTheDocument();
-    expect(screen.getByTestId("icon-phone")).toBeInTheDocument();
     expect(screen.getByTestId("icon-mappin")).toBeInTheDocument();
   });
 
