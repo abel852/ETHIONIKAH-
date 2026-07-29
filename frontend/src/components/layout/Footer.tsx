@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { useI18n } from "@/context/I18nContext";
 
 export default function Footer() {
@@ -45,23 +45,19 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Image src="/images/logo.png" alt="Ethio Nikah" width={48} height={48} className="rounded-xl border-2 border-accent ring-2 ring-charcoal-900" />
-              <span className="font-display font-bold text-xl [-webkit-text-stroke:0.5px_#D4AF37]">
+              <span className="font-cursive font-bold text-2xl [-webkit-text-stroke:0.5px_#D4AF37]">
                 Ethio <span className="text-accent [-webkit-text-stroke:0.5px_#111]">Nikah</span>
               </span>
             </Link>
-            <p className="text-charcoal-400 text-sm leading-relaxed mb-6">
+            <p className="text-charcoal-300 text-base font-script leading-relaxed mb-6">
               {t("footer.tagline")}
             </p>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-charcoal-400 text-sm">
+              <div className="flex items-center gap-2 text-charcoal-300 text-base font-script">
                 <Mail className="w-4 h-4 text-accent" />
-                ethionikah@gmail.com
+                ethiopianikah@gmail.com
               </div>
-              <div className="flex items-center gap-2 text-charcoal-400 text-sm">
-                <Phone className="w-4 h-4 text-accent" />
-                0911348962
-              </div>
-              <div className="flex items-center gap-2 text-charcoal-400 text-sm">
+              <div className="flex items-center gap-2 text-charcoal-300 text-base font-script">
                 <MapPin className="w-4 h-4 text-accent" />
                 Addis Ababa, Ethiopia
               </div>
@@ -70,7 +66,7 @@ export default function Footer() {
 
           {footerGroups.map((group) => (
             <div key={group.title}>
-              <h4 className="font-display font-semibold text-sm text-charcoal-300 mb-4 uppercase tracking-wider">
+              <h4 className="font-cursive font-bold text-lg text-accent mb-4">
                 {group.title}
               </h4>
               <ul className="space-y-2.5">
@@ -78,7 +74,7 @@ export default function Footer() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-charcoal-400 hover:text-accent text-sm transition-colors"
+                      className="text-charcoal-300 hover:text-accent text-base font-script transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -90,7 +86,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-charcoal-800 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-charcoal-500 text-sm">
+          <p className="text-charcoal-400 text-base font-script">
             © {new Date().getFullYear()} {t("app.name")}. {t("footer.rights")}
           </p>
         </div>

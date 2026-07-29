@@ -14,7 +14,7 @@ const config: Config = {
         display: ["var(--font-inter)", "system-ui", "sans-serif"],
         body: ["var(--font-inter)", "system-ui", "sans-serif"],
         cursive: ["var(--font-dancing)", "cursive"],
-        script: ["var(--font-great-vibes)", "cursive"],
+        script: ["var(--font-cormorant)", "Georgia", "serif"],
       },
       colors: {
         background: "#F5F5F5",

@@ -15,8 +15,12 @@
     @apply bg-background text-charcoal-900 font-sans antialiased dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h5, h6 {
     @apply font-display font-semibold;
+  }
+
+  h2, h3, h4 {
+    font-family: var(--font-bonbon), cursive;
   }
 }
 

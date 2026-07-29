@@ -91,7 +91,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link href="/" className="flex items-center gap-2 group">
             <Image src="/images/logo.png" alt="Ethio Nikah" width={48} height={48} className="rounded-xl border-2 border-accent ring-2 ring-charcoal-900 transition-transform duration-300 group-hover:scale-105" />
-            <span className="font-display font-bold text-xl text-charcoal-900 [-webkit-text-stroke:0.5px_#D4AF37]">
+            <span className="font-cursive font-bold text-2xl text-charcoal-900 [-webkit-text-stroke:0.5px_#D4AF37]">
               Ethio <span className="text-accent [-webkit-text-stroke:0.5px_#111]">Nikah</span>
             </span>
           </Link>
@@ -102,7 +102,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative font-medium text-sm transition-colors after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full",
+                  "relative font-bold text-base font-cursive transition-colors after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full",
                   scrolled ? "text-charcoal-600 hover:text-charcoal-900" : "text-white/80 hover:text-white"
                 )}
               >
@@ -132,14 +132,14 @@ export default function Navbar() {
                 <Link href="/login">
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className={cn("transition-all duration-300", scrolled ? "" : "text-white/80 hover:text-white hover:bg-white/10")}
+                    size="md"
+                    className={cn("font-cursive font-bold text-lg px-6 py-2.5 transition-all duration-300", scrolled ? "" : "text-white/90 hover:text-white hover:bg-white/10")}
                   >
                     {t('nav.signIn')}
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="primary" size="sm" className="shadow-glow hover:shadow-glow-lg transition-shadow duration-300">{t('nav.getStarted')}</Button>
+                  <Button variant="primary" size="md" className="font-cursive font-bold text-lg px-6 py-2.5 shadow-glow hover:shadow-glow-lg transition-shadow duration-300">{t('nav.getStarted')}</Button>
                 </Link>
               </>
             )}
@@ -191,7 +191,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-3 mb-6">
                   <Image src="/images/logo.png" alt={t("app.name")} width={40} height={40} className="rounded-lg border border-accent/30" />
                   <div>
-                    <p className="font-display font-bold text-charcoal-900">{t("app.name")}</p>
+                    <p className="font-cursive font-bold text-lg text-charcoal-900">{t("app.name")}</p>
                     <p className="text-xs text-charcoal-400">{t("app.tagline")}</p>
                   </div>
                 </div>
@@ -205,7 +205,7 @@ export default function Navbar() {
                     >
                       <Link
                         href={link.href}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-charcoal-700 hover:bg-accent/10 hover:text-accent font-medium transition-all duration-200 group"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-charcoal-700 hover:bg-accent/10 hover:text-accent font-bold text-base font-cursive transition-all duration-200 group"
                         onClick={() => setIsOpen(false)}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-accent/30 group-hover:bg-accent transition-colors" />
@@ -217,10 +217,10 @@ export default function Navbar() {
               </div>
               <div className="px-5 py-4 bg-charcoal-50/80 border-t border-charcoal-100/50 space-y-2">
                 <Link href="/login" className="block" onClick={() => setIsOpen(false)}>
-                  <Button variant="secondary" className="w-full">{t('nav.signIn')}</Button>
+                  <Button variant="secondary" className="w-full font-cursive font-bold text-lg py-3.5">{t('nav.signIn')}</Button>
                 </Link>
                 <Link href="/register" className="block" onClick={() => setIsOpen(false)}>
-                  <Button variant="primary" className="w-full shadow-glow">{t('nav.getStarted')}</Button>
+                  <Button variant="primary" className="w-full font-cursive font-bold text-lg py-3.5 shadow-glow">{t('nav.getStarted')}</Button>
                 </Link>
               </div>
             </motion.div>
