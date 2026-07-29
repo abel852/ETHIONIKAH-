@@ -20,5 +20,6 @@ router.delete("/:messageId", authenticate, requireActive, messageController.dele
 router.post("/block", authenticate, requireActive, validate(blockUserSchema), messageController.blockUser);
 router.post("/unblock", authenticate, requireActive, validate(blockUserSchema), messageController.unblockUser);
 router.post("/conversation/:otherUserId/delete", authenticate, requireActive, validate(deleteConversationSchema), messageController.deleteConversation);
+router.get("/active-partners/:userId", authenticate, requireActive, messageController.getActiveChatPartners);
 
 module.exports = router;

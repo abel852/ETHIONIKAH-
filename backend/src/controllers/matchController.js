@@ -968,6 +968,29 @@ const sendInterest = async (req, res) => {
   }
 };
 
+const passProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { matchedUserId } = req.body;
+
+    if (!matchedUserId || matchedUserId === userId) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Record a profile view so this user won't appear in suggestions again
+    await prisma.profileView.upsert({
+      where: { viewerId_viewedId: { viewerId: userId, viewedId: matchedUserId } },
+      update: { viewedAt: new Date() },
+      create: { viewerId: userId, viewedId: matchedUserId },
+    });
+
+    res.json({ message: "Profile passed" });
+  } catch (error) {
+    console.error("Pass profile error:", error);
+    res.status(500).json({ error: "Failed to pass profile" });
+  }
+};
+
 const respondToInterest = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1177,10 +1200,26 @@ const getSuggestedMatches = async (req, res) => {
 
     const oppositeGender = user.gender === "male" ? "female" : "male";
 
+    // Exclude users we've already interacted with (liked, matched, rejected)
+    const existingMatches = await prisma.match.findMany({
+      where: { userId },
+      select: { matchedUserId: true },
+    });
+    const matchUserIds = existingMatches.map((m) => m.matchedUserId);
+
+    // Exclude users we've already viewed (seen in match page)
+    const viewedProfiles = await prisma.profileView.findMany({
+      where: { viewerId: userId },
+      select: { viewedId: true },
+    });
+    const viewedUserIds = viewedProfiles.map((v) => v.viewedId);
+
+    const excludeIds = [...new Set([...matchUserIds, ...viewedUserIds])];
+
     const where = {
       gender: oppositeGender,
       isActive: true,
-      id: { not: userId },
+      id: { notIn: [userId, ...excludeIds] },
       profile: { isNot: null },
     };
 
@@ -1417,6 +1456,7 @@ module.exports = {
   getRecommendedMatches,
   searchProfiles,
   sendInterest,
+  passProfile,
   respondToInterest,
   getMyMatches,
   getLikesReceived,

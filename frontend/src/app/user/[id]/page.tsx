@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, MessageCircle, MapPin, Briefcase, GraduationCap, Calendar, Heart, Shield, Star, CheckCircle, XCircle, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, MessageCircle, MapPin, Briefcase, GraduationCap, Calendar, Heart, Shield, Star, CheckCircle, XCircle, X, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
 import { Button, Avatar, Badge, IslamicPatternBackground } from "@/components/common";
 import { mediaUrl } from "@/lib/utils";
 import { profileService } from "@/services/profile";
 import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -19,6 +20,7 @@ export default function UserProfilePage() {
   const [imgError, setImgError] = useState(false);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [chatPartners, setChatPartners] = useState<any[]>([]);
 
   const photos = profile?.photos || [];
 
@@ -28,6 +30,10 @@ export default function UserProfilePage() {
     profileService.getProfileByUserId(params.id as string)
       .then(({ data }) => {
         setProfile(data.profile);
+        // Fetch active chat partners
+        api.get(`/messages/active-partners/${params.id}`)
+          .then(({ data }) => setChatPartners(data.partners || []))
+          .catch(() => setChatPartners([]));
       })
       .catch(() => setError("User not found"))
       .finally(() => setLoading(false));
@@ -243,6 +249,46 @@ export default function UserProfilePage() {
                   ))}
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* Active Chat Partners */}
+          <div className="px-4 py-4 border-t border-charcoal-100/50 dark:border-charcoal-700">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-charcoal-400 mb-3 flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" /> Active Conversations
+            </h3>
+            {chatPartners.length > 0 ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                {chatPartners.map((partner) => (
+                  <div
+                    key={partner.id}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-charcoal-50 dark:bg-charcoal-800 border border-charcoal-100 dark:border-charcoal-700"
+                  >
+                    <div className="relative">
+                      {partner.photo ? (
+                        <img src={mediaUrl(partner.photo)} alt="" className="w-6 h-6 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
+                          {partner.firstName?.[0] || "U"}
+                        </div>
+                      )}
+                      {partner.isVerified && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-white dark:bg-charcoal-800 flex items-center justify-center">
+                          <CheckCircle className="w-2.5 h-2.5 text-accent" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs font-medium text-charcoal-700 dark:text-charcoal-300">
+                      {partner.firstName} {partner.lastName?.[0]}.
+                    </span>
+                  </div>
+                ))}
+                <span className="text-[11px] text-charcoal-400 dark:text-charcoal-500 ml-1">
+                  {chatPartners.length} active {chatPartners.length === 1 ? "chat" : "chats"}
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-charcoal-400 dark:text-charcoal-500">No active conversations</p>
             )}
           </div>
 

@@ -18,11 +18,205 @@ function containsProfanity(text) {
 }
 
 /**
- * Enforce one active conversation at a time.
- * Returns { allowed: true } or { allowed: false, error: string, status: number }
+ * Detect phone numbers and social media handles in messages.
+ * Blocks users from sharing contact info outside the platform.
+ */
+function containsContactInfo(text) {
+  const lower = text.toLowerCase();
+
+  // Phone numbers: international and local formats (3+ consecutive digits with optional separators)
+  if (/\+?\d[\d\s\-().]{7,}\d/.test(text)) return true;
+  // Ethiopian phone format: 09xxxxxxxx or +251xxxxxxxxx
+  if (/09\d{8}/.test(text)) return true;
+  if (/\+251\d{9}/.test(text)) return true;
+
+  // Telegram: @username, t.me/username, telegram.me/username
+  if (/@[a-z0-9_]{5,}/.test(lower)) return true;
+  if (/t\.me\//.test(lower)) return true;
+  if (/telegram\.me\//.test(lower)) return true;
+  if (/telegram/i.test(lower) && /\b(dm|message|contact|add|reach)\b/i.test(lower)) return true;
+
+  // WhatsApp: wa.me/, whatsapp.com/, whatsapp number
+  if (/wa\.me\//.test(lower)) return true;
+  if (/whatsapp/i.test(lower)) return true;
+
+  // Instagram: instagram.com/, ig: @username
+  if (/instagram\.com\//.test(lower)) return true;
+  if (/\big\b[:\s]/.test(lower)) return true;
+
+  // Facebook: facebook.com/, fb.com/, messenger
+  if (/facebook\.com\//.test(lower)) return true;
+  if (/fb\.com\//.test(lower)) return true;
+  if (/messenger/i.test(lower)) return true;
+
+  // Snapchat: snapchat.com/, snap: @username
+  if (/snapchat/i.test(lower)) return true;
+  if (/\bsnap\b[:\s]/.test(lower)) return true;
+
+  // TikTok: tiktok.com/, tiktok @
+  if (/tiktok\.com\//.test(lower)) return true;
+  if (/tiktok\s*@/i.test(lower)) return true;
+
+  // Twitter/X: twitter.com/, x.com/
+  if (/twitter\.com\//.test(lower)) return true;
+  if (/x\.com\//.test(lower)) return true;
+
+  // Generic URL patterns that might link to social profiles
+  if (/https?:\/\/(?!localhost|127\.0\.0\.1)/.test(lower)) return true;
+
+  // Email addresses
+  if (/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/.test(lower)) return true;
+
+  // Keywords suggesting sharing contact info
+  const contactKeywords = [
+    "my number is", "call me", "text me", "reach me", "contact me",
+    "my phone", "my telegram", "my whatsapp", "my insta", "my snap",
+    "my facebook", "my tiktok", "my twitter", "dm me", "pm me",
+    "outside this app", "outside the app", "other platform",
+  ];
+  if (contactKeywords.some((kw) => lower.includes(kw))) return true;
+
+  return false;
+}
+
+/**
+ * Shared pre-send validation: verification, active status, chat restriction, block check.
+ * Returns { ok: true } or { ok: false, status: number, error: string }.
+ */
+async function validateSender(senderId, receiverId) {
+  if (senderId === receiverId) {
+    return { ok: false, status: 400, error: "Cannot send message to yourself" };
+  }
+
+  const sender = await prisma.user.findUnique({
+    where: { id: senderId },
+    select: { isVerified: true, isActive: true },
+  });
+  if (!sender) {
+    return { ok: false, status: 404, error: "User not found" };
+  }
+  if (!sender.isVerified) {
+    return { ok: false, status: 403, error: "Your account must be verified before you can send messages. Please complete the verification process." };
+  }
+  if (!sender.isActive) {
+    return { ok: false, status: 403, error: "Your account has been suspended. You cannot send messages." };
+  }
+
+  const chatRestriction = await prisma.userRestriction.findFirst({
+    where: {
+      userId: senderId,
+      type: "chat_restrict",
+      OR: [
+        { expiresAt: { gt: new Date() } },
+        { expiresAt: null },
+      ],
+    },
+  });
+  if (chatRestriction) {
+    const msg = chatRestriction.expiresAt
+      ? `Your chat ability has been restricted until ${chatRestriction.expiresAt.toISOString()}. Reason: ${chatRestriction.reason || "No reason provided"}`
+      : `Your chat ability has been restricted. Reason: ${chatRestriction.reason || "No reason provided"}`;
+    return { ok: false, status: 403, error: msg };
+  }
+
+  // Block check: receiver must not have blocked sender
+  try {
+    const blocked = await prisma.blockedUser.findUnique({
+      where: { blockerId_blockedId: { blockerId: receiverId, blockedId: senderId } },
+    });
+    if (blocked) {
+      return { ok: false, status: 403, error: "You cannot message this user." };
+    }
+  } catch (_e) {}
+
+  return { ok: true };
+}
+
+/**
+ * Check if this is a new conversation (no prior messages between the two users).
+ * Credits are only deducted for brand-new conversations.
+ * Returns { isNew: true } or { isNew: false }.
+ */
+async function isNewConversation(senderId, receiverId) {
+  const priorFromSender = await prisma.message.count({
+    where: { senderId, receiverId },
+  });
+  const priorFromReceiver = await prisma.message.count({
+    where: { senderId: receiverId, receiverId: senderId },
+  });
+  return priorFromSender === 0 && priorFromReceiver === 0;
+}
+
+/**
+ * Deduct a contact credit for a new conversation.
+ * Returns { ok: true, creditsRemaining } or { ok: false, status, error }.
+ */
+async function checkAndDeductCredit(senderId, isNew) {
+  if (!isNew) return { ok: true, creditsUsed: 0, creditsRemaining: null };
+
+  const hasActiveSub = await prisma.subscription.findFirst({
+    where: { userId: senderId, status: "active", endDate: { gt: new Date() } },
+  });
+  if (hasActiveSub) return { ok: true, creditsUsed: 0, creditsRemaining: null };
+
+  const creditRecord = await ensureContactCredits(senderId);
+  if (creditRecord.credits <= 0) {
+    const pendingPayment = await prisma.payment.findFirst({
+      where: { userId: senderId, status: "pending", planType: { contains: "credit" } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (pendingPayment) {
+      return {
+        ok: false, status: 403,
+        error: "Your credit purchase is pending admin approval. You'll be able to start new conversations once it's approved. To reply to existing conversations, no credits are needed.",
+      };
+    }
+    return {
+      ok: false, status: 403,
+      error: "You need contact credits to start a new conversation. Buy credits (1 credit = 1 new conversation) or upgrade to Gold/Platinum for unlimited messaging.",
+    };
+  }
+
+  await prisma.userContactCredit.update({
+    where: { userId: senderId },
+    data: { credits: { decrement: 1 }, usedCredits: { increment: 1 } },
+  });
+
+  return { ok: true, creditsUsed: 1, creditsRemaining: creditRecord.credits - 1 };
+}
+
+/**
+ * Enforce one active conversation at a time for free users.
+ * - Accepted matches bypass the rule.
+ * - Gold/Platinum subscriptions bypass the rule.
+ * - Contact credits do NOT bypass the one-conversation rule — they only
+ *   allow messaging unmatched users (the credit is consumed per new conversation).
+ * - Polygamy: if sender has approved permission from current partner(s), allowed.
+ * - Only SENT messages count as active conversations (received don't lock you).
+ * Returns { allowed: true } or { allowed: false, error, status }.
  */
 async function checkOneConversationRule(senderId, receiverId) {
   try {
+    // Check for denied permission — blocks both directions
+    // If A asked B for permission to talk to C and B denied, neither A nor C can message each other
+    const deniedPermission = await prisma.conversationPermission.findFirst({
+      where: {
+        status: "denied",
+        OR: [
+          { requesterId: senderId, targetUserId: receiverId },
+          { requesterId: receiverId, targetUserId: senderId },
+        ],
+      },
+    });
+    if (deniedPermission) {
+      return {
+        allowed: false,
+        status: 403,
+        error: "You cannot message this user because the conversation permission was denied by the current partner.",
+      };
+    }
+
+    // Accepted match — always allowed
     const match = await prisma.match.findFirst({
       where: {
         OR: [
@@ -34,17 +228,49 @@ async function checkOneConversationRule(senderId, receiverId) {
     });
     if (match) return { allowed: true };
 
-    const priorMessages = await prisma.message.count({
+    // Gold/Platinum subscription — bypass one-conversation rule
+    const senderSubscription = await prisma.subscription.findFirst({
       where: {
-        OR: [
-          { senderId: senderId, receiverId: receiverId },
-          { senderId: receiverId, receiverId: senderId },
-        ],
+        userId: senderId,
+        status: "active",
+        planType: { in: ["gold", "platinum"] },
+        endDate: { gte: new Date() },
+      },
+      select: { planType: true },
+    });
+    if (senderSubscription) {
+      const receiver = await prisma.user.findUnique({
+        where: { id: receiverId },
+        select: { isVerified: true },
+      });
+      if (!receiver?.isVerified) {
+        return { allowed: false, status: 403, error: "You can only message verified users." };
+      }
+      return { allowed: true };
+    }
+
+    // Check if sender has ANY pending permission request as requester
+    // If so, block ALL new conversations until it's resolved (approved or denied)
+    // This prevents bypassing by messaging D or F while waiting for approval to message C
+    const anyPendingPermission = await prisma.conversationPermission.findFirst({
+      where: {
+        requesterId: senderId,
+        status: "pending",
       },
     });
-    if (priorMessages > 0) return { allowed: true };
+    if (anyPendingPermission) {
+      return {
+        allowed: false,
+        status: 403,
+        error: "You have a pending permission request. You must wait for your current partner to approve or deny it before you can start any new conversation.",
+      };
+    }
 
-    // NEW conversation — check if sender has other active conversations
+    // Only count SENT (non-deleted) messages as active conversations.
+    // Received messages from others don't lock the user — if two people
+    // message someone with no conversations, that person can freely reply
+    // to ONE of them. After that, talking to anyone else requires
+    // permission or deleting the current conversation.
     const sentMessages = await prisma.message.findMany({
       where: {
         senderId: senderId,
@@ -55,41 +281,10 @@ async function checkOneConversationRule(senderId, receiverId) {
       distinct: ["receiverId"],
     });
 
-    const receivedMessages = await prisma.message.findMany({
-      where: {
-        receiverId: senderId,
-        senderId: { not: receiverId },
-        deletedForReceiver: false,
-      },
-      select: { senderId: true },
-      distinct: ["senderId"],
-    });
-
-    const allPartners = new Set([
-      ...sentMessages.map((m) => m.receiverId),
-      ...receivedMessages.map((m) => m.senderId),
-    ]);
-
-    // Remove blocked partners
-    const blockedUsers = await prisma.blockedUser.findMany({
-      where: {
-        OR: [
-          { blockerId: senderId },
-          { blockedId: senderId },
-        ],
-      },
-      select: { blockerId: true, blockedId: true },
-    });
-
-    for (const b of blockedUsers) {
-      const otherId = b.blockerId === senderId ? b.blockedId : b.blockerId;
-      allPartners.delete(otherId);
-    }
-
-    const existingPartners = Array.from(allPartners);
+    const existingPartners = sentMessages.map((m) => m.receiverId);
 
     if (existingPartners.length > 0) {
-      // Check if sender has approved permissions (polygamy)
+      // Check if sender has approved polygamy permission from current partner(s)
       const approvedPermissions = await prisma.conversationPermission.findMany({
         where: {
           requesterId: senderId,
@@ -107,36 +302,16 @@ async function checkOneConversationRule(senderId, receiverId) {
         return {
           allowed: false,
           status: 403,
-          error: "You already have an active conversation. To start a new one, you need to block or delete your current conversation first.",
+          error: "You already have an active conversation. To start a new one, you must delete your current conversation, or request permission from your current partner to talk to someone new.",
         };
       }
     }
 
-    // No active conversations — check subscription for match bypass
-    const senderSubscription = await prisma.subscription.findFirst({
-      where: {
-        userId: senderId,
-        status: "active",
-        planType: { in: ["gold", "platinum"] },
-        endDate: { gte: new Date() },
-      },
-      select: { planType: true },
-    });
-
-    if (senderSubscription) {
-      const receiver = await prisma.user.findUnique({
-        where: { id: receiverId },
-        select: { isVerified: true },
-      });
-      if (!receiver?.isVerified) {
-        return { allowed: false, status: 403, error: "You can only message verified users." };
-      }
-      return { allowed: true };
-    }
-
-    return { allowed: false, status: 403, error: "You can only message users you have matched with. Upgrade to Gold or Platinum to message any verified user." };
-  } catch {
+    // No active conversations blocking — but user still needs credits or a match
+    // to message an unmatched user. Credit check happens in sendMessage.
     return { allowed: true };
+  } catch {
+    return { allowed: false, status: 500, error: "Unable to verify conversation status. Please try again." };
   }
 }
 
@@ -145,57 +320,20 @@ const sendMessage = async (req, res) => {
     const senderId = req.user.userId;
     const { receiverId, content, replyToId } = req.body;
 
-    if (senderId === receiverId) {
-      return res.status(400).json({ error: "Cannot send message to yourself" });
+    // Shared validation: self-check, verification, active, restriction, block
+    const validation = await validateSender(senderId, receiverId);
+    if (!validation.ok) {
+      return res.status(validation.status).json({ error: validation.error });
     }
-
-    const sender = await prisma.user.findUnique({
-      where: { id: senderId },
-      select: { isVerified: true, isActive: true },
-    });
-    if (!sender.isVerified) {
-      return res.status(403).json({ error: "Your account must be verified before you can send messages. Please complete the verification process." });
-    }
-    if (!sender.isActive) {
-      return res.status(403).json({ error: "Your account has been suspended. You cannot send messages." });
-    }
-
-    const chatRestriction = await prisma.userRestriction.findFirst({
-      where: {
-        userId: senderId,
-        type: "chat_restrict",
-        OR: [
-          { expiresAt: { gt: new Date() } },
-          { expiresAt: null },
-        ],
-      },
-    });
-    if (chatRestriction) {
-      const msg = chatRestriction.expiresAt
-        ? `Your chat ability has been restricted until ${chatRestriction.expiresAt.toISOString()}. Reason: ${chatRestriction.reason || "No reason provided"}`
-        : `Your chat ability has been restricted. Reason: ${chatRestriction.reason || "No reason provided"}`;
-      return res.status(403).json({ error: msg });
-    }
-
-    // One active conversation rule + match gate
-    const convCheck = await checkOneConversationRule(senderId, receiverId);
-    if (!convCheck.allowed) {
-      return res.status(convCheck.status).json({ error: convCheck.error });
-    }
-
-    // Block check: receiver must not have blocked sender
-    try {
-      const blocked = await prisma.blockedUser.findUnique({
-        where: { blockerId_blockedId: { blockerId: receiverId, blockedId: senderId } },
-      });
-      if (blocked) {
-        return res.status(403).json({ error: "You cannot message this user." });
-      }
-    } catch (_e) {}
 
     // Profanity filter
     if (containsProfanity(content || "")) {
       return res.status(400).json({ error: "Message contains inappropriate language and cannot be sent." });
+    }
+
+    // Contact info filter — block phone numbers and social media handles
+    if (containsContactInfo(content || "")) {
+      return res.status(400).json({ error: "For your safety, sharing phone numbers, social media handles, or external links is not allowed. Please keep all communication within the platform." });
     }
 
     if (replyToId) {
@@ -203,27 +341,17 @@ const sendMessage = async (req, res) => {
       if (!replyToMsg) return res.status(400).json({ error: "Message to reply to not found" });
     }
 
-    // Contact credit check: free users need credits to initiate first conversation
-    const hasActiveSub = await prisma.subscription.findFirst({
-      where: { userId: senderId, status: "active", endDate: { gt: new Date() } },
-    });
-    if (!hasActiveSub) {
-      const priorFromSender = await prisma.message.count({
-        where: { senderId, receiverId },
-      });
-      if (priorFromSender === 0) {
-        const creditRecord = await ensureContactCredits(senderId);
-        if (creditRecord.credits <= 0) {
-          return res.status(403).json({ error: "You need contact credits to start a conversation. Purchase credits or upgrade to a Gold/Platinum membership." });
-        }
-        await prisma.userContactCredit.update({
-          where: { userId: senderId },
-          data: {
-            credits: { decrement: 1 },
-            usedCredits: { increment: 1 },
-          },
-        });
-      }
+    // One active conversation rule
+    const convCheck = await checkOneConversationRule(senderId, receiverId);
+    if (!convCheck.allowed) {
+      return res.status(convCheck.status).json({ error: convCheck.error });
+    }
+
+    // Credit check: only deduct for brand-new conversations
+    const isNew = await isNewConversation(senderId, receiverId);
+    const creditResult = await checkAndDeductCredit(senderId, isNew);
+    if (!creditResult.ok) {
+      return res.status(creditResult.status).json({ error: creditResult.error });
     }
 
     const message = await prisma.message.create({
@@ -242,7 +370,7 @@ const sendMessage = async (req, res) => {
 
     emitNewMessage(message, receiverId);
 
-    res.status(201).json({ message });
+    res.status(201).json({ message, creditsUsed: creditResult.creditsUsed, creditsRemaining: creditResult.creditsRemaining });
   } catch (error) {
     console.error("Send message error:", error);
     res.status(500).json({ error: "Failed to send message" });
@@ -632,18 +760,33 @@ const sendImage = async (req, res) => {
     if (!receiverId) return res.status(400).json({ error: "receiverId is required" });
     if (!req.file) return res.status(400).json({ error: "Image is required" });
 
-    // Block check
-    try {
-      const blocked = await prisma.blockedUser.findUnique({
-        where: { blockerId_blockedId: { blockerId: receiverId, blockedId: senderId } },
-      });
-      if (blocked) return res.status(403).json({ error: "Cannot message this user." });
-    } catch (_e) {}
+    // Shared validation: self-check, verification, active, restriction, block
+    const validation = await validateSender(senderId, receiverId);
+    if (!validation.ok) {
+      return res.status(validation.status).json({ error: validation.error });
+    }
+
+    // Profanity filter on caption
+    if (caption && containsProfanity(caption)) {
+      return res.status(400).json({ error: "Caption contains inappropriate language and cannot be sent." });
+    }
+
+    // Contact info filter on caption
+    if (caption && containsContactInfo(caption)) {
+      return res.status(400).json({ error: "For your safety, sharing phone numbers, social media handles, or external links is not allowed." });
+    }
 
     // One active conversation rule
     const convCheck = await checkOneConversationRule(senderId, receiverId);
     if (!convCheck.allowed) {
       return res.status(convCheck.status).json({ error: convCheck.error });
+    }
+
+    // Credit check: only deduct for brand-new conversations
+    const isNew = await isNewConversation(senderId, receiverId);
+    const creditResult = await checkAndDeductCredit(senderId, isNew);
+    if (!creditResult.ok) {
+      return res.status(creditResult.status).json({ error: creditResult.error });
     }
 
     const imageUrl = "uploads/chat-images/" + req.file.filename;
@@ -657,7 +800,7 @@ const sendImage = async (req, res) => {
     });
 
     emitNewMessage(message, receiverId);
-    res.status(201).json({ message });
+    res.status(201).json({ message, creditsUsed: creditResult.creditsUsed, creditsRemaining: creditResult.creditsRemaining });
   } catch (error) {
     console.error("Send image error:", error);
     res.status(500).json({ error: "Failed to send image" });
@@ -672,18 +815,33 @@ const sendFile = async (req, res) => {
     if (!receiverId) return res.status(400).json({ error: "receiverId is required" });
     if (!req.file) return res.status(400).json({ error: "File is required" });
 
-    // Block check
-    try {
-      const blocked = await prisma.blockedUser.findUnique({
-        where: { blockerId_blockedId: { blockerId: receiverId, blockedId: senderId } },
-      });
-      if (blocked) return res.status(403).json({ error: "Cannot message this user." });
-    } catch (_e) {}
+    // Shared validation: self-check, verification, active, restriction, block
+    const validation = await validateSender(senderId, receiverId);
+    if (!validation.ok) {
+      return res.status(validation.status).json({ error: validation.error });
+    }
+
+    // Profanity filter on caption
+    if (caption && containsProfanity(caption)) {
+      return res.status(400).json({ error: "Caption contains inappropriate language and cannot be sent." });
+    }
+
+    // Contact info filter on caption
+    if (caption && containsContactInfo(caption)) {
+      return res.status(400).json({ error: "For your safety, sharing phone numbers, social media handles, or external links is not allowed." });
+    }
 
     // One active conversation rule
     const convCheck = await checkOneConversationRule(senderId, receiverId);
     if (!convCheck.allowed) {
       return res.status(convCheck.status).json({ error: convCheck.error });
+    }
+
+    // Credit check: only deduct for brand-new conversations
+    const isNew = await isNewConversation(senderId, receiverId);
+    const creditResult = await checkAndDeductCredit(senderId, isNew);
+    if (!creditResult.ok) {
+      return res.status(creditResult.status).json({ error: creditResult.error });
     }
 
     const fileUrl = "uploads/chat-files/" + req.file.filename;
@@ -701,7 +859,7 @@ const sendFile = async (req, res) => {
     });
 
     emitNewMessage(message, receiverId);
-    res.status(201).json({ message });
+    res.status(201).json({ message, creditsUsed: creditResult.creditsUsed, creditsRemaining: creditResult.creditsRemaining });
   } catch (error) {
     console.error("Send file error:", error);
     res.status(500).json({ error: "Failed to send file" });
@@ -728,6 +886,65 @@ const unblockUser = async (req, res) => {
   }
 };
 
+// Get active chat partners for a specific user (public, for profile/match display)
+const getActiveChatPartners = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find all users this person has non-deleted messages with
+    const sentMessages = await prisma.message.findMany({
+      where: { senderId: userId, deletedForSender: false },
+      select: { receiverId: true },
+      distinct: ["receiverId"],
+    });
+
+    const receivedMessages = await prisma.message.findMany({
+      where: { receiverId: userId, deletedForReceiver: false },
+      select: { senderId: true },
+      distinct: ["senderId"],
+    });
+
+    const partnerIds = Array.from(new Set([
+      ...sentMessages.map((m) => m.receiverId),
+      ...receivedMessages.map((m) => m.senderId),
+    ]));
+
+    if (partnerIds.length === 0) {
+      return res.json({ partners: [], count: 0 });
+    }
+
+    // Get partner details
+    const partners = await prisma.user.findMany({
+      where: { id: { in: partnerIds } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        isVerified: true,
+        membershipPlan: true,
+        profile: { select: { photos: true } },
+      },
+    });
+
+    res.json({
+      partners: partners.map((p) => ({
+        id: p.id,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        username: p.username,
+        isVerified: p.isVerified,
+        membershipPlan: p.membershipPlan,
+        photo: p.profile?.photos?.[0] || null,
+      })),
+      count: partners.length,
+    });
+  } catch (error) {
+    console.error("Get active chat partners error:", error);
+    res.status(500).json({ error: "Failed to get chat partners" });
+  }
+};
+
 module.exports = {
   sendMessage,
   sendImage,
@@ -735,6 +952,7 @@ module.exports = {
   sendMessageToAdmin,
   getConversation,
   getConversations,
+  getActiveChatPartners,
   markAsRead,
   deleteMessage,
   blockUser,

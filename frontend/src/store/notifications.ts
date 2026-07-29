@@ -15,11 +15,20 @@ interface NotificationState {
 const extractArray = (data: any): Notification[] =>
   Array.isArray(data) ? data : data?.notifications ?? [];
 
+function hasAuthToken(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!sessionStorage.getItem("accessToken");
+}
+
 export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
   fetchNotifications: async () => {
+    if (!hasAuthToken()) {
+      set({ notifications: [], unreadCount: 0, isLoading: false });
+      return;
+    }
     set({ isLoading: true });
     try {
       const { data } = await notificationService.getAll();
@@ -29,6 +38,10 @@ export const useNotificationStore = create<NotificationState>((set) => ({
     } catch { set({ isLoading: false }); }
   },
   fetchUnreadCount: async () => {
+    if (!hasAuthToken()) {
+      set({ unreadCount: 0 });
+      return;
+    }
     try {
       const { data } = await notificationService.getUnreadCount();
       set({ unreadCount: data.count ?? 0 });

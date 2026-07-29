@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = sessionStorage.getItem("accessToken");
 
     if (token) {
       api.get("/auth/me", { _noRedirect: true } as any).then((res) => {
@@ -62,8 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setConnectionError("server_down");
           setUser(null);
         } else {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
+          sessionStorage.removeItem("accessToken");
+          sessionStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
           setUser(null);
           if (typeof window !== "undefined" && window.location.pathname !== "/login") {
@@ -72,52 +72,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }).finally(() => setIsLoading(false));
     } else {
-      const rememberMe = localStorage.getItem("rememberMe");
-      const refreshToken = localStorage.getItem("refreshToken");
-      const ts = localStorage.getItem("rememberMeTimestamp");
-      const expired = !ts || Date.now() - Number(ts) > 3 * 24 * 60 * 60 * 1000;
-      if (expired && rememberMe) {
-        localStorage.removeItem("rememberMe");
-        localStorage.removeItem("rememberMeTimestamp");
-      }
-      if (rememberMe && refreshToken && !expired) {
-        axios.post(`${api.defaults.baseURL}/auth/refresh`, { refreshToken })
-          .then(({ data }) => {
-            localStorage.setItem("accessToken", data.accessToken);
-            if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
-            return api.get("/auth/me", { _noRedirect: true } as any);
-          })
-          .then((res) => {
-            const u = mapVerificationStatus(res.data.user);
-            setUser(u);
-            setConnectionError(null);
-            localStorage.setItem("user", JSON.stringify(u));
-          })
-          .catch((err) => {
-            if (isNetworkError(err)) {
-              setConnectionError("server_down");
-            } else {
-              localStorage.removeItem("accessToken");
-              localStorage.removeItem("refreshToken");
-              localStorage.removeItem("user");
-              localStorage.removeItem("rememberMe");
-              setUser(null);
-              if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-                window.location.href = "/login";
-              }
-            }
-          })
-          .finally(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
+      sessionStorage.removeItem("refreshToken");
+      setIsLoading(false);
     }
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const { data } = await api.post("/auth/login", { email, password });
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
+    sessionStorage.setItem("accessToken", data.accessToken);
+    sessionStorage.setItem("refreshToken", data.refreshToken);
+    if (typeof document !== "undefined") {
+      document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`;
+    }
     setUser(mapVerificationStatus(data.user));
     // Fetch full user data including membershipPlan
     try {
@@ -130,8 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (formData: Record<string, unknown>) => {
     const { data } = await api.post("/auth/register", formData);
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
+    sessionStorage.setItem("accessToken", data.accessToken);
+    sessionStorage.setItem("refreshToken", data.refreshToken);
+    if (typeof document !== "undefined") {
+      document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`;
+    }
     setUser(mapVerificationStatus(data.user));
     try {
       const { data: fullUser } = await api.get("/auth/me", { _noRedirect: true } as any);
@@ -142,12 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
-    localStorage.removeItem("rememberMe");
-    localStorage.removeItem("rememberMeTimestamp");
     localStorage.removeItem("trustedDeviceToken");
+    if (typeof document !== "undefined") {
+      document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
     setUser(null);
   }, []);
 

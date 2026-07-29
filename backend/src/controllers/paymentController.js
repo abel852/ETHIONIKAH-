@@ -23,6 +23,7 @@ async function ensureWallet(userId) {
 
 // Fetch plan config from DB, fall back to hardcoded for legacy compatibility
 async function getPlanConfig(planType) {
+  // Check MembershipPlan table first
   const plan = await prisma.membershipPlan.findFirst({
     where: { key: planType, isActive: true },
   });
@@ -35,6 +36,21 @@ async function getPlanConfig(planType) {
       name: plan.name,
     };
   }
+
+  // Check ContactCreditPackage table for credit packages
+  const creditPkg = await prisma.contactCreditPackage.findFirst({
+    where: { key: planType, isActive: true },
+  });
+  if (creditPkg) {
+    return {
+      type: "credit",
+      credits: creditPkg.credits,
+      price: creditPkg.price,
+      durationDays: 0,
+      name: creditPkg.name,
+    };
+  }
+
   // Legacy fallback for existing payments
   const LEGACY = {
     credit_1: { type: "credit", credits: 1, durationDays: 0, name: "1 Contact Credit" },
@@ -81,14 +97,18 @@ async function activatePayment(payment, adminId) {
 
   switch (config.type) {
     case "credit": {
+      const creditsToAdd = config.credits || 0;
+      console.log(`[activatePayment] Adding ${creditsToAdd} credits for user ${userId}, planType: ${planType}`);
       await ensureContactCredits(userId);
-      await prisma.userContactCredit.update({
+      const updatedCredit = await prisma.userContactCredit.update({
         where: { userId },
         data: {
-          credits: { increment: config.credits || 0 },
+          credits: { increment: creditsToAdd },
         },
       });
+      console.log(`[activatePayment] Credits after update: ${updatedCredit.credits}`);
       activation.applied = true;
+      activation.creditsAdded = creditsToAdd;
       break;
     }
     case "subscription": {
@@ -379,6 +399,11 @@ const approvePayment = async (req, res) => {
       return res.status(400).json({ error: `Payment is already ${payment.status}` });
     }
 
+    // Activate the payment FIRST (before marking as approved)
+    // This way if activation fails, the payment stays pending and admin can retry
+    const activation = await activatePayment(payment, adminId);
+
+    // Only mark as approved after successful activation
     const updated = await prisma.payment.update({
       where: { id },
       data: {
@@ -388,8 +413,6 @@ const approvePayment = async (req, res) => {
         adminNote: adminNote || payment.adminNote,
       },
     });
-
-    const activation = await activatePayment(updated, adminId);
 
     const config = await getPlanConfig(payment.planType);
     const planName = config?.name || payment.planType.charAt(0).toUpperCase() + payment.planType.slice(1);
@@ -730,6 +753,26 @@ const uploadReceiptFile = async (req, res) => {
   }
 };
 
+// Admin: re-activate an already-approved payment (fixes old payments where credits weren't applied)
+const reactivatePayment = async (req, res) => {
+  try {
+    const adminId = req.user.userId;
+    const { id } = req.params;
+
+    const payment = await prisma.payment.findUnique({ where: { id } });
+    if (!payment) return res.status(404).json({ error: "Payment not found" });
+    if (payment.status !== "approved") {
+      return res.status(400).json({ error: "Only approved payments can be reactivated" });
+    }
+
+    const activation = await activatePayment(payment, adminId);
+    res.json({ message: "Payment reactivated successfully", activation });
+  } catch (error) {
+    console.error("Reactivate payment error:", error);
+    res.status(500).json({ error: error.message || "Failed to reactivate payment" });
+  }
+};
+
 module.exports = {
   createPaymentRequest,
   getMyPayments,
@@ -737,6 +780,7 @@ module.exports = {
   getAdminPayments,
   approvePayment,
   rejectPayment,
+  reactivatePayment,
   getPaymentStats,
   getRenewalReminders,
   verifyTransaction,

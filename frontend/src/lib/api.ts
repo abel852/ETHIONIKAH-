@@ -9,7 +9,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("accessToken");
+    const token = sessionStorage.getItem("accessToken");
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -28,8 +28,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       // Session invalidated (tokenVersion mismatch) — don't retry, redirect immediately
       if (error.response?.data?.error?.includes("Session invalidated") || error.response?.data?.error?.includes("Account not found")) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";
@@ -41,15 +41,18 @@ api.interceptors.response.use(
       }
       original._retry = true;
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = sessionStorage.getItem("refreshToken");
         if (!refreshToken) throw new Error("No refresh token");
         const { data } = await axios.post(`${api.defaults.baseURL}/auth/refresh`, { refreshToken });
-        localStorage.setItem("accessToken", data.accessToken);
+        sessionStorage.setItem("accessToken", data.accessToken);
+        if (typeof document !== "undefined") {
+          document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`;
+        }
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(original);
       } catch {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";
@@ -76,8 +79,8 @@ api.interceptors.response.use(
 
     // Catch-all: any 401 that wasn't handled above — redirect to login
     if (status === 401) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      sessionStorage.removeItem("accessToken");
+      sessionStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
       if (typeof window !== "undefined" && window.location.pathname !== "/login") {
         window.location.href = "/login";
@@ -93,8 +96,8 @@ api.interceptors.response.use(
     } else if (status === 403) {
       // Suspended/deleted account — redirect to login
       if (serverMsg?.includes("suspended") || serverMsg?.includes("deleted") || error.response.data?.code === "ACCOUNT_DELETED") {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.href = "/login";

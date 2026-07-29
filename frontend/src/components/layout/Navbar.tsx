@@ -8,22 +8,54 @@ import { User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Button from "@/components/common/Button";
 import NotificationBell from "@/components/notifications/NotificationBell";
-import { useI18n } from "@/context/I18nContext";
+import { useI18n, type Lang } from "@/context/I18nContext";
+import { useAuth } from "@/context/AuthContext";
+
+const LANGUAGES: { code: Lang; label: string }[] = [
+  { code: "en", label: "EN" },
+  { code: "am", label: "አማ" },
+  { code: "ar", label: "ع" },
+];
+
+function LanguageSwitcher({ scrolled }: { scrolled: boolean }) {
+  const { lang, setLang } = useI18n();
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {LANGUAGES.map((l, i) => (
+        <div key={l.code} className="flex items-center">
+          {i > 0 && (
+            <span className={scrolled ? "text-charcoal-200" : "text-white/20"}>|</span>
+          )}
+          <button
+            onClick={() => setLang(l.code)}
+            className={cn(
+              "px-2 py-1 text-sm font-medium rounded-md transition-all duration-150",
+              lang === l.code
+                ? "text-accent font-bold"
+                : scrolled
+                  ? "text-charcoal-500 hover:text-charcoal-900 hover:bg-charcoal-100"
+                  : "text-white/60 hover:text-white hover:bg-white/10"
+            )}
+          >
+            {l.label}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Navbar() {
   const { t } = useI18n();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const navLinks = [
     { href: "/", label: t('nav.home') },
     { href: "/matches", label: t('nav.matches') },
   ];
   const [scrolled, setScrolled] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem("accessToken"));
-  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -80,7 +112,8 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <NotificationBell />
+            <LanguageSwitcher scrolled={scrolled} />
+            {isAuthenticated && <NotificationBell />}
             {isAuthenticated ? (
               <>
                 <Link href="/matches">
@@ -89,7 +122,7 @@ export default function Navbar() {
                     {t('nav.profile')}
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={() => { localStorage.removeItem("accessToken"); localStorage.removeItem("refreshToken"); localStorage.removeItem("user"); window.location.href = "/"; }}>
+                <Button variant="ghost" size="sm" onClick={() => { logout(); window.location.href = "/"; }}>
                   <LogOut className="w-4 h-4 mr-2" />
                     {t('nav.logout')}
                   </Button>
@@ -112,16 +145,18 @@ export default function Navbar() {
             )}
           </div>
 
-          <button
-            aria-label={isOpen ? t("nav.closeMenu") : t("nav.openMenu")}
-            className={cn(
-              "md:hidden relative z-50 p-2.5 rounded-xl transition-all duration-300",
-              scrolled
-                ? "hover:bg-charcoal-100 text-charcoal-700"
-                : "hover:bg-white/10 text-white"
-            )}
-            onClick={() => setIsOpen(!isOpen)}
-          >
+          <div className="flex items-center gap-2 md:hidden">
+            <LanguageSwitcher scrolled={scrolled} />
+            <button
+              aria-label={isOpen ? t("nav.closeMenu") : t("nav.openMenu")}
+              className={cn(
+                "relative z-50 p-2.5 rounded-xl transition-all duration-300",
+                scrolled
+                  ? "hover:bg-charcoal-100 text-charcoal-700"
+                  : "hover:bg-white/10 text-white"
+              )}
+              onClick={() => setIsOpen(!isOpen)}
+            >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               {isOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -130,6 +165,7 @@ export default function Navbar() {
               )}
             </svg>
           </button>
+          </div>
         </div>
       </div>
 

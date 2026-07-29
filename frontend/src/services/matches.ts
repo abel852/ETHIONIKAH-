@@ -5,6 +5,7 @@ export const matchService = {
   getSuggested: (params?: Record<string, unknown>) => api.get("/matches/suggested", { params }),
   search: (params?: Record<string, unknown>) => api.get("/matches/search", { params }),
   sendInterest: (matchedUserId: string) => api.post("/matches/interest", { matchedUserId }),
+  passProfile: (matchedUserId: string) => api.post("/matches/pass", { matchedUserId }),
   respondToInterest: (id: string, status: "accepted" | "rejected") => api.put(`/matches/${id}/respond`, { status }),
   getMyMatches: () => api.get("/matches/my-matches"),
   getFavorites: () => api.get("/matches/favorites"),

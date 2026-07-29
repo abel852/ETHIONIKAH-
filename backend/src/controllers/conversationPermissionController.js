@@ -20,8 +20,8 @@ const requestPermission = async (req, res) => {
     const priorMessages = await prisma.message.count({
       where: {
         OR: [
-          { senderId: requesterId, receiverId: partnerId },
-          { senderId: requesterId, receiverId: partnerId },
+          { senderId: requesterId, receiverId: partnerId, deletedForSender: false },
+          { senderId: partnerId, receiverId: requesterId, deletedForReceiver: false },
         ],
       },
     });

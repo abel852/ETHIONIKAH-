@@ -127,7 +127,7 @@ export default function WordSuggest({ value, onChange, placeholder, rows, classN
   }, [suggestions, cursorPos, value]);
 
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden">
       <textarea
         ref={textareaRef}
         value={value}
@@ -142,8 +142,8 @@ export default function WordSuggest({ value, onChange, placeholder, rows, classN
       />
       {suggestions.length > 0 && (
         <div
-          className="absolute z-50 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-lg shadow-xl max-h-40 overflow-y-auto"
-          style={{ top: popupPos.top, left: popupPos.left, minWidth: 160 }}
+          className="absolute z-50 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-lg shadow-xl max-h-40 overflow-y-auto max-w-[calc(100vw-2rem)]"
+          style={{ top: popupPos.top, left: 0, right: 0, minWidth: 160 }}
         >
           {suggestions.map((s, i) => (
             <button

@@ -387,11 +387,19 @@ export default function MembershipPage() {
                   </div>
                 )}
 
-                {contactCredits && contactCredits.credits > 0 && (
-                  <div className="flex items-center justify-center gap-2 mb-6">
-                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent/10 text-accent-dark dark:text-accent-light text-sm font-medium">
-                      <WalletIcon className="w-4 h-4" /> {contactCredits.credits} contact credit{contactCredits.credits === 1 ? "" : "s"} available
-                    </span>
+                {contactCredits && (
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="inline-flex items-center gap-4 px-5 py-3 rounded-2xl bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-500/10 dark:to-cyan-500/10 border border-teal-200 dark:border-teal-800/50">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0">
+                        <WalletIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-lg font-bold text-teal-700 dark:text-teal-300">{contactCredits.credits} {contactCredits.credits === 1 ? "credit" : "credits"}</p>
+                        <p className="text-xs text-teal-600/70 dark:text-teal-400/70">
+                          {contactCredits.credits > 0 ? `${contactCredits.credits} remaining · ${contactCredits.usedCredits || 0} used` : `All ${contactCredits.usedCredits || 0} credits used — buy more below`}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
 

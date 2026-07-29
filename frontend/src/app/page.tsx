@@ -3,8 +3,8 @@
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ChevronDown, Shield, CheckCircle, Sparkles, Star, ArrowRight,
   UserCheck, Heart, MessageCircle, Quote, ChevronLeft, ChevronRight,
@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const goldText = "bg-gold-gradient bg-clip-text text-transparent";
 
-function SectionHeading({ label, title, subtitle, light }: { label?: string; title: string; subtitle?: string; light?: boolean }) {
+function SectionHeading({ label, title, subtitle, light, imageSrc, imageAlt }: { label?: string; title: string; subtitle?: string; light?: boolean; imageSrc?: string; imageAlt?: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -25,6 +25,11 @@ function SectionHeading({ label, title, subtitle, light }: { label?: string; tit
       transition={{ duration: 0.8 }}
       className="text-center mb-16 md:mb-20"
     >
+      {imageSrc && (
+        <div className="relative w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-2 border-accent/50">
+          <Image src={imageSrc} alt={imageAlt ?? ""} fill sizes="96px" className="object-cover" />
+        </div>
+      )}
       {label && (
         <span className="inline-block text-xs uppercase tracking-[0.3em] text-accent font-medium mb-4">
           {label}
@@ -77,17 +82,16 @@ function HeroSection() {
   const ref = useRef(null);
   const { t } = useI18n();
   const { scrollYProgress } = useScroll({ target: ref, container: ref, offset: ["start start", "end start"] });
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const highlight = t("home.heroHighlight");
   const heroBadges = [t("home.heroBadge1"), t("home.heroBadge2"), t("home.heroBadge3")];
 
   return (
     <section ref={ref} className="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden bg-charcoal-900">
-      <motion.div style={{ y: bgY }} className="absolute inset-0">
-        <Image src="/images/muslimwedding.png" alt="" fill sizes="100vw" className="object-cover opacity-40" priority />
+      <div className="absolute inset-0 overflow-hidden">
+        <Image src="/images/gemini-bg-1.png" alt="" fill sizes="100vw" className="object-cover opacity-40" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal-900/70 via-charcoal-900/50 to-charcoal-900/80" />
-      </motion.div>
+      </div>
 
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -170,10 +174,14 @@ function PremiumSection() {
   ];
 
   return (
-    <section className="relative py-24 md:py-32 bg-gradient-to-br from-charcoal-900 via-[#1a1040] to-charcoal-900 overflow-hidden">
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gold/10 rounded-full blur-3xl" />
+    <section className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
+        <Image src="/images/gemini-bg-2.png" alt="" fill sizes="100vw" className="object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-charcoal-900/80 via-charcoal-900/60 to-charcoal-900/80" />
+      </div>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/[0.07] rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gold/[0.05] rounded-full blur-3xl" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -357,7 +365,7 @@ function JourneySection() {
   ];
 
   return (
-    <section ref={ref} className="relative py-24 md:py-32 bg-white overflow-hidden">
+    <section ref={ref} className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden">
       <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-accent/20 to-transparent hidden md:block" />
       <div className="absolute left-1/2 top-0 bottom-0 w-[200px] -translate-x-1/2 bg-accent/[0.02] blur-3xl rounded-full pointer-events-none hidden md:block" />
 
@@ -366,6 +374,7 @@ function JourneySection() {
           label={t("home.journeyEyebrow")}
           title={t("home.journeyTitle")}
           subtitle={t("home.journeySubtitle")}
+          light
         />
 
         <div className="relative">
@@ -381,8 +390,8 @@ function JourneySection() {
                 className={`relative flex items-start gap-6 md:gap-0 mb-12 md:mb-16 last:mb-0 ${isLeft ? "md:flex-row" : "md:flex-row-reverse"}`}
               >
                 <div className={`hidden md:block w-1/2 ${isLeft ? "pr-12 text-right" : "pl-12"}`}>
-                  <h3 className="text-lg font-display font-semibold text-charcoal-900 mb-1">{step.title}</h3>
-                  <p className="text-sm text-charcoal-500 leading-relaxed">{step.desc}</p>
+                  <h3 className="text-lg font-display font-semibold text-white mb-1">{step.title}</h3>
+                  <p className="text-sm text-charcoal-300 leading-relaxed">{step.desc}</p>
                 </div>
 
                 <div className="relative flex-shrink-0 z-10 flex items-center justify-center">
@@ -393,8 +402,8 @@ function JourneySection() {
                 </div>
 
                 <div className="md:hidden flex-1">
-                  <h3 className="text-lg font-display font-semibold text-charcoal-900 mb-1">{step.title}</h3>
-                  <p className="text-sm text-charcoal-500 leading-relaxed">{step.desc}</p>
+                  <h3 className="text-lg font-display font-semibold text-white mb-1">{step.title}</h3>
+                  <p className="text-sm text-charcoal-300 leading-relaxed">{step.desc}</p>
                 </div>
               </motion.div>
             );
@@ -413,21 +422,21 @@ function StoriesSection() {
     {
       name: t("home.story1Name"),
       location: t("home.story1Location"),
-      image: "/images/nikkah-prep.png",
+      image: "/images/4288.png",
       quote: t("home.story1Quote"),
       role: t("home.story1Role"),
     },
     {
       name: t("home.story2Name"),
       location: t("home.story2Location"),
-      image: "/images/wedding-ceremony.png",
+      image: "/images/B2.png",
       quote: t("home.story2Quote"),
       role: t("home.story2Role"),
     },
     {
       name: t("home.story3Name"),
       location: t("home.story3Location"),
-      image: "/images/wedding-thumb.png",
+      image: "/images/R.png",
       quote: t("home.story3Quote"),
       role: t("home.story3Role"),
     },
@@ -446,13 +455,13 @@ function StoriesSection() {
 
   return (
     <section className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden">
-      <div className="absolute inset-0">
-        <Image src={story.image} alt="" fill sizes="100vw" className="object-cover opacity-10 transition-opacity duration-1000" />
+      <div className="absolute inset-0 overflow-hidden">
+        <Image src={story.image} alt="" fill sizes="100vw" className="object-cover opacity-10 transition-opacity duration-1000" priority={false} />
         <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900 via-charcoal-900/95 to-charcoal-900/90" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading label={t("home.storiesEyebrow")} title={t("home.storiesTitle")} subtitle={t("home.storiesSubtitle")} light />
+        <SectionHeading label={t("home.storiesEyebrow")} title={t("home.storiesTitle")} subtitle={t("home.storiesSubtitle")} light imageSrc="/images/decorative-1.png" imageAlt="" />
 
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-2">
@@ -487,8 +496,8 @@ function StoriesSection() {
                   &ldquo;{story.quote}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-accent/50">
-                    <Image src={story.image} alt={story.name} width={56} height={56} className="w-full h-full object-cover" />
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-accent/50 bg-accent/20">
+                    <Image src={story.image} alt={story.name} fill sizes="56px" className="object-cover" />
                   </div>
                   <div>
                     <p className="font-display font-semibold text-white">{story.name}</p>
@@ -530,8 +539,8 @@ function CTASection() {
   const highlight = t("home.ctaHighlight");
   return (
     <section className="relative py-28 md:py-40 bg-charcoal-900 overflow-hidden">
-      <div className="absolute inset-0">
-        <Image src="/images/muslimwedding.png" alt="" fill sizes="100vw" className="object-cover opacity-[0.04]" />
+      <div className="absolute inset-0 overflow-hidden">
+        <Image src="/images/gemini-bg-2.png" alt="" fill sizes="100vw" className="object-cover opacity-[0.04]" />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900 via-charcoal-900/95 to-charcoal-900/90" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/[0.03] rounded-full blur-3xl" />
       </div>

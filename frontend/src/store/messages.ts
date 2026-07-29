@@ -77,13 +77,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     try {
       const { data } = await messageService.getMessages(conversationId);
       if (get().activeConversation !== conversationId) return;
-      const msgs = (data.messages || []).filter((m: any) => {
-        const uid = get().activeConversation;
-        const userId = uid;
-        if (!userId) return true;
-        return !(m.senderId === userId && m.deletedForSender) && !(m.receiverId === userId && m.deletedForReceiver);
-      });
-      set({ messages: msgs, matchReason: data.matchReason || null, isLoading: false });
+      set({ messages: data.messages || [], matchReason: data.matchReason || null, isLoading: false });
     } catch { set({ error: "Failed to load messages", isLoading: false }); }
   },
   sendMessage: async (conversationId, content, replyToId) => {

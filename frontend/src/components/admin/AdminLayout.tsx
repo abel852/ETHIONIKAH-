@@ -376,49 +376,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               {t('admin.language')}
             </span>
-            <div className="relative">
-              <button
-                onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all"
-                style={{
-                  background: d ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                  color: d ? s.gold : "#1a1a2e",
-                }}
-              >
-                <Languages className="w-3.5 h-3.5" />
-                {lang.toUpperCase()}
-                <ChevronDown className={`w-3 h-3 transition-transform ${langOpen ? "rotate-180" : ""}`} />
-              </button>
-              {langOpen && (
-                <div
-                  className="absolute bottom-full right-0 mb-1 rounded-lg overflow-hidden z-50 min-w-[120px]"
-                  style={{
-                    background: d ? s.surface : "#fff",
-                    border: d ? `1px solid ${s.sidebarBorder}` : "1px solid #d0d3d6",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  }}
-                >
-                  {([
-                    { code: "en", label: "English" },
-                    { code: "am", label: "አማርኛ" },
-                    { code: "ar", label: "العربية" },
-                    { code: "om", label: "Afaan Oromoo" },
-                  ] as { code: Lang; label: string }[]).map((l) => (
-                    <button
-                      key={l.code}
-                      onClick={() => { setLang(l.code); setLangOpen(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium transition-colors text-left"
-                      style={{
-                        background: lang === l.code ? (d ? "rgba(212,175,55,0.15)" : "rgba(0,0,0,0.04)") : "transparent",
-                        color: lang === l.code ? (d ? s.gold : "#1a1a2e") : (d ? s.text : "#333"),
-                      }}
-                    >
-                      {l.label}
-                      {lang === l.code && <span className="ml-auto">✓</span>}
-                    </button>
-                  ))}
+            <div className="flex items-center gap-0.5">
+              {([
+                { code: "en", label: "EN" },
+                { code: "am", label: "አማ" },
+                { code: "ar", label: "ع" },
+              ] as { code: Lang; label: string }[]).map((l, i) => (
+                <div key={l.code} className="flex items-center">
+                  {i > 0 && <span style={{ color: d ? s.textMuted : "#ccc" }}>|</span>}
+                  <button
+                    onClick={() => setLang(l.code)}
+                    className="px-2 py-0.5 text-xs font-medium rounded-md transition-all"
+                    style={{
+                      color: lang === l.code ? (d ? s.gold : "#1a1a2e") : (d ? s.textMuted : "#666"),
+                      fontWeight: lang === l.code ? 700 : 500,
+                    }}
+                  >
+                    {l.label}
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         </div>

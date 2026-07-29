@@ -124,6 +124,7 @@ export const adminService = {
   getRenewalReminders: (params?: Record<string, unknown>) => api.get("/payments/admin/payments/renewals", { params }),
   approvePayment: (id: string, adminNote?: string) => api.post(`/payments/admin/payments/${id}/approve`, { adminNote }),
   rejectPayment: (id: string, adminNote?: string) => api.post(`/payments/admin/payments/${id}/reject`, { adminNote }),
+  reactivatePayment: (id: string) => api.post(`/payments/admin/payments/${id}/reactivate`),
   verifyTransaction: (ref: string) => api.get(`/payments/admin/verify-transaction/${encodeURIComponent(ref)}`),
 
   // Membership Plans

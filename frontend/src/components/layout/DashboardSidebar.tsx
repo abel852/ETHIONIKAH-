@@ -15,11 +15,17 @@ import { useAuth } from "@/context/AuthContext";
 import { mediaUrl } from "@/lib/utils";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useMessageStore } from "@/store/messages";
-import { useI18n } from "@/context/I18nContext";
+import { useI18n, type Lang } from "@/context/I18nContext";
 
 export default function DashboardSidebar() {
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const pathname = usePathname();
+
+  const LANGS: { code: Lang; label: string }[] = [
+    { code: "en", label: "EN" },
+    { code: "am", label: "አማ" },
+    { code: "ar", label: "ع" },
+  ];
   const mainNav = [
     { href: "/matches", label: t('nav.matches'), icon: Heart, requiresVerification: false },
     { href: "/liked-interest", label: t('nav.liked'), icon: Sparkles, requiresVerification: true },
@@ -98,6 +104,22 @@ export default function DashboardSidebar() {
           <span className="font-display font-bold text-base text-charcoal-900 dark:text-white">Ethio Nikah</span>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-0.5">
+            {LANGS.map((l, i) => (
+              <div key={l.code} className="flex items-center">
+                {i > 0 && <span className="text-charcoal-200 dark:text-charcoal-600">|</span>}
+                <button
+                  onClick={() => setLang(l.code)}
+                  className={cn(
+                    "px-2 py-0.5 text-sm font-medium rounded-md transition-all",
+                    lang === l.code ? "text-accent font-bold" : "text-charcoal-500 dark:text-charcoal-400"
+                  )}
+                >
+                  {l.label}
+                </button>
+              </div>
+            ))}
+          </div>
           {!isBanned && <NotificationBell />}
         </div>
       </div>
@@ -246,6 +268,22 @@ export default function DashboardSidebar() {
         </nav>
 
         <div className="p-3 border-t border-charcoal-100/50 dark:border-charcoal-800 space-y-2">
+          <div className="flex items-center justify-center gap-0.5 py-1">
+            {LANGS.map((l, i) => (
+              <div key={l.code} className="flex items-center">
+                {i > 0 && <span className="text-charcoal-200 dark:text-charcoal-600">|</span>}
+                <button
+                  onClick={() => setLang(l.code)}
+                  className={cn(
+                    "px-2.5 py-1 text-sm font-medium rounded-md transition-all",
+                    lang === l.code ? "text-accent font-bold" : "text-charcoal-500 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:text-white"
+                  )}
+                >
+                  {l.label}
+                </button>
+              </div>
+            ))}
+          </div>
           <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-charcoal-50 dark:hover:bg-charcoal-800 transition-colors">
             <Avatar key={user?.photos?.[0] || "no-photo"} firstName={user?.firstName || "U"} lastName={user?.lastName || ""} size="sm" src={mediaUrl(user?.photos?.[0])} />
             <div className="flex-1 min-w-0">

@@ -38,6 +38,7 @@ router.get("/admin/payments/stats", authenticate, authorize("admin"), paymentCon
 router.get("/admin/payments/renewals", authenticate, authorize("admin"), paymentController.getRenewalReminders);
 router.post("/admin/payments/:id/approve", authenticate, authorize("admin"), paymentController.approvePayment);
 router.post("/admin/payments/:id/reject", authenticate, authorize("admin"), paymentController.rejectPayment);
+router.post("/admin/payments/:id/reactivate", authenticate, authorize("admin"), paymentController.reactivatePayment);
 router.get("/admin/verify-transaction/:ref", authenticate, authorize("admin"), paymentController.verifyTransaction);
 
 // User routes

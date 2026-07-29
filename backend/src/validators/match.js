@@ -1,12 +1,12 @@
 const { z } = require("zod");
 
 const sendInterestSchema = z.object({
-  targetUserId: z.string().min(1, "targetUserId is required"),
+  matchedUserId: z.string().min(1, "matchedUserId is required"),
   message: z.string().max(500, "Message too long").optional(),
 });
 
 const respondToInterestSchema = z.object({
-  action: z.enum(["accept", "reject"], "Invalid action"),
+  status: z.enum(["accepted", "rejected"], "Invalid status"),
   message: z.string().max(500).optional(),
 });
 

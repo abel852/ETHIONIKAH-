@@ -101,11 +101,24 @@ model Profile {
   nationality              String?
   region                   String?
   height                   Int?
+  weight                   String?
+  appearance               String?
+  hasWali                  String?
+  waliName                 String?
+  waliPhone                String?
+  waliRelation             String?
+  hasChildren              String?
+  childrenCount            String?
+  childrenCustody          String?
   childrenStatus           String?           @map("children_status")
   religiousCommitment      String?           @map("religious_commitment")
   prayerHabits             String?           @map("prayer_habits")
   quranReadingFrequency    String?           @map("quran_reading_frequency")
   islamicClassesAttendance String?           @map("islamic_classes_attendance")
+  islamicTradition         String?           @map("islamic_tradition")
+  islamicTraditionOther    String?           @map("islamic_tradition_other")
+  islamicMatchPreference   String?           @map("islamic_match_preference")
+  personalPreference       String?           @map("personal_preference")
   educationLevel           String?           @map("education_level")
   occupation               String?
   employmentStatus         String?           @map("employment_status")
@@ -245,6 +258,7 @@ model SpousePreference {
   preferredLocation            String   @map("preferred_location")
   preferredMaritalStatus       String   @map("preferred_marital_status")
   preferredReligiousCommitment String   @map("preferred_religious_commitment")
+  islamicMatchPreference       String?  @map("islamic_match_preference")
   profileId                    String   @unique @map("profile_id") @db.Uuid
   updatedAt                    DateTime @updatedAt @map("updated_at")
   waliInvolvement              String   @map("wali_involvement")
@@ -565,6 +579,8 @@ model health_info {
   chronic_details             String?
   disabilities                String?
   disability_details          String?
+  dwarfism_status             String?
+  dwarfism_details            String?
   other_conditions            String?
   share_with_matches          Boolean  @default(false)
   hiv_match_preference        String?  @default("any")

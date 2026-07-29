@@ -45,7 +45,7 @@ export function proxy(request: NextRequest) {
   const cspHeader = [
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isProduction ? "" : " 'unsafe-eval'"}`,
-    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+    `style-src 'self' 'unsafe-hashes' 'unsafe-inline' https://fonts.googleapis.com`,
     `font-src 'self' https://fonts.gstatic.com data:`,
     `img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://images.unsplash.com ${apiBase} ${isProduction ? "" : "http://localhost:*"}`,
     `media-src 'self' data: blob:`,

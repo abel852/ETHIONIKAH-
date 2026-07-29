@@ -150,7 +150,7 @@ app.use("/uploads", (req, res, next) => {
 }));
 
 // General API rate limiting — configurable via env (dev: 10000 / 15 min, prod: 1000 / 15 min)
-const { apiLimiter } = require("./middleware/rateLimiter");
+const { apiLimiter, authedLimiter } = require("./middleware/rateLimiter");
 app.use("/api", apiLimiter);
 
 const authRoutes = require("./routes/auth");
@@ -185,23 +185,23 @@ setupSocket(io).then(({ io: socketIo }) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/profile", profileRoutes);
-app.use("/api/spouse-preference", spousePreferenceRoutes);
-app.use("/api/verification", verificationRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/admin", require("./routes/adminManagement"));
-app.use("/api/admin", backupRoutes);
-app.use("/api/reports", reportRoutes);
-app.use("/api/complaints", complaintRoutes);
-app.use("/api/matches", matchRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/subscriptions", subscriptionRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/membership", membershipPlanRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/health", healthRoutes);
-app.use("/api/users/preferences", preferencesRoutes);
-app.use("/api/conversation-permissions", conversationPermissionRoutes);
+app.use("/api/profile", authedLimiter, profileRoutes);
+app.use("/api/spouse-preference", authedLimiter, spousePreferenceRoutes);
+app.use("/api/verification", authedLimiter, verificationRoutes);
+app.use("/api/admin", authedLimiter, adminRoutes);
+app.use("/api/admin", authedLimiter, require("./routes/adminManagement"));
+app.use("/api/admin", authedLimiter, backupRoutes);
+app.use("/api/reports", authedLimiter, reportRoutes);
+app.use("/api/complaints", authedLimiter, complaintRoutes);
+app.use("/api/matches", authedLimiter, matchRoutes);
+app.use("/api/messages", authedLimiter, messageRoutes);
+app.use("/api/subscriptions", authedLimiter, subscriptionRoutes);
+app.use("/api/payments", authedLimiter, paymentRoutes);
+app.use("/api/membership", authedLimiter, membershipPlanRoutes);
+app.use("/api/notifications", authedLimiter, notificationRoutes);
+app.use("/api/health", authedLimiter, healthRoutes);
+app.use("/api/users/preferences", authedLimiter, preferencesRoutes);
+app.use("/api/conversation-permissions", authedLimiter, conversationPermissionRoutes);
 app.use("/api", bookRoutes);
 
 app.get("/api/health", (_req, res) => {

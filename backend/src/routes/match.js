@@ -10,6 +10,7 @@ router.get("/recommended", authenticate, requireActive, matchController.getRecom
 router.get("/suggested", authenticate, requireActive, matchController.getSuggestedMatches);
 router.get("/search", authenticate, requireActive, validate(searchSchema), matchController.searchProfiles);
 router.post("/interest", authenticate, requireActive, matchActionLimiter, validate(sendInterestSchema), matchController.sendInterest);
+router.post("/pass", authenticate, requireActive, matchActionLimiter, matchController.passProfile);
 router.put("/:id/respond", authenticate, requireActive, matchActionLimiter, validate(respondToInterestSchema), matchController.respondToInterest);
 router.get("/my-matches", authenticate, requireActive, matchController.getMyMatches);
 router.get("/likes-received", authenticate, requireActive, matchController.getLikesReceived);

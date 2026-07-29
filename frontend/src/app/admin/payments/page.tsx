@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Search, CreditCard, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Receipt, Wallet, Shield,
-  ScanSearch, AlertTriangle, Info, User,
+  ScanSearch, AlertTriangle, Info, User, RefreshCw,
 } from "lucide-react";
 import { Card, Button } from "@/components/common";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -88,6 +88,20 @@ export default function AdminPaymentsPage() {
       fetchData();
     } catch {
       toast.error("Failed to approve payment");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleReactivate = async (id: string) => {
+    setProcessing(true);
+    try {
+      await adminService.reactivatePayment(id);
+      toast.success("Payment reactivated — credits/benefits applied");
+      setSelected(null);
+      fetchData();
+    } catch {
+      toast.error("Failed to reactivate payment");
     } finally {
       setProcessing(false);
     }
@@ -280,9 +294,12 @@ export default function AdminPaymentsPage() {
                           <span className={`w-1.5 h-1.5 rounded-full ${p.status === "approved" ? "bg-green-500" : p.status === "rejected" ? "bg-red-500" : "bg-amber-500"}`} />
                           {p.status}
                         </span>
-                        <Button variant="ghost" size="sm" onClick={() => { setSelected(p); setAdminNote(p.adminNote || ""); }}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <button
+                          onClick={() => { setSelected(p); setAdminNote(p.adminNote || ""); }}
+                          className="p-2.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
@@ -397,8 +414,8 @@ export default function AdminPaymentsPage() {
         </div>
       </Card>
 
-      <Card padding="none" hover={false}>
-        <div className="overflow-x-auto">
+      <Card padding="none" hover={false} className="relative z-10">
+        <div className="overflow-x-auto" style={{ touchAction: 'pan-x pinch-zoom', pointerEvents: 'auto' }}>
           {loading ? (
             <div className="p-8 space-y-4">
               {[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-charcoal-100 dark:bg-charcoal-800 rounded-lg animate-pulse" />)}
@@ -415,7 +432,7 @@ export default function AdminPaymentsPage() {
                   <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Status</th>
                   <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider hidden md:table-cell">Membership</th>
                   <th className="text-left py-3.5 px-3 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider hidden md:table-cell">Date</th>
-                  <th className="text-right py-3.5 px-4 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider">Actions</th>
+                  <th className="text-right py-3.5 px-4 text-xs font-medium text-charcoal-400 dark:text-white uppercase tracking-wider sticky right-0 bg-charcoal-50/50 dark:bg-charcoal-800/50">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -425,7 +442,8 @@ export default function AdminPaymentsPage() {
                   const PlanIcon = planIcons[p.planType] || CreditCard;
                   return (
                     <tr key={p.id}
-                      className="border-b border-charcoal-50 dark:border-charcoal-700/50 hover:bg-charcoal-50 dark:hover:bg-charcoal-700/20 transition-colors"
+                      onClick={() => { setSelected(p); setAdminNote(p.adminNote || ""); }}
+                      className="border-b border-charcoal-50 dark:border-charcoal-700/50 hover:bg-charcoal-50 dark:hover:bg-charcoal-700/20 transition-colors cursor-pointer"
                     >
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
@@ -460,10 +478,13 @@ export default function AdminPaymentsPage() {
                         ) : "—"}
                       </td>
                       <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white hidden md:table-cell">{formatDate(p.createdAt)}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <Button variant="ghost" size="sm" onClick={() => { setSelected(p); setAdminNote(p.adminNote || ""); }}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                      <td className="py-3.5 px-4 text-right sticky right-0 bg-white dark:bg-charcoal-800/80 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => { setSelected(p); setAdminNote(p.adminNote || ""); }}
+                          className="p-2.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -563,6 +584,19 @@ export default function AdminPaymentsPage() {
                 <p className="text-sm text-charcoal-500 dark:text-white">This payment has already been {selected.status}.</p>
                 {selected.verifiedAt && <p className="text-xs text-charcoal-400 dark:text-white mt-1">Verified at {formatDate(selected.verifiedAt)}</p>}
                 {selected.adminNote && <p className="text-xs text-charcoal-400 dark:text-white mt-1">Note: {selected.adminNote}</p>}
+                {selected.status === "approved" && (
+                  <div className="mt-3">
+                    <Button
+                      variant="secondary"
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                      loading={processing}
+                      onClick={() => handleReactivate(selected.id)}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-1.5" /> Reactivate (Re-apply Credits)
+                    </Button>
+                    <p className="text-xs text-charcoal-400 dark:text-white mt-1.5 text-center">Use this if the user didn't receive their credits/subscription after approval.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

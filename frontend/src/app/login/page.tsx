@@ -5,14 +5,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Shield, Smartphone, Key, Home, Clock, AlertTriangle, LifeBuoy, HelpCircle } from "lucide-react";
-import { useI18n } from "@/context/I18nContext";
+import { useI18n, type Lang } from "@/context/I18nContext";
 import { Button, Input } from "@/components/common";
 import api from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 
 export default function LoginPage() {
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const router = useRouter();
+
+  const LANGS: { code: Lang; label: string }[] = [
+    { code: "en", label: "EN" },
+    { code: "am", label: "አማ" },
+    { code: "ar", label: "ع" },
+  ];
 
   const [showPassword, setShowPassword] = useState(false);
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
@@ -69,11 +75,11 @@ export default function LoginPage() {
   }, [lockout]);
 
   const handleLoginSuccess = (data: any) => {
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
+    sessionStorage.setItem("accessToken", data.accessToken);
+    sessionStorage.setItem("refreshToken", data.refreshToken);
     localStorage.setItem("user", JSON.stringify(data.user));
 
-    document.cookie = `accessToken=${data.accessToken}; path=/; max-age=${60*60*24*3}; SameSite=Lax`;
+    document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`;
 
     if (data.deviceToken) {
       localStorage.setItem("trustedDeviceToken", data.deviceToken);
@@ -169,10 +175,34 @@ export default function LoginPage() {
 
   if (requires2FA) {
     return (
-      <div className="min-h-screen flex dark:bg-charcoal-900">
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-md">
-            <div className="flex items-center justify-between mb-2">
+      <div className="min-h-screen flex flex-col lg:flex-row dark:bg-charcoal-900 overflow-x-hidden">
+
+      {/* Mobile dark header */}
+      <div className="lg:hidden bg-charcoal-900 px-3 py-3 flex items-center justify-between">
+        <Link href="/" className="inline-flex items-center gap-2">
+          <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
+          <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
+        </Link>
+        <div className="flex items-center gap-0.5">
+          {LANGS.map((l, i) => (
+            <div key={l.code} className="flex items-center">
+              {i > 0 && <span className="text-white/15">|</span>}
+              <button
+                onClick={() => setLang(l.code)}
+                className={`px-1.5 py-0.5 text-xs font-medium rounded-md transition-all ${
+                  lang === l.code ? "text-accent font-bold" : "text-white/50 hover:text-white/80"
+                }`}
+              >
+                {l.label}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-3 py-3 lg:py-12 bg-charcoal-50 dark:bg-charcoal-900">
+        <div className="w-full max-w-md mx-auto min-w-0">
+          <div className="hidden lg:flex items-center justify-between mb-2">
               <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-charcoal-800/80 backdrop-blur-sm border border-charcoal-100/50 dark:border-charcoal-700 shadow-xs hover:shadow-md hover:bg-white dark:hover:bg-charcoal-700 transition-all group">
                 <ArrowLeft className="w-4 h-4 text-accent group-hover:-translate-x-0.5 transition-transform" />
                 <span className="text-sm font-medium text-charcoal-600 dark:text-charcoal-300">{t('auth.home')}</span>
@@ -183,11 +213,11 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">{t('auth.twoFactor')}</h1>
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">{t('auth.twoFactor')}</h1>
               <p className="text-charcoal-500 dark:text-charcoal-400">{useBackupCode ? t('auth.enterRecoveryCode') : t('auth.enterAuthCode')}</p>
             </div>
 
-            <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-8">
+            <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden">
               <form onSubmit={handle2FASubmit} className="space-y-5">
                 <div className="text-center">
                   <div className="w-16 h-16 rounded-2xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center mx-auto mb-4">
@@ -275,25 +305,66 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex dark:bg-charcoal-900">
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="flex items-center justify-between mb-2">
+    <div className="min-h-screen flex flex-col lg:flex-row dark:bg-charcoal-900 overflow-x-hidden">
+
+      {/* Mobile dark header */}
+      <div className="lg:hidden bg-charcoal-900 px-3 py-3 flex items-center justify-between">
+        <Link href="/" className="inline-flex items-center gap-2">
+          <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
+          <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
+        </Link>
+        <div className="flex items-center gap-0.5">
+          {LANGS.map((l, i) => (
+            <div key={l.code} className="flex items-center">
+              {i > 0 && <span className="text-white/15">|</span>}
+              <button
+                onClick={() => setLang(l.code)}
+                className={`px-1.5 py-0.5 text-xs font-medium rounded-md transition-all ${
+                  lang === l.code ? "text-accent font-bold" : "text-white/50 hover:text-white/80"
+                }`}
+              >
+                {l.label}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-3 py-3 lg:py-12 bg-charcoal-50 dark:bg-charcoal-900">
+        <div className="w-full max-w-md mx-auto min-w-0">
+          <div className="hidden lg:flex items-center justify-between mb-2">
             <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-charcoal-800/80 backdrop-blur-sm border border-charcoal-100/50 dark:border-charcoal-700 shadow-xs hover:shadow-md hover:bg-white dark:hover:bg-charcoal-700 transition-all group">
               <ArrowLeft className="w-4 h-4 text-accent group-hover:-translate-x-0.5 transition-transform" />
               <span className="text-sm font-medium text-charcoal-600 dark:text-charcoal-300">{t('auth.home')}</span>
             </Link>
-            <div className="flex items-center gap-2 opacity-60">
-              <Image src="/images/logo.png" alt="" width={28} height={28} className="rounded-lg border border-accent/50" />
-              <span className="font-display font-semibold text-sm text-charcoal-500 dark:text-charcoal-400">Ethio Nikah</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-0.5">
+                {LANGS.map((l, i) => (
+                  <div key={l.code} className="flex items-center">
+                    {i > 0 && <span className="text-charcoal-200 dark:text-charcoal-600">|</span>}
+                    <button
+                      onClick={() => setLang(l.code)}
+                      className={`px-2 py-1 text-sm font-medium rounded-md transition-all ${
+                        lang === l.code ? "text-accent font-bold" : "text-charcoal-500 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:text-white"
+                      }`}
+                    >
+                      {l.label}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 opacity-60">
+                <Image src="/images/logo.png" alt="" width={28} height={28} className="rounded-lg border border-accent/50" />
+                <span className="font-display font-semibold text-sm text-charcoal-500 dark:text-charcoal-400">Ethio Nikah</span>
+              </div>
             </div>
           </div>
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">{t('auth.welcomeBack')}</h1>
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">{t('auth.welcomeBack')}</h1>
             <p className="text-charcoal-500 dark:text-charcoal-400">{t('auth.signInToContinue')}</p>
           </div>
 
-          <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-8">
+          <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden">
             <div className="flex gap-2 mb-6 p-1 bg-charcoal-100 dark:bg-charcoal-700 rounded-xl">
               <button
                 type="button"

@@ -1,5 +1,20 @@
 const { z } = require("zod");
 
+// Helper: treat empty strings as undefined for optional number/boolean fields
+const optionalNumber = (min, max) => z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : v),
+  z.coerce.number().int().min(min).max(max).optional()
+);
+const optionalBoolean = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : v),
+  z.coerce.boolean().optional()
+);
+// Helper: treat empty strings as undefined for optional string fields
+const optionalString = (max) => z.preprocess(
+  (v) => (v === "" || v === null ? undefined : v),
+  z.string().max(max).optional()
+);
+
 const registerSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
   phone: z.string().transform((v) => {
@@ -24,89 +39,89 @@ const registerSchema = z.object({
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
 
   // Basic Info
-  nationality: z.string().max(100).optional(),
-  country: z.string().max(100).optional(),
-  city: z.string().max(100).optional(),
-  height: z.coerce.number().int().min(100).max(250).optional(),
-  weight: z.string().max(50).optional(),
-  appearance: z.string().max(100).optional(),
-  hasWali: z.string().max(20).optional(),
-  waliName: z.string().max(100).optional(),
-  waliPhone: z.string().max(20).optional(),
-  waliRelation: z.string().max(50).optional(),
-  maritalStatus: z.string().max(50).optional(),
-  hasChildren: z.string().max(20).optional(),
-  childrenCount: z.string().max(20).optional(),
-  childrenCustody: z.string().max(100).optional(),
-  childrenStatus: z.string().max(100).optional(),
+  nationality: optionalString(100),
+  country: optionalString(100),
+  city: optionalString(100),
+  height: optionalNumber(100, 250),
+  weight: optionalString(50),
+  appearance: optionalString(100),
+  hasWali: optionalString(20),
+  waliName: optionalString(100),
+  waliPhone: optionalString(20),
+  waliRelation: optionalString(50),
+  maritalStatus: optionalString(50),
+  hasChildren: optionalString(20),
+  childrenCount: optionalString(20),
+  childrenCustody: optionalString(100),
+  childrenStatus: optionalString(100),
 
   // Religious Info
-  religiousCommitment: z.string().max(100).optional(),
-  prayerHabits: z.string().max(100).optional(),
-  quranReadingFrequency: z.string().max(100).optional(),
-  islamicClassesAttendance: z.string().max(100).optional(),
-  islamicTradition: z.string().max(100).optional(),
-  islamicTraditionOther: z.string().max(100).optional(),
-  islamicMatchPreference: z.string().max(100).optional(),
-  preferredReligiousCommitment: z.string().max(100).optional(),
+  religiousCommitment: optionalString(100),
+  prayerHabits: optionalString(100),
+  quranReadingFrequency: optionalString(100),
+  islamicClassesAttendance: optionalString(100),
+  islamicTradition: optionalString(100),
+  islamicTraditionOther: optionalString(100),
+  islamicMatchPreference: optionalString(100),
+  preferredReligiousCommitment: optionalString(100),
 
   // Education & Career
-  educationLevel: z.string().max(100).optional(),
-  occupation: z.string().max(100).optional(),
-  employmentStatus: z.string().max(50).optional(),
-  monthlyIncomeRange: z.string().max(50).optional(),
+  educationLevel: optionalString(100),
+  occupation: optionalString(100),
+  employmentStatus: optionalString(50),
+  monthlyIncomeRange: optionalString(50),
 
   // Marriage Intentions
-  reasonForJoining: z.string().max(500).optional(),
-  desiredMarriageTimeline: z.string().max(100).optional(),
-  childrenPreference: z.string().max(100).optional(),
+  reasonForJoining: optionalString(500),
+  desiredMarriageTimeline: optionalString(100),
+  childrenPreference: optionalString(100),
 
   // Family Background
-  ethnicBackground: z.string().max(100).optional(),
-  motherTongue: z.string().max(50).optional(),
-  familyInvolvement: z.string().max(100).optional(),
+  ethnicBackground: optionalString(100),
+  motherTongue: optionalString(50),
+  familyInvolvement: optionalString(100),
 
   // Lifestyle
-  smokingHabits: z.string().max(50).optional(),
-  khatUsage: z.string().max(50).optional(),
-  exerciseHabits: z.string().max(50).optional(),
-  livingPreference: z.string().max(100).optional(),
+  smokingHabits: optionalString(50),
+  khatUsage: optionalString(50),
+  exerciseHabits: optionalString(50),
+  livingPreference: optionalString(100),
 
   // Personality & Interests
-  selfDescription: z.string().max(2000).optional(),
+  selfDescription: optionalString(2000),
   qualities: z.union([z.string().max(100), z.array(z.string().max(100))]).optional(),
   interests: z.union([z.string().max(100), z.array(z.string().max(100))]).optional(),
 
   // Spouse Preferences
-  preferredAgeMin: z.coerce.number().int().min(18).max(120).optional(),
-  preferredAgeMax: z.coerce.number().int().min(18).max(120).optional(),
-  preferredMaritalStatus: z.string().max(50).optional(),
-  preferredEducationLevel: z.string().max(100).optional(),
-  preferredLocation: z.string().max(100).optional(),
-  waliInvolvement: z.string().max(100).optional(),
-  polygamyPreference: z.string().max(50).optional(),
-  mahrExpectation: z.string().max(200).optional(),
-  genderInteraction: z.string().max(100).optional(),
+  preferredAgeMin: optionalNumber(18, 120),
+  preferredAgeMax: optionalNumber(18, 120),
+  preferredMaritalStatus: optionalString(50),
+  preferredEducationLevel: optionalString(100),
+  preferredLocation: optionalString(100),
+  waliInvolvement: optionalString(100),
+  polygamyPreference: optionalString(50),
+  mahrExpectation: optionalString(200),
+  genderInteraction: optionalString(100),
 
   // Health Information (optional)
-  hivStatus: z.string().max(50).optional(),
-  stdStatus: z.string().max(50).optional(),
-  stdDetails: z.string().max(500).optional(),
-  hereditaryDiseases: z.string().max(50).optional(),
-  hereditaryDetails: z.string().max(500).optional(),
-  chronicConditions: z.string().max(50).optional(),
-  chronicDetails: z.string().max(500).optional(),
-  disabilities: z.string().max(50).optional(),
-  disabilityDetails: z.string().max(500).optional(),
-  dwarfismStatus: z.string().max(50).optional(),
-  dwarfismDetails: z.string().max(500).optional(),
-  otherConditions: z.string().max(500).optional(),
-  shareWithMatches: z.coerce.boolean().optional(),
-  hivMatchPreference: z.string().max(50).optional(),
-  stdMatchPreference: z.string().max(50).optional(),
-  hereditaryMatchPreference: z.string().max(50).optional(),
-  healthMatchPreference: z.string().max(50).optional(),
-  personalPreference: z.string().max(200).optional(),
+  hivStatus: optionalString(50),
+  stdStatus: optionalString(50),
+  stdDetails: optionalString(500),
+  hereditaryDiseases: optionalString(50),
+  hereditaryDetails: optionalString(500),
+  chronicConditions: optionalString(50),
+  chronicDetails: optionalString(500),
+  disabilities: optionalString(50),
+  disabilityDetails: optionalString(500),
+  dwarfismStatus: optionalString(50),
+  dwarfismDetails: optionalString(500),
+  otherConditions: optionalString(500),
+  shareWithMatches: optionalBoolean,
+  hivMatchPreference: optionalString(50),
+  stdMatchPreference: optionalString(50),
+  hereditaryMatchPreference: optionalString(50),
+  healthMatchPreference: optionalString(50),
+  personalPreference: optionalString(200),
 });
 
 const loginSchema = z.object({

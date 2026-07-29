@@ -129,9 +129,6 @@ const register = async (req, res) => {
         interests: toArray(interests),
         isProfileComplete: true,
       },
-    }).catch((e) => {
-      console.error("Profile creation error (non-fatal):", e);
-      return null;
     });
 
     if (profile && (preferredAgeMin || preferredAgeMax || preferredMaritalStatus ||
@@ -208,7 +205,8 @@ const register = async (req, res) => {
     });
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({ error: "Registration failed" });
+    const message = error?.meta?.cause || error?.message || "Registration failed";
+    res.status(500).json({ error: message });
   }
 };
 

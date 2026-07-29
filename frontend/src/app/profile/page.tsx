@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { profileService } from "@/services/profile";
 import { notificationService } from "@/services/notifications";
 import { matchService } from "@/services/matches";
+import { paymentService } from "@/services/payment";
 import api from "@/lib/api";
 import { useI18n } from "@/context/I18nContext";
 import { mediaUrl, formatDate, formatRemaining, cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export default function ProfilePage() {
   const [notifCount, setNotifCount] = useState(0);
   const [favCount, setFavCount] = useState(0);
   const [twoFA, setTwoFA] = useState<any>(null);
+  const [contactCredits, setContactCredits] = useState<any>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [editingBio, setEditingBio] = useState(false);
   const [bioValue, setBioValue] = useState("");
@@ -70,6 +72,7 @@ export default function ProfilePage() {
           setFavCount(Array.isArray(list) ? list.length : 0);
         }).catch(() => {}),
         api.get("/auth/2fa/status").then((r) => setTwoFA(r.data)).catch(() => {}),
+        paymentService.getWallet().then((r) => setContactCredits(r.data.data?.contactCredits || null)).catch(() => {}),
       ]);
     } catch { /* all caught individually */ }
     setLoading(false);
@@ -122,6 +125,7 @@ export default function ProfilePage() {
 
   const pLikes = profile?.likesCount || 0;
 
+  const isPremium = p.membership?.isPremium;
   const statCards = [
     { icon: Heart, label: t('profile.likesReceived'), value: pLikes, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-500/10" },
     { icon: Star, label: t('profile.favorites'), value: favCount, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10" },
@@ -315,6 +319,32 @@ export default function ProfilePage() {
                     <p className="text-sm text-white/90">Your {p.membership.activePlan?.charAt(0).toUpperCase() + p.membership.activePlan?.slice(1)} membership is active. {p.membership.expiresAt ? `Expires in ${formatRemaining(p.membership.expiresAt, now)}.` : ""} Enjoy premium benefits.</p>
                   </div>
                   <Sparkles className="w-6 h-6 opacity-80" />
+                </div>
+              </div>
+            )}
+
+            {/* ─── CREDIT BALANCE BANNER ─── */}
+            {contactCredits && !isPremium && (
+              <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-500/10 dark:to-cyan-500/10 border border-teal-200 dark:border-teal-800/50 shadow-card">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0">
+                    <CreditCard className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-teal-700 dark:text-teal-300">
+                      {contactCredits.credits} contact {contactCredits.credits === 1 ? "credit" : "credits"} remaining
+                    </p>
+                    <p className="text-xs text-teal-600/70 dark:text-teal-400/70">
+                      {contactCredits.credits > 0
+                        ? `${contactCredits.credits} available · ${contactCredits.usedCredits || 0} used`
+                        : `All ${contactCredits.usedCredits || 0} credits used — buy more to start new conversations`}
+                    </p>
+                  </div>
+                  <Link href="/membership">
+                    <Button variant="secondary" size="sm" className="shrink-0 bg-teal-500 hover:bg-teal-600 text-white border-0">
+                      <CreditCard className="w-3.5 h-3.5 mr-1" /> Buy Credits
+                    </Button>
+                  </Link>
                 </div>
               </div>
             )}

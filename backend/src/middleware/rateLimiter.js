@@ -156,20 +156,20 @@ const loginRateInfo = (req, res, next) => {
 };
 
 // ============================================================
-// 3. SIGNUP LIMITER — 1 registration / 1 hour per IP
+// 3. SIGNUP LIMITER — 20 registrations / 2 minutes per IP
 //    Prevents mass account creation / bot signups
 // ============================================================
 const signupLimiter = createLimiter({
-  windowMs: 60 * 60 * 1000,
-  max: 1,
-  message: { error: "Too many registration attempts. Please try again in 1 hour." },
+  windowMs: 2 * 60 * 1000,
+  max: 20,
+  message: { error: "Too many registration attempts. Please try again in 2 minutes." },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
     logRateLimitHit("signup", req);
     res.status(429).json({
-      error: "Too many registration attempts. Please try again in 1 hour.",
-      retryAfter: res.getHeader("Retry-After") || 3600,
+      error: "Too many registration attempts. Please try again in 2 minutes.",
+      retryAfter: res.getHeader("Retry-After") || 120,
     });
   },
 });
@@ -265,24 +265,31 @@ const photoUploadLimiter = createLimiter({
 });
 
 // ============================================================
-// 9. PROFILE VIEW LIMITER — 30 views / 15 min per user
-//    Prevents profile enumeration / scraping via /:id and /user/:userId
+// 9. AUTHED USER LIMITER — 150 requests / 1 min per logged-in user
+//    Applies to all authenticated routes (everything after login,
+//    not login/signup pages which have their own limiters)
 // ============================================================
-const profileViewLimiter = createLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
+const AUTHED_LIMIT_WINDOW = parseInt(process.env.AUTHED_LIMIT_WINDOW || "60000", 10); // 1 min
+const AUTHED_LIMIT_MAX = parseInt(process.env.AUTHED_LIMIT_MAX || "150", 10);
+
+const authedLimiter = createLimiter({
+  windowMs: AUTHED_LIMIT_WINDOW,
+  max: AUTHED_LIMIT_MAX,
   keyGenerator: (req) => req.user?.userId || req.ip,
-  message: { error: "Too many profile views. Please slow down." },
+  message: { error: "Too many requests. Please slow down." },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    logRateLimitHit("profileView", req);
+    logRateLimitHit("authed", req);
     res.status(429).json({
-      error: "Too many profile views. Please slow down.",
+      error: "Too many requests. Please slow down.",
       retryAfter: res.getHeader("Retry-After") || 60,
     });
   },
 });
+
+// Keep profileViewLimiter as alias for backward compatibility
+const profileViewLimiter = authedLimiter;
 
 // ============================================================
 // 10. MATCH ACTION LIMITER — 10 actions / min per user
@@ -407,6 +414,7 @@ module.exports = {
   profileUpdateLimiter,
   photoUploadLimiter,
   profileViewLimiter,
+  authedLimiter,
   matchActionLimiter,
   throttle,
   authLimiter,

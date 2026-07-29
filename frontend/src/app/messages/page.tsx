@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
 import { useI18n } from "@/context/I18nContext";
 import { mediaUrl, formatLastSeen } from "@/lib/utils";
+import { conversationPermissionService } from "@/services/conversationPermission";
 import type { Message } from "@/types";
 
 function MessagesContent() {
@@ -56,6 +57,12 @@ function MessagesContent() {
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportReason, setReportReason] = useState("inappropriate");
   const [reportDescription, setReportDescription] = useState("");
+  const [permissionDialog, setPermissionDialog] = useState<{ targetUserId: string; targetName: string } | null>(null);
+  const [permissionPartnerId, setPermissionPartnerId] = useState<string | null>(null);
+  const [permissionSubmitting, setPermissionSubmitting] = useState(false);
+  const [chatPermRequests, setChatPermRequests] = useState<any[]>([]);
+  const [chatPermLoading, setChatPermLoading] = useState<string | null>(null);
+  const [sentPermStatus, setSentPermStatus] = useState<any[]>([]);
   const [urlName, setUrlName] = useState<string | null>(null);
   const [urlUsername, setUrlUsername] = useState<string | null>(null);
   const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
@@ -109,6 +116,19 @@ function MessagesContent() {
   useEffect(() => {
     if (activeConversation) {
       fetchMessages(activeConversation);
+      // Fetch pending permission requests where this chat partner is the partner (incoming)
+      conversationPermissionService.getReceivedPermissions("pending").then(({ data }) => {
+        const relevant = (data.permissions || []).filter((p: any) => p.requesterId === activeConversation);
+        setChatPermRequests(relevant);
+      }).catch(() => setChatPermRequests([]));
+      // Fetch sent permission requests to this partner (outgoing status)
+      conversationPermissionService.getSentPermissions().then(({ data }) => {
+        const relevant = (data.permissions || []).filter((p: any) => p.partnerId === activeConversation);
+        setSentPermStatus(relevant);
+      }).catch(() => setSentPermStatus([]));
+    } else {
+      setChatPermRequests([]);
+      setSentPermStatus([]);
     }
   }, [activeConversation, fetchMessages]);
 
@@ -349,6 +369,17 @@ function MessagesContent() {
       playMessageSound("error");
       const errMsg = e?.response?.data?.error;
       if (errMsg) {
+        if (errMsg.includes("already have an active conversation")) {
+          const activePartner = conversations.find(c => c.id !== activeConversation);
+          if (activePartner) {
+            setPermissionPartnerId(activePartner.id);
+            setPermissionDialog({
+              targetUserId: activeConversation,
+              targetName: activeConv?.name || urlName || t('messages.userFallback'),
+            });
+            return;
+          }
+        }
         setToastError(true);
         setToast(errMsg);
         setTimeout(() => { setToast(null); setToastError(false); }, 5000);
@@ -771,6 +802,103 @@ function MessagesContent() {
                   </div>
                 )}
 
+                {/* In-chat permission requests (incoming — partner wants to talk to someone else) */}
+                {activeConversation && chatPermRequests.length > 0 && (
+                  <div className="px-3 lg:px-4 py-3 border-b border-amber-200/50 dark:border-amber-800/30 bg-amber-50/90 dark:bg-amber-900/15 shrink-0 space-y-2">
+                    {chatPermRequests.map((perm) => (
+                      <div key={perm.id} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+                          <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                            Permission Request
+                          </p>
+                          <p className="text-xs text-amber-700 dark:text-amber-400/80 truncate">
+                            {perm.requester?.firstName} wants to talk to {perm.targetUser?.firstName} {perm.targetUser?.lastName}
+                          </p>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <button
+                            onClick={async () => {
+                              setChatPermLoading(perm.id);
+                              try {
+                                await conversationPermissionService.respondToPermission(perm.id, "approved");
+                                setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
+                                setToastError(false);
+                                setToast("Permission granted. They can now start a new conversation.");
+                                setTimeout(() => setToast(null), 4000);
+                              } catch {
+                                setToastError(true);
+                                setToast("Failed to respond. Try again.");
+                                setTimeout(() => { setToast(null); setToastError(false); }, 4000);
+                              } finally {
+                                setChatPermLoading(null);
+                              }
+                            }}
+                            disabled={chatPermLoading === perm.id}
+                            className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:bg-green-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Accept
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setChatPermLoading(perm.id);
+                              try {
+                                await conversationPermissionService.respondToPermission(perm.id, "denied");
+                                setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
+                                setToastError(false);
+                                setToast("Permission denied.");
+                                setTimeout(() => setToast(null), 4000);
+                              } catch {
+                                setToastError(true);
+                                setToast("Failed to respond. Try again.");
+                                setTimeout(() => { setToast(null); setToastError(false); }, 4000);
+                              } finally {
+                                setChatPermLoading(null);
+                              }
+                            }}
+                            disabled={chatPermLoading === perm.id}
+                            className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                          >
+                            <X className="w-3.5 h-3.5" /> Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Sent permission status (outgoing — you asked this partner to talk to someone else) */}
+                {activeConversation && sentPermStatus.length > 0 && (
+                  <div className="px-3 lg:px-4 py-3 border-b border-charcoal-100/50 dark:border-charcoal-700/50 bg-charcoal-50/80 dark:bg-charcoal-800/30 shrink-0 space-y-2">
+                    {sentPermStatus.map((perm) => (
+                      <div key={perm.id} className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          perm.status === "approved" ? "bg-green-100 dark:bg-green-500/20" :
+                          perm.status === "denied" ? "bg-red-100 dark:bg-red-500/20" :
+                          "bg-amber-100 dark:bg-amber-500/20"
+                        }`}>
+                          {perm.status === "approved" ? <Check className="w-4 h-4 text-green-600 dark:text-green-400" /> :
+                           perm.status === "denied" ? <X className="w-4 h-4 text-red-600 dark:text-red-400" /> :
+                           <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-charcoal-800 dark:text-charcoal-200">
+                            {perm.status === "pending" ? "Permission Pending" :
+                             perm.status === "approved" ? "Permission Approved" : "Permission Denied"}
+                          </p>
+                          <p className="text-xs text-charcoal-600 dark:text-charcoal-400 truncate">
+                            {perm.status === "pending" ? `Waiting for ${perm.partner?.firstName || "partner"} to approve your request to talk to ${perm.targetUser?.firstName} ${perm.targetUser?.lastName}` :
+                             perm.status === "approved" ? `${perm.partner?.firstName || "Partner"} approved — you can now talk to ${perm.targetUser?.firstName} ${perm.targetUser?.lastName}` :
+                             `${perm.partner?.firstName || "Partner"} denied your request to talk to ${perm.targetUser?.firstName} ${perm.targetUser?.lastName}`}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto min-h-0 p-3 lg:p-4 space-y-2 lg:space-y-3 z-10">
                   {isLoading && messages.length === 0 ? (
@@ -783,7 +911,7 @@ function MessagesContent() {
                       </div>
                     </div>
                   ) : (
-                    messages.map((msg) => {
+                    [...messages].reverse().map((msg) => {
                       const otherId = activeConversation;
                       const isOwn = otherId ? msg.senderId !== otherId : true;
                       const otherAvatar = mediaUrl(activeConv?.avatar);
@@ -1152,6 +1280,59 @@ function MessagesContent() {
                 className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
                 {reportSubmitting ? t('messages.submitting') : t('messages.submitReport')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permission Request Dialog */}
+      {permissionDialog && permissionPartnerId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPermissionDialog(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-sm bg-white dark:bg-charcoal-800 rounded-2xl shadow-elevated border border-charcoal-100/50 dark:border-charcoal-700 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
+                <Shield className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-lg font-display font-semibold text-charcoal-900 dark:text-white mb-2">Permission Required</h3>
+              <p className="text-sm text-charcoal-500 dark:text-charcoal-400">
+                You have an active conversation. To start talking to <span className="font-semibold text-charcoal-700 dark:text-charcoal-300">{permissionDialog.targetName}</span>, you need permission from your current partner.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  setPermissionSubmitting(true);
+                  try {
+                    await conversationPermissionService.requestPermission(
+                      permissionPartnerId,
+                      permissionDialog.targetUserId,
+                      "I'd like to start a conversation with someone new."
+                    );
+                    setToastError(false);
+                    setToast("Permission request sent! You'll be notified when your partner responds.");
+                    setTimeout(() => { setToast(null); setToastError(false); }, 4000);
+                    setPermissionDialog(null);
+                  } catch (err: any) {
+                    const msg = err?.response?.data?.error || "Failed to send permission request";
+                    setToastError(true);
+                    setToast(msg);
+                    setTimeout(() => { setToast(null); setToastError(false); }, 5000);
+                  } finally {
+                    setPermissionSubmitting(false);
+                  }
+                }}
+                disabled={permissionSubmitting}
+                className="w-full px-4 py-2.5 text-sm font-medium bg-accent text-white rounded-xl hover:bg-accent-dark disabled:opacity-50 transition-colors"
+              >
+                {permissionSubmitting ? "Sending..." : "Request Permission from Partner"}
+              </button>
+              <button
+                onClick={() => setPermissionDialog(null)}
+                className="w-full px-4 py-2.5 text-sm font-medium text-charcoal-600 dark:text-charcoal-300 hover:bg-charcoal-100 dark:hover:bg-charcoal-700 rounded-xl transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>

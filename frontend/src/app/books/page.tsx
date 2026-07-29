@@ -152,7 +152,7 @@ export default function UserBooksPage() {
       const { data } = await api.get(`/books/${book.id}/read`);
       const baseUrl = (api.defaults.baseURL || "").replace(/\/api$/, "");
       const fileUrl = `${baseUrl}${data.book.fileUrl}`;
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null;
       const response = await fetch(fileUrl, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

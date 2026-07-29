@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, Heart, MessageCircle, MapPin, Briefcase, BookOpen, Users, Sparkles, RefreshCw, Crown, Gem, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
+import { X, Heart, MessageCircle, MapPin, Briefcase, BookOpen, Users, Sparkles, RefreshCw, Crown, Gem, AlertCircle, CheckCircle2, AlertTriangle, MessageSquare } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
 import { Button, VerifiedBadge, IslamicPatternBackground } from "@/components/common";
 import { mediaUrl } from "@/lib/utils";
@@ -12,11 +12,12 @@ import { useI18n } from "@/context/I18nContext";
 import { matchService } from "@/services/matches";
 import api from "@/lib/api";
 
-function SwipeCard({ profile, onSwipe, isTop, zIndex }: {
+function SwipeCard({ profile, onSwipe, isTop, zIndex, chatCount }: {
   profile: any;
   onSwipe: (direction: "left" | "right", id: string) => void;
   isTop: boolean;
   zIndex: number;
+  chatCount?: number;
 }) {
   const { t } = useI18n();
   const [imgError, setImgError] = useState(false);
@@ -153,6 +154,14 @@ function SwipeCard({ profile, onSwipe, isTop, zIndex }: {
             )}
           </div>
 
+          {/* Active chats badge */}
+          {chatCount != null && chatCount > 0 && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-white text-[10px] font-medium shadow-md">
+              <MessageSquare className="w-2.5 h-2.5" />
+              <span>{chatCount} active {chatCount === 1 ? "chat" : "chats"}</span>
+            </div>
+          )}
+
           {/* Name & Age at bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
             <h2 className="text-xl font-bold text-white drop-shadow-lg flex items-center gap-1.5">
@@ -275,15 +284,23 @@ export default function MatchesPage() {
   const [error, setError] = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [chatCounts, setChatCounts] = useState<Record<string, number>>({});
 
   const loadMatches = useCallback(async (page = 1) => {
     if (page === 1) setIsLoading(true);
     setError(null);
     try {
       const { data } = await api.get("/matches/suggested", { params: { page, limit: 12 } });
-      setProfiles(page === 1 ? (data.matches || []) : (prev) => [...prev, ...(data.matches || [])]);
+      const matches = data.matches || [];
+      setProfiles(page === 1 ? matches : (prev) => [...prev, ...matches]);
       setNeedsProfile(data.needsProfile || false);
       setCurrentIndex(0);
+      // Fetch chat counts for each profile
+      matches.forEach((m: any) => {
+        api.get(`/messages/active-partners/${m.id}`)
+          .then(({ data }) => setChatCounts((prev) => ({ ...prev, [m.id]: data.count || 0 })))
+          .catch(() => {});
+      });
     } catch (err: any) {
       setError(err?.response?.data?.error || t("matches.failedToLoad"));
     } finally {
@@ -341,6 +358,8 @@ export default function MatchesPage() {
   const handleSwipe = useCallback((direction: "left" | "right", id: string) => {
     if (direction === "right") {
       handleLike(id);
+    } else {
+      matchService.passProfile(id).catch(() => {});
     }
     setCurrentIndex((prev) => prev + 1);
   }, []);
@@ -431,6 +450,7 @@ export default function MatchesPage() {
                     onSwipe={handleSwipe}
                     isTop={false}
                     zIndex={1}
+                    chatCount={chatCounts[thirdProfile.id]}
                   />
                 )}
                 {/* Second card (middle) */}
@@ -441,6 +461,7 @@ export default function MatchesPage() {
                     onSwipe={handleSwipe}
                     isTop={false}
                     zIndex={2}
+                    chatCount={chatCounts[nextProfile.id]}
                   />
                 )}
                 {/* Top card (swipeable) */}
@@ -451,6 +472,7 @@ export default function MatchesPage() {
                     onSwipe={handleSwipe}
                     isTop={true}
                     zIndex={3}
+                    chatCount={chatCounts[currentProfile.id]}
                   />
                 )}
               </div>
