@@ -216,7 +216,40 @@ async function checkOneConversationRule(senderId, receiverId) {
       };
     }
 
-    // Accepted match — always allowed
+    // Check if this is an existing conversation (prior messages between the two)
+    const priorMessages = await prisma.message.count({
+      where: {
+        OR: [
+          { senderId, receiverId },
+          { senderId: receiverId, receiverId: senderId },
+        ],
+      },
+    });
+    const isNewConversation = priorMessages === 0;
+
+    // If sender has ANY pending permission request, they can ONLY talk to
+    // the partner they requested permission from. All other conversations
+    // (new AND existing) are blocked until the request is resolved.
+    const anyPendingPermission = await prisma.conversationPermission.findFirst({
+      where: {
+        requesterId: senderId,
+        status: "pending",
+      },
+    });
+    if (anyPendingPermission) {
+      // Only allowed to message the partner (the person who needs to approve/deny)
+      if (receiverId !== anyPendingPermission.partnerId) {
+        return {
+          allowed: false,
+          status: 403,
+          error: "You have a pending permission request. You can only message your current partner until they approve or deny your request to talk to someone new.",
+        };
+      }
+      // Messaging the partner — allowed
+      return { allowed: true };
+    }
+
+    // Accepted match — always allowed (but only for existing conversations or when no pending permission)
     const match = await prisma.match.findFirst({
       where: {
         OR: [
@@ -247,23 +280,6 @@ async function checkOneConversationRule(senderId, receiverId) {
         return { allowed: false, status: 403, error: "You can only message verified users." };
       }
       return { allowed: true };
-    }
-
-    // Check if sender has ANY pending permission request as requester
-    // If so, block ALL new conversations until it's resolved (approved or denied)
-    // This prevents bypassing by messaging D or F while waiting for approval to message C
-    const anyPendingPermission = await prisma.conversationPermission.findFirst({
-      where: {
-        requesterId: senderId,
-        status: "pending",
-      },
-    });
-    if (anyPendingPermission) {
-      return {
-        allowed: false,
-        status: 403,
-        error: "You have a pending permission request. You must wait for your current partner to approve or deny it before you can start any new conversation.",
-      };
     }
 
     // Only count SENT (non-deleted) messages as active conversations.
