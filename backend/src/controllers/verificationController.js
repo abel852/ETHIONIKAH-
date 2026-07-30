@@ -1,6 +1,7 @@
 const prisma = require("../config/database");
 const { createNotification, notifyAllAdmins } = require("../utils/notification");
 const { emitVerificationStatus } = require("../utils/messageSocket");
+const { logAudit } = require("../utils/auditLogger");
 
 const submitVerification = async (req, res) => {
   try {
@@ -120,6 +121,8 @@ const approveVerification = async (req, res) => {
 
     emitVerificationStatus(verification.userId, { id: verification.id, status: "approved", userId: verification.userId });
 
+    await logAudit({ adminId, action: "verify_user", resource: "user", resourceId: verification.userId, details: { verificationId: verification.id } });
+
     res.json({ message: "Verification approved", verification });
   } catch (error) {
     console.error("Approve verification error:", error);
@@ -146,6 +149,8 @@ const rejectVerification = async (req, res) => {
     }).catch((e) => console.error("Notification error:", e));
 
     emitVerificationStatus(verification.userId, { id: verification.id, status: "rejected", userId: verification.userId, adminNote });
+
+    await logAudit({ adminId, action: "reject_verification", resource: "user", resourceId: verification.userId, details: { verificationId: verification.id, reason: adminNote } });
 
     res.json({ message: "Verification rejected", verification });
   } catch (error) {

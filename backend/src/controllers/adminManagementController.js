@@ -246,19 +246,40 @@ exports.listAdmins = async (req, res) => {
     const enriched = await Promise.all(admins.map(async (a) => {
       const recentLogs = await prisma.auditLog.findMany({
         where: { adminId: a.id, createdAt: { gte: thirtyDaysAgo } },
-        select: { resource: true, resourceId: true },
+        select: { resource: true, resourceId: true, action: true },
       });
 
+      // Also count verifications reviewed directly from the verification table
+      const [verificationsReviewed, complaintsHandled, reportsHandled] = await Promise.all([
+        prisma.verification.count({
+          where: { adminId: a.id, reviewedAt: { gte: thirtyDaysAgo } },
+        }),
+        prisma.complaint.count({
+          where: { adminId: a.id, updatedAt: { gte: thirtyDaysAgo } },
+        }).catch(() => 0),
+        prisma.report.count({
+          where: { adminId: a.id, updatedAt: { gte: thirtyDaysAgo } },
+        }).catch(() => 0),
+      ]);
+
+      // Collect distinct user IDs from audit logs
       const userActions = recentLogs.filter((l) =>
         ["user", "verification", "complaint", "report"].includes(l.resource) && l.resourceId
       );
-      const distinctUsersServed = new Set(userActions.map((l) => l.resourceId)).size;
+      const distinctUsersFromLogs = new Set(userActions.map((l) => l.resourceId));
+
+      // Also count verifications as users served (by userId)
+      const verifications = await prisma.verification.findMany({
+        where: { adminId: a.id, reviewedAt: { gte: thirtyDaysAgo } },
+        select: { userId: true },
+      });
+      verifications.forEach((v) => distinctUsersFromLogs.add(v.userId));
 
       return {
         ...a,
         stats30d: {
-          actions: recentLogs.length,
-          usersServed: distinctUsersServed,
+          actions: recentLogs.length + verificationsReviewed + complaintsHandled + reportsHandled,
+          usersServed: distinctUsersFromLogs.size,
         },
       };
     }));
