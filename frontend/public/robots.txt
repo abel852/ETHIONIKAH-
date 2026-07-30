@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+
+# Block private/authenticated pages from indexing
+Disallow: /admin
+Disallow: /settings
+Disallow: /messages
+Disallow: /profile
+Disallow: /profile/edit
+Disallow: /preferences
+Disallow: /discover
+Disallow: /search
+Disallow: /matches
+Disallow: /favorites
+Disallow: /notifications
+Disallow: /verification
+Disallow: /health-info
+
+# Allow public pages
+Allow: /$
+Allow: /login
+Allow: /register
+
+# Sitemap
+Sitemap: https://ethionikah.com/sitemap.xml
