@@ -259,8 +259,8 @@ export default function AdminVerificationsPage() {
           <div className="relative w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
             {/* Close button */}
             <button onClick={() => setPreviewVerification(null)}
-              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-red-500 text-white shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors z-10">
-              <X className="w-5 h-5" />
+              className="absolute -top-5 -right-5 w-12 h-12 rounded-full bg-red-500 text-white shadow-xl flex items-center justify-center hover:bg-red-600 hover:scale-110 transition-all z-10">
+              <X className="w-6 h-6" />
             </button>
 
             {/* User name */}
@@ -289,7 +289,7 @@ export default function AdminVerificationsPage() {
               )}
             </div>
 
-            {/* Approve / Reject buttons */}
+            {/* Approve / Reject / Close buttons */}
             {previewVerification.status === "pending" && (
               <div className="flex items-center justify-center gap-3 mt-4">
                 <button onClick={() => { handleApprove(previewVerification.id); setPreviewVerification(null); }}
@@ -299,6 +299,18 @@ export default function AdminVerificationsPage() {
                 <button onClick={() => { setRejectModal(previewVerification.id); setPreviewVerification(null); }}
                   className="flex items-center gap-1.5 px-6 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
                   <X className="w-4 h-4" /> Reject
+                </button>
+                <button onClick={() => setPreviewVerification(null)}
+                  className="flex items-center gap-1.5 px-6 py-2.5 text-sm font-medium text-white/80 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+                  Close
+                </button>
+              </div>
+            )}
+            {previewVerification.status !== "pending" && (
+              <div className="flex items-center justify-center mt-4">
+                <button onClick={() => setPreviewVerification(null)}
+                  className="flex items-center gap-1.5 px-6 py-2.5 text-sm font-medium text-white/80 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+                  Close
                 </button>
               </div>
             )}
