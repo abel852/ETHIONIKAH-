@@ -227,25 +227,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     socket.on("disconnect", () => {});
 
+    // Reconnect silently in the background — no "Reconnecting..." toast.
     socket.on("connect_error", () => {
       failCountRef.current += 1;
-      // Stay silent for the first few attempts — brief server restarts
-      // recover in 1-3 seconds and the user never needs to know.
-      if (failCountRef.current >= 3 && !lostShownRef.current) {
-        lostShownRef.current = true;
-        toast.loading("Reconnecting...", { id: "socket-reconnecting", duration: Infinity });
-        setTimeout(() => toast.dismiss("socket-reconnecting"), 60000);
-      }
     });
 
     socket.io.on("reconnect", () => {
       failCountRef.current = 0;
-      toast.dismiss("socket-reconnecting");
-      // Only announce recovery if we told the user we lost connection
-      if (lostShownRef.current) {
-        lostShownRef.current = false;
-        toast.success("Reconnected", { id: "socket-err", duration: 2000 });
-      }
+      lostShownRef.current = false;
     });
 
     socket.io.on("reconnect_failed", () => {
