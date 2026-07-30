@@ -21,6 +21,11 @@ function getTransporter() {
     secure: port === 465,
     auth: { user, pass },
     tls: { rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false" },
+    // Fail fast if the SMTP server is unreachable (VPS providers often
+    // block outbound SMTP) instead of hanging for nodemailer's 2min default.
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 
   return transporter;

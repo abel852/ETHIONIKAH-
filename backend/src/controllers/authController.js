@@ -187,13 +187,18 @@ const register = async (req, res) => {
     const accessToken = generateAccessToken({ userId: user.id, role: user.role, adminRole: user.adminRole, tokenVersion: user.tokenVersion ?? 0 });
     const refreshToken = generateRefreshToken({ userId: user.id, tokenVersion: user.tokenVersion ?? 0 });
 
+    // Fire-and-forget: don't block the registration response on SMTP.
+    // A slow/unreachable mail server was causing gateway timeouts even
+    // though the account was already created.
     try {
       const { sendEmail } = require("../utils/email");
-      await sendEmail({
+      sendEmail({
         to: user.email,
         subject: "Welcome to Ethio Nikah — Complete Your Profile",
         text: `Hi ${user.firstName}, welcome to Ethio Nikah! Your account has been created successfully. Please complete your profile to start finding your perfect match.`,
         html: `<p>Hi ${user.firstName},</p><p>Welcome to <strong>Ethio Nikah</strong>! Your account has been created successfully.</p><p>To get started:</p><ul><li>Complete your profile details</li><li>Set your spouse preferences</li><li>Verify your identity</li><li>Start browsing matches</li></ul><p>May Allah bless your journey to finding a righteous spouse.</p><p>— Ethio Nikah Team</p>`,
+      }).catch((emailErr) => {
+        console.error("[EMAIL] Welcome email failed:", emailErr.message);
       });
     } catch (emailErr) {
       console.error("[EMAIL] Welcome email failed:", emailErr.message);

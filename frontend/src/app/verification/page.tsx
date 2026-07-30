@@ -126,6 +126,13 @@ export default function VerificationPage() {
   };
 
   const openCamera = async () => {
+    // getUserMedia requires a secure context (HTTPS). On HTTP or older
+    // browsers navigator.mediaDevices is undefined — fall back to the
+    // native camera capture input instead.
+    if (!navigator.mediaDevices?.getUserMedia) {
+      fallbackFilePicker();
+      return;
+    }
     setShowCamera(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } } });
@@ -145,6 +152,8 @@ export default function VerificationPage() {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
+    // Opens the device's front camera directly on mobile instead of the gallery
+    input.setAttribute("capture", "user");
     input.onchange = async () => {
       const f = input.files?.[0];
       if (f) { const v = await detectBlur(f).catch(() => Infinity); if (v < BLUR_THRESHOLD) { toast.error(t('verification.blurryPhoto')); return; } setBothSelfieFile(f); setSelfiePreview(URL.createObjectURL(f)); }

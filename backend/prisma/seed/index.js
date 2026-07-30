@@ -13,7 +13,7 @@ async function main() {
   if (admin) {
     admin = await prisma.user.update({
       where: { email: "admin@islamicmatch.com" },
-      data: { passwordHash: adminPassword },
+      data: { passwordHash: adminPassword, adminRole: "super_admin" },
     });
     console.log(`Admin password updated: ${admin.email}`);
   } else {
@@ -30,6 +30,7 @@ async function main() {
         gender: "male",
         dateOfBirth: new Date("1990-01-01"),
         role: "admin",
+        adminRole: "super_admin",
         isVerified: true,
         isEmailVerified: true,
         isPhoneVerified: true,
