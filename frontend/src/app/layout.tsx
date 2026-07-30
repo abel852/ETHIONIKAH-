@@ -6,7 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { RouteGuard } from "@/components/auth/RouteGuard";
 import { SocketProvider } from "@/context/SocketContext";
 import { I18nProvider } from "@/context/I18nContext";
-import { ToastProvider, ScreenshotGuard, NetworkBanner } from "@/components/common";
+import { ToastProvider, NetworkBanner } from "@/components/common";
 import { TwoFactorPrompt } from "@/components/auth/TwoFactorPrompt";
 import { ThemeInit } from "@/components/ThemeInit";
 
@@ -31,7 +31,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeInit />
         <NetworkBanner />
         <AuthProvider>
-          <ScreenshotGuard />
           <RouteGuard>
             <I18nProvider>
               <SocketProvider>

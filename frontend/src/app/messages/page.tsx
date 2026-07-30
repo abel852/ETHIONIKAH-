@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Search, Send, MoreVertical, ChevronLeft, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
 import { Input, Button, Avatar } from "@/components/common";
+import { ScreenshotGuard } from "@/components/common";
 import { useMessageStore } from "@/store/messages";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
@@ -1549,6 +1550,7 @@ export default function MessagesPage() {
       </div>
     }>
       <MessagesContent />
+      <ScreenshotGuard />
     </Suspense>
   );
 }
