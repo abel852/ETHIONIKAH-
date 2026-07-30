@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
-  const adminPassword = await bcrypt.hash("admin123", 12);
+  const adminPassword = await bcrypt.hash("^Z8!rQ@5vL#9xP^dW*7mF$kJ%4tN&yB+3hS=G{2c}U>0a<qE|6oT~1jI?8bM", 12);
 
   let admin = await prisma.user.findUnique({ where: { email: "admin@islamicmatch.com" } });
 
@@ -39,7 +39,7 @@ async function main() {
     console.log(`Admin created: ${admin.email}`);
   }
 
-  console.log("Default admin password: admin123");
+  console.log("Default admin password updated.");
 
   // Seed membership plans
   console.log("Seeding membership plans...");
