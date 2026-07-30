@@ -1,18 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 export function ScreenshotGuard() {
   const { user } = useAuth();
   const [showOverlay, setShowOverlay] = useState(false);
-  const [showWatermark, setShowWatermark] = useState(false);
-  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Build watermark text from user info
-  const watermarkText = user
-    ? `${user.firstName} ${user.lastName?.[0] || ""} • ${user.id.slice(0, 8)} • ETHIONIKAH`
-    : "ETHIONIKAH • Protected";
 
   useEffect(() => {
     // Only activate screenshot protection when user is logged in
@@ -23,10 +16,6 @@ export function ScreenshotGuard() {
     const blur = () => {
       document.documentElement.classList.add(BLUR_CLASS);
       setShowOverlay(true);
-      // Also flash watermark on any blur event
-      setShowWatermark(true);
-      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-      blurTimerRef.current = setTimeout(() => setShowWatermark(false), 3000);
     };
 
     const unblur = () => {
@@ -108,7 +97,6 @@ export function ScreenshotGuard() {
       document.removeEventListener("keydown", checkKey, true);
       document.removeEventListener("keyup", checkKey, true);
       document.removeEventListener("touchstart", onTouchStart);
-      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
       if (blurTimeout) clearTimeout(blurTimeout);
     };
   }, [user]);
@@ -131,24 +119,6 @@ export function ScreenshotGuard() {
               Screenshot detected — content hidden
             </p>
             <p className="text-xs text-charcoal-400 mt-1">Tap to return</p>
-          </div>
-        </div>
-      )}
-
-      {/* Watermark overlay — always visible on sensitive content, identifies the user */}
-      {showWatermark && user && (
-        <div
-          className="fixed inset-0 z-[99998] pointer-events-none flex items-center justify-center"
-          aria-hidden="true"
-        >
-          <div
-            className="text-[10px] sm:text-xs font-medium text-charcoal-300/40 dark:text-white/20 select-none whitespace-nowrap"
-            style={{
-              transform: "rotate(-30deg)",
-              filter: "blur(0.3px)",
-            }}
-          >
-            {watermarkText}
           </div>
         </div>
       )}
