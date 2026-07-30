@@ -1,5 +1,6 @@
 const prisma = require("../config/database");
 const { recordProfileView } = require("../utils/subscriptionHelper");
+const { uploadMulterFile, deleteFromR2, isR2Enabled } = require("../config/r2");
 
 const createOrUpdateProfile = async (req, res) => {
   try {
@@ -227,7 +228,13 @@ const uploadPhoto = async (req, res) => {
       return res.status(400).json({ error: "No file provided" });
     }
 
-    const photoUrl = `/uploads/${req.file.filename}`;
+    let photoUrl;
+
+    if (isR2Enabled) {
+      photoUrl = await uploadMulterFile(req.file, "profile-photos");
+    } else {
+      photoUrl = `/uploads/${req.file.filename}`;
+    }
 
     let profile = await prisma.profile.findUnique({
       where: { userId },

@@ -2,6 +2,7 @@ const prisma = require("../config/database");
 const { createNotification } = require("../utils/notification");
 const { emitPaymentStatus } = require("../utils/messageSocket");
 const { ensureContactCredits } = require("./membershipPlanController");
+const { uploadMulterFile, isR2Enabled } = require("../config/r2");
 
 async function createAuditLog(adminId, action, resource, resourceId, details, ipAddress) {
   try {
@@ -745,7 +746,12 @@ const uploadReceiptFile = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No receipt file provided" });
     }
-    const receiptUrl = `/uploads/receipts/${req.file.filename}`;
+    let receiptUrl;
+    if (isR2Enabled) {
+      receiptUrl = await uploadMulterFile(req.file, "receipts");
+    } else {
+      receiptUrl = `/uploads/receipts/${req.file.filename}`;
+    }
     res.json({ success: true, receiptUrl, fileType: req.file.mimetype, fileSize: req.file.size });
   } catch (error) {
     console.error("Receipt upload error:", error);

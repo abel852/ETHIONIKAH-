@@ -45,7 +45,9 @@ const apiOrigin = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api
 
 export function mediaUrl(path?: string): string | undefined {
   if (!path) return undefined;
+  // R2 public URLs and other absolute URLs pass through directly
   if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("blob:")) return path;
+  // Local upload paths are served from the backend
   return `${apiOrigin}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 

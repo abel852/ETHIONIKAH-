@@ -139,6 +139,7 @@ app.use(mongoSanitizeMiddleware);
 app.use(sanitizeInput);
 
 // Static uploads — serve with security headers to prevent script execution
+// When R2 is enabled, new uploads go to R2 but old local files may still exist
 app.use("/uploads", (req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Content-Security-Policy", "default-src 'none'");
@@ -269,6 +270,14 @@ function startServer(attempt = 0) {
 }
 
 startServer();
+
+// Initialize R2 storage monitoring and retention cron jobs
+try {
+  const { initStorageCron } = require("./utils/storageMonitor");
+  initStorageCron();
+} catch (e) {
+  console.log("[STORAGE] R2 monitoring not initialized:", e.message);
+}
 
 // ============================================================
 // Graceful shutdown — handle PM2 restart / SIGTERM / SIGINT

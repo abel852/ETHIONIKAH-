@@ -2,6 +2,7 @@ const prisma = require("../config/database");
 const { createNotification, notifyAllAdmins } = require("../utils/notification");
 const { emitVerificationStatus } = require("../utils/messageSocket");
 const { logAudit } = require("../utils/auditLogger");
+const { uploadMulterFile, isR2Enabled } = require("../config/r2");
 
 const submitVerification = async (req, res) => {
   try {
@@ -12,8 +13,15 @@ const submitVerification = async (req, res) => {
     if (!idPhoto) return res.status(400).json({ error: "National ID photo is required" });
     if (!selfiePhoto) return res.status(400).json({ error: "Selfie photo is required" });
 
-    const idDocumentPath = `uploads/national-ids/${idPhoto.filename}`;
-    const selfiePath = `uploads/selfies/${selfiePhoto.filename}`;
+    let idDocumentPath, selfiePath;
+
+    if (isR2Enabled) {
+      idDocumentPath = await uploadMulterFile(idPhoto, "national-ids");
+      selfiePath = await uploadMulterFile(selfiePhoto, "selfies");
+    } else {
+      idDocumentPath = `uploads/national-ids/${idPhoto.filename}`;
+      selfiePath = `uploads/selfies/${selfiePhoto.filename}`;
+    }
 
     const existing = await prisma.verification.findUnique({ where: { userId } });
 

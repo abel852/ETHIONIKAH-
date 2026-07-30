@@ -1,6 +1,7 @@
 const prisma = require("../config/database");
 const { emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited } = require("../utils/messageSocket");
 const { ensureContactCredits } = require("./membershipPlanController");
+const { uploadMulterFile, isR2Enabled } = require("../config/r2");
 
 const blockedWords = [
   "fuck", "shit", "ass", "bitch", "damn", "bastard", "crap", "dick",
@@ -873,7 +874,12 @@ const sendImage = async (req, res) => {
       return res.status(creditResult.status).json({ error: creditResult.error });
     }
 
-    const imageUrl = "uploads/chat-images/" + req.file.filename;
+    let imageUrl;
+    if (isR2Enabled) {
+      imageUrl = await uploadMulterFile(req.file, "chat-images");
+    } else {
+      imageUrl = "uploads/chat-images/" + req.file.filename;
+    }
     const content = caption ? `IMG:${imageUrl}|${caption}` : `IMG:${imageUrl}`;
     const message = await prisma.message.create({
       data: { senderId, receiverId, content },
@@ -928,7 +934,12 @@ const sendFile = async (req, res) => {
       return res.status(creditResult.status).json({ error: creditResult.error });
     }
 
-    const fileUrl = "uploads/chat-files/" + req.file.filename;
+    let fileUrl;
+    if (isR2Enabled) {
+      fileUrl = await uploadMulterFile(req.file, "chat-files");
+    } else {
+      fileUrl = "uploads/chat-files/" + req.file.filename;
+    }
     const fileName = req.file.originalname;
     const fileSize = req.file.size;
     const content = caption

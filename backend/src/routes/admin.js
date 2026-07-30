@@ -108,4 +108,27 @@ router.get("/deleted-users", ...auth, ctrl.getDeletedUsers);
 router.post("/deleted-users/:id/restore", ...auth, ctrl.restoreDeletedUser);
 router.post("/deleted-users/purge", ...auth, ctrl.purgeDeletedUsers);
 
+// R2 Storage monitoring
+router.get("/storage-usage", ...auth, async (req, res) => {
+  try {
+    const { getStorageUsage, isR2Enabled } = require("../config/r2");
+    if (!isR2Enabled()) return res.json({ enabled: false, message: "R2 storage not configured" });
+    const usage = await getStorageUsage();
+    res.json({ enabled: true, ...usage });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get storage usage" });
+  }
+});
+
+// Manually trigger retention cleanup
+router.post("/storage-cleanup", ...auth, async (req, res) => {
+  try {
+    const { runRetentionCleanup } = require("../utils/storageMonitor");
+    await runRetentionCleanup();
+    res.json({ message: "Retention cleanup completed" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to run cleanup" });
+  }
+});
+
 module.exports = router;

@@ -2,6 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const path = require("path");
 const fs = require("fs");
+const { uploadMulterFile, isR2Enabled } = require("../config/r2");
 
 // === ADMIN: Create a book (with file upload) ===
 exports.createBook = async (req, res) => {
@@ -9,7 +10,14 @@ exports.createBook = async (req, res) => {
     const { title, author, description, price, category } = req.body;
     if (!title || !author) return res.status(400).json({ error: "Title and author are required" });
 
-    const fileUrl = req.file ? `/uploads/books/${req.file.filename}` : null;
+    let fileUrl;
+    if (req.file) {
+      if (isR2Enabled) {
+        fileUrl = await uploadMulterFile(req.file, "books");
+      } else {
+        fileUrl = `/uploads/books/${req.file.filename}`;
+      }
+    }
     if (!fileUrl) return res.status(400).json({ error: "Book file is required" });
 
     const ext = path.extname(req.file.filename).toLowerCase().replace(".", "");

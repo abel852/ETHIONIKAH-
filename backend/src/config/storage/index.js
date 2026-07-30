@@ -2,24 +2,59 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
+const { isR2Enabled } = require("../r2");
 
 // Production-configurable upload limits (2 vCPU / 4 GB VPS defaults)
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || (5 * 1024 * 1024).toString(), 10); // 5 MB
 const MAX_FILES_PER_UPLOAD = parseInt(process.env.MAX_FILES_PER_UPLOAD || "5", 10);
 
-const uploadDirs = ["uploads/profile-photos", "uploads/national-ids", "uploads/selfies", "uploads/chat-images", "uploads/chat-files"];
+// When R2 is enabled, files are saved to a temp dir first, then uploaded to R2
+// When R2 is not configured, files go directly to their final local folder
+const r2Enabled = isR2Enabled();
+
+const uploadDirs = [
+  "uploads/profile-photos",
+  "uploads/national-ids",
+  "uploads/selfies",
+  "uploads/chat-images",
+  "uploads/chat-files",
+  "uploads/receipts",
+  "uploads/books",
+  "uploads/tmp",
+];
 uploadDirs.forEach((dir) => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); });
+
+// Map field names to R2 keys (folders)
+function getFolderForField(fieldname) {
+  const map = {
+    profilePhoto: "profile-photos",
+    photo: "profile-photos",
+    idPhoto: "national-ids",
+    selfiePhoto: "selfies",
+    chatImage: "chat-images",
+    chatFile: "chat-files",
+    receipt: "receipts",
+    book: "books",
+  };
+  return map[fieldname] || "misc";
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let folder = "uploads";
-    if (file.fieldname === "profilePhoto" || file.fieldname === "photo") folder += "/profile-photos";
-    else if (file.fieldname === "idPhoto") folder += "/national-ids";
-    else if (file.fieldname === "selfiePhoto") folder += "/selfies";
-    else if (file.fieldname === "chatImage") folder += "/chat-images";
-    else if (file.fieldname === "chatFile") folder += "/chat-files";
-
-    cb(null, folder);
+    if (r2Enabled) {
+      // Save to temp dir first, R2 upload happens after
+      cb(null, "uploads/tmp");
+    } else {
+      let folder = "uploads";
+      if (file.fieldname === "profilePhoto" || file.fieldname === "photo") folder += "/profile-photos";
+      else if (file.fieldname === "idPhoto") folder += "/national-ids";
+      else if (file.fieldname === "selfiePhoto") folder += "/selfies";
+      else if (file.fieldname === "chatImage") folder += "/chat-images";
+      else if (file.fieldname === "chatFile") folder += "/chat-files";
+      else if (file.fieldname === "receipt") folder += "/receipts";
+      else if (file.fieldname === "book") folder += "/books";
+      cb(null, folder);
+    }
   },
   filename: (req, file, cb) => {
     // Always generate random filename — never keep original
@@ -55,3 +90,5 @@ const upload = multer({
 module.exports = upload;
 module.exports.MAX_FILE_SIZE = MAX_FILE_SIZE;
 module.exports.MAX_FILES_PER_UPLOAD = MAX_FILES_PER_UPLOAD;
+module.exports.getFolderForField = getFolderForField;
+module.exports.isR2Enabled = r2Enabled;
