@@ -1,9 +1,16 @@
+import { StatsGridSkeleton, DashboardCardSkeleton } from "@/components/common";
+
 export default function Loading() {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
-        <p className="text-sm text-charcoal-400 dark:text-white/50">Loading...</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      <div className="space-y-2">
+        <div className="h-7 w-48 bg-charcoal-100 dark:bg-charcoal-700 rounded-lg animate-pulse" />
+        <div className="h-4 w-32 bg-charcoal-100 dark:bg-charcoal-700 rounded-lg animate-pulse" />
+      </div>
+      <StatsGridSkeleton />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DashboardCardSkeleton />
+        <DashboardCardSkeleton />
       </div>
     </div>
   );

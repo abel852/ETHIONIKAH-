@@ -21,3 +21,4 @@ export { ScreenshotGuard } from "./ScreenshotGuard";
 export { NetworkBanner } from "./NetworkBanner";
 export { default as WordSuggest } from "./WordSuggest";
 export { IslamicPatternBackground } from "./IslamicPatternBackground";
+export { default as PageTransition } from "./PageTransition";
