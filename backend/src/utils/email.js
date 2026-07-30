@@ -167,7 +167,7 @@ async function send2FAAlertEmail(to, firstName, action) {
     `2FA ${label.charAt(0).toUpperCase() + label.slice(1)}`,
     `<p>Hi ${firstName},</p>
      <p>Two-factor authentication was <strong>${label}</strong> on your account.</p>
-     <p>If you did not do this, please contact support immediately and reset your password.</p>`
+     <p>If this was not you, your account may be compromised. Please <a href="${process.env.APP_URL || "http://localhost:3000"}/forgot-password" style="color:#D4AF37;font-weight:600;text-decoration:none;">reset your password immediately</a> and strengthen your account security.</p>`
   );
   await sendEmail({
     to,

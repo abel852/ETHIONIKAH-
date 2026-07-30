@@ -65,10 +65,10 @@ export function TwoFactorPrompt() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-charcoal-900 dark:text-white">
-                  Protect your account
+                  Your 2-step verification is off
                 </h3>
                 <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-0.5">
-                  Enable two-step authentication so no one can access your account, even if they know your password.
+                  If this is not you, reset and strengthen your password right now. Enable two-step authentication to protect your account.
                 </p>
                 <div className="flex items-center gap-3 mt-3">
                   <button
