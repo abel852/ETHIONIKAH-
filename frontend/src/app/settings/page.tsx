@@ -578,13 +578,13 @@ function TwoFactorContent() {
           <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
         </div>
       ) : showBackupCodes && backupCodes.length > 0 ? (
-        <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-6 space-y-4">
+        <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-4 sm:p-6 space-y-4">
           <div className="text-center">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
             <p className="text-sm font-semibold text-charcoal-900 dark:text-white">{t("settings.recoveryCodes")}</p>
             <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-1">{t("settings.recoveryCodesDesc")}</p>
           </div>
-          <div className="bg-charcoal-50 dark:bg-charcoal-700 rounded-xl p-4 space-y-1.5">
+          <div className="bg-charcoal-50 dark:bg-charcoal-700 rounded-xl p-3 sm:p-4 space-y-1.5">
             {backupCodes.map((code, i) => (
               <div key={i} className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-charcoal-600 rounded-lg">
                 <span className="text-sm font-mono font-bold text-charcoal-900 dark:text-white tracking-wider">{code}</span>
@@ -592,33 +592,35 @@ function TwoFactorContent() {
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Button variant="primary" size="sm" className="flex-1" onClick={() => { navigator.clipboard.writeText(backupCodes.join("\n")); toast.success(t("settings.codesCopied")); }}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="primary" size="sm" className="flex-1 w-full" onClick={() => { navigator.clipboard.writeText(backupCodes.join("\n")); toast.success(t("settings.codesCopied")); }}>
               {t("settings.copyCodes")}
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => { const blob = new Blob([backupCodes.join("\n")], {type: "text/plain"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ethio-nikah-backup-codes.txt"; a.click(); toast.success(t("settings.codesDownloaded")); }}>
+            <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => { const blob = new Blob([backupCodes.join("\n")], {type: "text/plain"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ethio-nikah-backup-codes.txt"; a.click(); toast.success(t("settings.codesDownloaded")); }}>
               <Download className="w-4 h-4 mr-1" /> {t("settings.download")}
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setShowBackupCodes(false)}>
+            <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => setShowBackupCodes(false)}>
               {t("settings.iveSavedThem")}
             </Button>
           </div>
         </div>
       ) : step === "setup" ? (
-        <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-6 space-y-5">
+        <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-4 sm:p-6 space-y-5">
           {existingSecret ? (
             <div className="text-center">
               <SmartphoneIcon className="w-12 h-12 text-accent mx-auto mb-3" />
               <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300">{t("settings.existingEntry")}</p>
               <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-1">{t("settings.existingEntryDesc")}</p>
               {showForceInput ? (
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex flex-col sm:flex-row items-center gap-2 mt-3">
                   <input type="password" value={forcePassword} onChange={(e) => setForcePassword(e.target.value)}
-                    placeholder={t("settings.enterPassword")} className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    placeholder={t("settings.enterPassword")} className="w-full sm:flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
                   />
-                  <button type="button" onClick={async () => { if (!forcePassword) return; setSaving(true); try { const { data } = await api.post("/auth/2fa/enable", { force: true, password: forcePassword }); setSecret(data.secret); setQrCode(data.qrCode); setExistingSecret(false); setShowForceInput(false); setForcePassword(""); } catch (e: any) { toast.error(e?.response?.data?.error || t("settings.genericFailed")); } finally { setSaving(false); } }}
-                    className="text-xs px-2.5 py-1.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-dark">{t("settings.confirm")}</button>
-                  <button type="button" onClick={() => { setShowForceInput(false); setForcePassword(""); }} className="text-xs text-charcoal-400 hover:text-charcoal-600">{t("common.cancel")}</button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button type="button" onClick={async () => { if (!forcePassword) return; setSaving(true); try { const { data } = await api.post("/auth/2fa/enable", { force: true, password: forcePassword }); setSecret(data.secret); setQrCode(data.qrCode); setExistingSecret(false); setShowForceInput(false); setForcePassword(""); } catch (e: any) { toast.error(e?.response?.data?.error || t("settings.genericFailed")); } finally { setSaving(false); } }}
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-dark flex-1 sm:flex-none">{t("settings.confirm")}</button>
+                    <button type="button" onClick={() => { setShowForceInput(false); setForcePassword(""); }} className="text-xs text-charcoal-400 hover:text-charcoal-600 px-2">{t("common.cancel")}</button>
+                  </div>
                 </div>
               ) : (
                 <button type="button" onClick={() => setShowForceInput(true)}
@@ -629,13 +631,13 @@ function TwoFactorContent() {
           ) : (
             <div className="text-center">
               <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-3">{t("settings.scanQR")}</p>
-              {qrCode && <img src={qrCode} alt="QR Code" className="mx-auto w-48 h-48 rounded-lg border border-charcoal-200 dark:border-charcoal-600" />}
+              {qrCode && <img src={qrCode} alt="QR Code" className="mx-auto w-40 h-40 sm:w-48 sm:h-48 rounded-lg border border-charcoal-200 dark:border-charcoal-600" />}
             </div>
           )}
           {!existingSecret && (
             <div className="bg-charcoal-50 dark:bg-charcoal-700 rounded-lg p-3 text-center">
               <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-1">{t("settings.manualKey")}</p>
-              <p className="text-sm font-mono font-bold text-charcoal-900 dark:text-white tracking-wider select-all">{secret}</p>
+              <p className="text-xs sm:text-sm font-mono font-bold text-charcoal-900 dark:text-white tracking-wider select-all break-all">{secret}</p>
             </div>
           )}
           <div>
@@ -647,11 +649,11 @@ function TwoFactorContent() {
               className="w-full text-center text-xl tracking-[0.5em] font-mono px-4 py-2.5 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-300 dark:placeholder-charcoal-600 focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
           </div>
-          <div className="flex gap-3">
-            <Button variant="primary" className="flex-1" size="md" onClick={handleConfirm} loading={saving} disabled={verifyCode.length !== 6}>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="primary" className="flex-1 w-full sm:w-auto" size="md" onClick={handleConfirm} loading={saving} disabled={verifyCode.length !== 6}>
               {existingSecret ? t("settings.enableWithExisting") : t("settings.verifyAndEnable")}
             </Button>
-            <Button variant="secondary" size="md" onClick={() => setStep("status")}>{t("common.cancel")}</Button>
+            <Button variant="secondary" size="md" className="w-full sm:w-auto" onClick={() => setStep("status")}>{t("common.cancel")}</Button>
           </div>
         </div>
       ) : (
@@ -702,7 +704,7 @@ function TwoFactorContent() {
         </div>
       )}
       {step === "disable" && (
-        <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-5 space-y-4 mt-4">
+        <div className="bg-white dark:bg-charcoal-800 rounded-xl border border-charcoal-100/50 dark:border-charcoal-700 p-4 sm:p-5 space-y-4 mt-4">
           <p className="text-sm font-medium text-charcoal-700 dark:text-charcoal-300">{t("settings.confirmDisable2FA")}</p>
           <div>
             <label className="block text-xs font-medium text-charcoal-600 dark:text-charcoal-400 mb-1.5">{t("settings.currentPassword")}</label>
@@ -719,11 +721,11 @@ function TwoFactorContent() {
               className="w-full text-center text-lg tracking-[0.5em] font-mono px-3 py-2 text-sm rounded-lg bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
           </div>
-          <div className="flex gap-3">
-            <Button variant="danger" size="sm" onClick={handleDisableConfirm} loading={saving} disabled={!disablePassword || disableCode.length !== 6}>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="danger" size="sm" className="w-full sm:w-auto" onClick={handleDisableConfirm} loading={saving} disabled={!disablePassword || disableCode.length !== 6}>
               {t("settings.disable2FAButton")}
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => { setStep("status"); setDisablePassword(""); setDisableCode(""); }}>{t("common.cancel")}</Button>
+            <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => { setStep("status"); setDisablePassword(""); setDisableCode(""); }}>{t("common.cancel")}</Button>
           </div>
         </div>
       )}
@@ -843,7 +845,7 @@ export default function SettingsPage() {
                 <button onClick={() => setMobileSection(null)} className="flex items-center gap-1.5 text-sm font-medium text-accent mb-4">
                   <ArrowLeft className="w-4 h-4" /> {t("settings.backToSettings")}
                 </button>
-                <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-6">
+                <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-3 sm:p-6">
                   {contentMap[mobileSection]}
                 </div>
               </div>
