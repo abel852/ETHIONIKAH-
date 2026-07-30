@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, Heart, MessageCircle, MapPin, Briefcase, BookOpen, Users, Sparkles, RefreshCw, Crown, Gem, AlertCircle, CheckCircle2, AlertTriangle, MessageSquare } from "lucide-react";
+import { X, Heart, MessageCircle, MapPin, Briefcase, BookOpen, Users, Sparkles, RefreshCw, Crown, Gem, CheckCircle2, AlertTriangle, MessageSquare } from "lucide-react";
 import { DashboardSidebar } from "@/components/layout";
 import { Button, VerifiedBadge, IslamicPatternBackground } from "@/components/common";
 import { mediaUrl } from "@/lib/utils";
@@ -326,32 +326,35 @@ export default function MatchesPage() {
 
   const [profiles, setProfiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [chatCounts, setChatCounts] = useState<Record<string, number>>({});
 
-  const loadMatches = useCallback(async (page = 1) => {
-    if (page === 1) setIsLoading(true);
-    setError(null);
+  const loadMatches = useCallback(async (page = 1, silent = false) => {
+    if (page === 1 && !silent) setIsLoading(true);
     try {
       const { data } = await api.get("/matches/suggested", { params: { page, limit: 12 } });
       const matches = data.matches || [];
       setProfiles(page === 1 ? matches : (prev) => [...prev, ...matches]);
       setNeedsProfile(data.needsProfile || false);
-      setCurrentIndex(0);
-      // Fetch chat counts for each profile
+      if (page === 1) {
+        if (!silent) {
+          setCurrentIndex(0);
+        } else {
+          setCurrentIndex((prev) => prev >= matches.length ? 0 : prev);
+        }
+      }
       matches.forEach((m: any) => {
         api.get(`/messages/active-partners/${m.id}`, { _noToast: true } as any)
           .then(({ data }) => setChatCounts((prev) => ({ ...prev, [m.id]: data.count || 0 })))
           .catch(() => {});
       });
-    } catch (err: any) {
-      setError(err?.response?.data?.error || t("matches.failedToLoad"));
+    } catch {
+      // silently ignore - auto-reload will retry
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     loadMatches(1).then(() => setPageLoaded(true));
@@ -359,6 +362,14 @@ export default function MatchesPage() {
       const ids = new Set<string>((data.likes || []).map((l: any) => l.matchedUser?.id));
       setLikedProfileIds(ids);
     }).catch(() => {});
+  }, [loadMatches]);
+
+  // Auto-reload every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!document.hidden) loadMatches(1, true);
+    }, 5000);
+    return () => clearInterval(interval);
   }, [loadMatches]);
 
   const handleLike = async (id: string) => {
@@ -446,10 +457,18 @@ export default function MatchesPage() {
             </div>
           </div>
 
-          {/* Loading state */}
+          {/* Loading state - skeleton card that keeps nav/bottom menus visible */}
           {isLoading && !pageLoaded ? (
-            <div className="flex items-center justify-center" style={{ height: "calc(100vh - 250px)" }}>
-              <div className="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
+            <div className="relative w-full max-w-md mx-auto" style={{ height: "calc(100vh - 280px)", minHeight: "500px" }}>
+              <div className="absolute inset-0 bg-charcoal-800 rounded-3xl shadow-2xl border-2 border-amber-400/30 overflow-hidden">
+                <div className="h-3/5 bg-charcoal-700 animate-pulse" />
+                <div className="p-4 space-y-3">
+                  <div className="h-5 bg-charcoal-700 rounded animate-pulse w-1/2" />
+                  <div className="h-3 bg-charcoal-700 rounded animate-pulse w-1/3" />
+                  <div className="h-3 bg-charcoal-700 rounded animate-pulse w-2/3" />
+                  <div className="h-3 bg-charcoal-700 rounded animate-pulse w-1/2" />
+                </div>
+              </div>
             </div>
           ) : needsProfile ? (
             <div className="py-16 text-center">
@@ -558,13 +577,6 @@ export default function MatchesPage() {
             </>
           )}
 
-          {error && (
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999999] px-6 py-4 rounded-xl bg-white dark:bg-charcoal-800 backdrop-blur-md border border-red-200 dark:border-red-800/50 shadow-elevated flex items-center gap-3 max-w-md">
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-              <span className="text-sm text-red-600 dark:text-red-400">{error}</span>
-              <button onClick={handleRefresh} className="text-sm font-medium text-accent hover:underline shrink-0 whitespace-nowrap">{t('matches.retry')}</button>
-            </div>
-          )}
         </main>
       </div>
     </IslamicPatternBackground>

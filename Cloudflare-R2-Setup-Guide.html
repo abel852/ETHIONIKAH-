@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudflare R2 Setup Guide — ETHIONIKAH</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px;
+    color: #333;
+    line-height: 1.6;
+  }
+  h1 {
+    color: #1e3a5f;
+    border-bottom: 3px solid #f6821f;
+    padding-bottom: 10px;
+  }
+  h2 {
+    color: #1e3a5f;
+    margin-top: 30px;
+    border-left: 4px solid #f6821f;
+    padding-left: 12px;
+  }
+  h3 {
+    color: #2c5282;
+    margin-top: 20px;
+  }
+  .step {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+  }
+  .step-number {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    background: #f6821f;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 32px;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  .note {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 12px 16px;
+    margin: 15px 0;
+    border-radius: 4px;
+  }
+  .tip {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 12px 16px;
+    margin: 15px 0;
+    border-radius: 4px;
+  }
+  .warning {
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    padding: 12px 16px;
+    margin: 15px 0;
+    border-radius: 4px;
+  }
+  code {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 14px;
+  }
+  .code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  .env-var {
+    color: #4ec9b0;
+  }
+  .env-value {
+    color: #ce9178;
+  }
+  .env-comment {
+    color: #6a9955;
+  }
+  .toc {
+    background: #f0f4f8;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  .toc a {
+    color: #1e3a5f;
+    text-decoration: none;
+  }
+  .toc a:hover {
+    text-decoration: underline;
+  }
+  .toc ul {
+    list-style: none;
+    padding-left: 10px;
+  }
+  .toc li {
+    margin: 6px 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  th {
+    background: #1e3a5f;
+    color: white;
+  }
+  tr:nth-child(even) {
+    background: #f8f9fa;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    color: #888;
+    font-size: 13px;
+  }
+  @media print {
+    body { padding: 20px; }
+    .step { break-inside: avoid; }
+    h2 { break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Cloudflare R2 Setup Guide</h1>
+<p style="font-size: 18px; color: #666;">Complete step-by-step guide for ETHIONIKAH platform</p>
+
+<div class="toc">
+  <strong>Table of Contents</strong>
+  <ul>
+    <li><a href="#overview">Overview — What is Cloudflare R2?</a></li>
+    <li><a href="#step1">Step 1: Create a Cloudflare Account</a></li>
+    <li><a href="#step2">Step 2: Add a Payment Method (Required for R2)</a></li>
+    <li><a href="#step3">Step 3: Enable R2 on Your Account</a></li>
+    <li><a href="#step4">Step 4: Create an R2 Bucket</a></li>
+    <li><a href="#step5">Step 5: Create R2 API Tokens</a></li>
+    <li><a href="#step6">Step 6: Enable Public Access</a></li>
+    <li><a href="#step7">Step 7: Add R2 Credentials to Your Server</a></li>
+    <li><a href="#step8">Step 8: Deploy and Verify</a></li>
+    <li><a href="#env-reference">Environment Variables Reference</a></li>
+    <li><a href="#free-tier">R2 Free Tier Limits</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+  </ul>
+</div>
+
+<h2 id="overview">Overview — What is Cloudflare R2?</h2>
+<p>
+  Cloudflare R2 is an object storage service (like AWS S3) that lets you store files (images, documents, videos) in the cloud.
+  It is <strong>cheaper than AWS S3</strong> because it has <strong>no egress fees</strong> — you only pay for storage and operations.
+</p>
+<p>
+  For ETHIONIKAH, R2 will store:
+</p>
+<ul>
+  <li>Profile photos</li>
+  <li>National ID images (verification)</li>
+  <li>Selfie photos (verification)</li>
+  <li>Chat images and files</li>
+  <li>Payment receipts</li>
+  <li>Book files</li>
+</ul>
+
+<h2 id="step1">Step 1: Create a Cloudflare Account</h2>
+
+<div class="step">
+  <span class="step-number">1</span>
+  <strong>Go to the Cloudflare signup page</strong>
+  <p>Open your browser and go to: <code>https://dash.cloudflare.com/sign-up</code></p>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  <strong>Enter your email address</strong>
+  <p>Use a valid email that you have access to. This will be your login email.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  <strong>Create a password</strong>
+  <p>Choose a strong password (minimum 12 characters with uppercase, lowercase, numbers, and symbols).</p>
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  <strong>Verify your email</strong>
+  <p>Cloudflare will send a verification email. Open it and click the <strong>"Verify email"</strong> button.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">5</span>
+  <strong>Complete the signup</strong>
+  <p>You may be asked to choose a plan. Select the <strong>"Free"</strong> plan — this is sufficient for R2.</p>
+</div>
+
+<div class="note">
+  <strong>Note:</strong> You do NOT need to add a domain to Cloudflare to use R2. You can skip the "Add a site" step.
+</div>
+
+<h2 id="step2">Step 2: Add a Payment Method (Required for R2)</h2>
+
+<div class="warning">
+  <strong>Important:</strong> Even though R2 has a free tier, Cloudflare requires a payment method on file to activate R2. You will NOT be charged unless you exceed the free tier limits.
+</div>
+
+<div class="step">
+  <span class="step-number">1</span>
+  <strong>Go to your account billing</strong>
+  <p>In the Cloudflare dashboard, click your profile icon (top right) → <strong>Billing</strong></p>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  <strong>Add a payment method</strong>
+  <p>Click <strong>"Add payment method"</strong> and enter your credit/debit card details.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  <strong>Confirm</strong>
+  <p>Cloudflare may make a small temporary charge to verify the card (usually $0-$1). This is reversed within a few days.</p>
+</div>
+
+<h2 id="step3">Step 3: Enable R2 on Your Account</h2>
+
+<div class="step">
+  <span class="step-number">1</span>
+  <strong>Navigate to R2</strong>
+  <p>In the Cloudflare dashboard left sidebar, click <strong>"R2 Object Storage"</strong></p>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  <strong>Activate R2</strong>
+  <p>You'll see a welcome screen. Click <strong>"Activate R2"</strong> or <strong>"Get started"</strong>.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  <strong>Accept the terms</strong>
+  <p>Review and accept the R2 terms of service. Your R2 is now active.</p>
+</div>
+
+<div class="note">
+  <strong>Find your Account ID:</strong> After activating R2, look at the right sidebar — you'll see your <strong>Account ID</strong>. It looks like: <code>a1b2c3d4e5f6g7h8i9j0...</code> (32 characters). Copy and save this — you'll need it later.
+</div>
+
+<h2 id="step4">Step 4: Create an R2 Bucket</h2>
+
+<div class="step">
+  <span class="step-number">1</span>
+  <strong>Click "Create bucket"</strong>
+  <p>On the R2 overview page, click the <strong>"Create bucket"</strong> button.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  <strong>Name your bucket</strong>
+  <p>Enter the bucket name: <code>ethionikah-uploads</code></p>
+  <p><small>Bucket names must be lowercase, 3-63 characters, and globally unique.</small></p>
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  <strong>Choose location</strong>
+  <p>Leave as <strong>"Automatic"</strong> — Cloudflare will pick the best location based on access patterns. If your VPS is in a specific region, you can choose that region.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  <strong>Click "Create"</strong>
+  <p>Your bucket is now created. You'll see it listed in the R2 dashboard.</p>
+</div>
+
+<h2 id="step5">Step 5: Create R2 API Tokens</h2>
+
+<div class="step">
+  <span class="step-number">1</span>
+  <strong>Go to API token management</strong>
+  <p>In the R2 dashboard, click <strong>"Manage R2 API Tokens"</strong> (top right area) or go to R2 → click the <strong>API Tokens</strong> tab.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  <strong>Click "Create API token"</strong>
+  <p>Click the <strong>"Create API token"</strong> button.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  <strong>Configure the token</strong>
+  <ul>
+    <li><strong>Token name:</strong> <code>ethionikah-backend</code></li>
+    <li><strong>Permissions:</strong> Select <strong>"Object Read & Write"</strong></li>
+    <li><strong>Specify bucket(s):</strong> Select <strong>"Apply to specific buckets only"</strong> → choose <code>ethionikah-uploads</code></li>
+    <li><strong>TTL (Time to Live):</strong> Leave as "Forever" (or set an expiry if preferred)</li>
+  </ul>
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  <strong>Click "Create"</strong>
+</div>
+
+<div class="warning">
+  <strong>Critical — Save your credentials now!</strong> After clicking Create, you will see a popup with your credentials. The <strong>Secret Access Key will NEVER be shown again</strong>. Copy everything immediately:
+  <ul>
+    <li><strong>Access Key ID</strong> — e.g., <code>abcdef1234567890</code></li>
+    <li><strong>Secret Access Key</strong> — e.g., <code>xyz789abc...</code> (long string)</li>
+    <li><strong>Endpoint URL</strong> — e.g., <code>https://a1b2c3d4.r2.cloudflarestorage.com</code></li>
+    <li><strong>Jurisdiction specific endpoint</strong> — use this if shown</li>
+  </ul>
+  Save these in a secure password manager or file.
+</div>
+
+<h2 id="step6">Step 6: Enable Public Access</h2>
+
+<p>You need a public URL so that uploaded images can be viewed in the browser by users and admins.</p>
+
+<h3>Option A: Custom Domain (Recommended)</h3>
+<p><em>Requires your domain (ethionikah.com) to be on Cloudflare DNS</em></p>
+
+<div class="step">
+  <span class="step-number">1</span>
+  <strong>Open bucket settings</strong>
+  <p>Click your bucket <code>ethionikah-uploads</code> → <strong>Settings</strong> tab</p>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  <strong>Find "Public Access"</strong>
+  <p>Scroll to the <strong>"Public Access"</strong> section</p>
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  <strong>Connect a domain</strong>
+  <p>Click <strong>"Connect Domain"</strong> and enter: <code>uploads.ethionikah.com</code></p>
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  <strong>Confirm DNS record</strong>
+  <p>Cloudflare will automatically create a CNAME record. Click <strong>"Continue"</strong> and then <strong>"Connect domain"</strong>.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">5</span>
+  <strong>Your public URL is:</strong>
+  <p><code>https://uploads.ethionikah.com</code></p>
+</div>
+
+<h3>Option B: R2.dev Public URL (Quick — No Custom Domain Needed)</h3>
+
+<div class="step">
+  <span class="step-number">1</span>
+  <strong>Open bucket settings</strong>
+  <p>Click your bucket <code>ethionikah-uploads</code> → <strong>Settings</strong> tab</p>
+</div>
+
+<div class="step">
+  <span class="step-number">2</span>
+  <strong>Find "Public Access" → R2.dev subdomain</strong>
+</div>
+
+<div class="step">
+  <span class="step-number">3</span>
+  <strong>Click "Allow Access"</strong>
+  <p>Confirm the warning prompt.</p>
+</div>
+
+<div class="step">
+  <span class="step-number">4</span>
+  <strong>Your public URL is:</strong>
+  <p><code>https://pub-abc123def456.r2.dev</code> (copy this from the dashboard)</p>
+</div>
+
+<div class="note">
+  <strong>Note:</strong> R2.dev URLs are rate-limited and not recommended for production. Use a custom domain for best performance.
+</div>
+
+<h2 id="step7">Step 7: Add R2 Credentials to Your Server</h2>
+
+<p>SSH into your VPS and edit the backend environment file:</p>
+
+<div class="code-block">
+<span class="env-comment"># SSH into your server</span>
+ssh root@your_vps_ip
+
+<span class="env-comment"># Navigate to your project</span>
+cd /var/www/ETHIONIKAH-
+
+<span class="env-comment"># Edit the .env file</span>
+nano backend/.env
+</div>
+
+<p>Add these lines at the bottom of the file (replace with your actual values):</p>
+
+<div class="code-block">
+<span class="env-comment"># Cloudflare R2 Storage</span>
+<span class="env-var">R2_ACCOUNT_ID</span>=<span class="env-value">your_account_id_here</span>
+<span class="env-var">R2_ACCESS_KEY_ID</span>=<span class="env-value">your_access_key_id_here</span>
+<span class="env-var">R2_SECRET_ACCESS_KEY</span>=<span class="env-value">your_secret_access_key_here</span>
+<span class="env-var">R2_BUCKET_NAME</span>=<span class="env-value">ethionikah-uploads</span>
+<span class="env-var">R2_ENDPOINT</span>=<span class="env-value">https://your_account_id.r2.cloudflarestorage.com</span>
+<span class="env-var">R2_PUBLIC_URL</span>=<span class="env-value">https://uploads.ethionikah.com</span>
+
+<span class="env-comment"># Optional: Retention settings (days)</span>
+<span class="env-var">R2_VERIFICATION_RETENTION_DAYS</span>=<span class="env-value">90</span>
+<span class="env-var">R2_CHAT_RETENTION_DAYS</span>=<span class="env-value">60</span>
+</div>
+
+<p>Save and exit: press <code>Ctrl+X</code>, then <code>Y</code>, then <code>Enter</code></p>
+
+<h2 id="step8">Step 8: Deploy and Verify</h2>
+
+<div class="code-block">
+<span class="env-comment"># Pull the latest code</span>
+cd /var/www/ETHIONIKAH-
+git pull
+
+<span class="env-comment"># Install new dependencies</span>
+cd backend && npm install
+
+<span class="env-comment"># Restart the server</span>
+pm2 restart all
+
+<span class="env-comment"># Check logs to verify R2 is connected</span>
+pm2 logs --lines 30
+</div>
+
+<p>You should see these log messages confirming R2 is active:</p>
+
+<div class="code-block">
+[R2] Client initialized — bucket: ethionikah-uploads, endpoint: https://...
+[R2-CRON] Storage monitoring and retention jobs scheduled
+</div>
+
+<h3>Test an upload:</h3>
+<ol>
+  <li>Go to your website and log in</li>
+  <li>Upload a profile photo</li>
+  <li>Go to the Cloudflare R2 dashboard and check the <code>ethionikah-uploads</code> bucket</li>
+  <li>You should see a new file in the <code>profile-photos/</code> folder</li>
+  <li>The image should display correctly on your website</li>
+</ol>
+
+<h2 id="env-reference">Environment Variables Reference</h2>
+
+<table>
+  <tr>
+    <th>Variable</th>
+    <th>Required</th>
+    <th>Description</th>
+    <th>Example</th>
+  </tr>
+  <tr>
+    <td><code>R2_ACCOUNT_ID</code></td>
+    <td>Yes</td>
+    <td>Your Cloudflare Account ID</td>
+    <td><code>a1b2c3d4e5f6...</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_ACCESS_KEY_ID</code></td>
+    <td>Yes</td>
+    <td>Access Key from API token</td>
+    <td><code>abcdef123456...</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_SECRET_ACCESS_KEY</code></td>
+    <td>Yes</td>
+    <td>Secret Key from API token</td>
+    <td><code>xyz789abc...</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_BUCKET_NAME</code></td>
+    <td>Yes</td>
+    <td>Name of your R2 bucket</td>
+    <td><code>ethionikah-uploads</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_ENDPOINT</code></td>
+    <td>No*</td>
+    <td>R2 S3 endpoint URL</td>
+    <td><code>https://&lt;account_id&gt;.r2.cloudflarestorage.com</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_PUBLIC_URL</code></td>
+    <td>Yes</td>
+    <td>Public URL for serving files</td>
+    <td><code>https://uploads.ethionikah.com</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_VERIFICATION_RETENTION_DAYS</code></td>
+    <td>No</td>
+    <td>Days to keep verification images (default: 90)</td>
+    <td><code>90</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_CHAT_RETENTION_DAYS</code></td>
+    <td>No</td>
+    <td>Days to keep chat files (default: 60)</td>
+    <td><code>60</code></td>
+  </tr>
+  <tr>
+    <td><code>R2_STORAGE_LIMIT_BYTES</code></td>
+    <td>No</td>
+    <td>Storage limit for alerts (default: 10GB)</td>
+    <td><code>10737418240</code></td>
+  </tr>
+</table>
+
+<p><small>* If <code>R2_ENDPOINT</code> is not set, it's automatically constructed from <code>R2_ACCOUNT_ID</code>.</small></p>
+
+<h2 id="free-tier">R2 Free Tier Limits</h2>
+
+<table>
+  <tr>
+    <th>Resource</th>
+    <th>Free Tier (Monthly)</th>
+    <th>Cost Above Free Tier</th>
+  </tr>
+  <tr>
+    <td>Storage</td>
+    <td>10 GB</td>
+    <td>$0.015 per GB</td>
+  </tr>
+  <tr>
+    <td>Class A Operations (writes)</td>
+    <td>1 million</td>
+    <td>$4.50 per million</td>
+  </tr>
+  <tr>
+    <td>Class B Operations (reads)</td>
+    <td>10 million</td>
+    <td>$0.36 per million</td>
+  </tr>
+  <tr>
+    <td>Egress (data transfer out)</td>
+    <td><strong>Unlimited (FREE!)</strong></td>
+    <td><strong>$0.00</strong></td>
+  </tr>
+</table>
+
+<div class="tip">
+  <strong>Why R2 is better than AWS S3:</strong> AWS S3 charges $0.09 per GB for egress (data transfer out). R2 charges <strong>$0.00</strong> — this saves significant money when serving images to users.
+</div>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<h3>R2 not initializing</h3>
+<p>If you see <code>[R2] Not configured — uploads will use local disk</code> in logs:</p>
+<ul>
+  <li>Check that all required env vars are set in <code>backend/.env</code></li>
+  <li>Restart the server: <code>pm2 restart all</code></li>
+  <li>Verify there are no typos in variable names</li>
+</ul>
+
+<h3>Upload failing with R2</h3>
+<p>If uploads fail after R2 is configured:</p>
+<ul>
+  <li>Verify the Access Key ID and Secret Access Key are correct</li>
+  <li>Check that the API token has "Object Read & Write" permission</li>
+  <li>Ensure the token is applied to the correct bucket</li>
+  <li>Check server logs: <code>pm2 logs --lines 50</code></li>
+</ul>
+
+<h3>Images not displaying</h3>
+<p>If files upload to R2 but images don't show on the website:</p>
+<ul>
+  <li>Verify <code>R2_PUBLIC_URL</code> is correct and the domain is accessible</li>
+  <li>Test the URL directly in your browser: <code>https://uploads.ethionikah.com/profile-photos/test.jpg</code></li>
+  <li>Check that public access is enabled on the bucket</li>
+  <li>For custom domains, verify the DNS CNAME record is active</li>
+</ul>
+
+<h3>Storage alerts not working</h3>
+<p>If you don't receive storage alerts:</p>
+<ul>
+  <li>Check that there are active admin users in the database</li>
+  <li>The cron job runs daily at 3 AM — check logs at that time</li>
+  <li>You can manually check: <code>GET /api/admin/storage-usage</code> (requires admin auth)</li>
+</ul>
+
+<div class="footer">
+  ETHIONIKAH — Cloudflare R2 Setup Guide<br>
+  Generated on July 30, 2026
+</div>
+
+</body>
+</html>
