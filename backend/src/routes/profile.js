@@ -8,6 +8,7 @@ const { profileUpdateLimiter, photoUploadLimiter, profileViewLimiter } = require
 const { validate } = require("../validators/auth");
 const { updateProfileSchema, updateProfileStepSchema } = require("../validators/profile");
 const { verifyUpload } = require("../middleware/uploadSecurity");
+const { cacheResponse } = require("../middleware/cache");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, "..", "..", "uploads")),
@@ -22,11 +23,11 @@ const upload = multer({
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE || (5 * 1024 * 1024).toString(), 10) },
 });
 
-router.get("/badge-counts", authenticate, profileViewLimiter, profileController.getUserBadgeCounts);
-router.get("/ban-info", authenticate, profileViewLimiter, profileController.getUserBanInfo);
-router.get("/weather", authenticate, profileController.getWeather);
+router.get("/badge-counts", authenticate, profileViewLimiter, cacheResponse(30), profileController.getUserBadgeCounts);
+router.get("/ban-info", authenticate, profileViewLimiter, cacheResponse(30), profileController.getUserBanInfo);
+router.get("/weather", authenticate, cacheResponse(300), profileController.getWeather);
 router.post("/", authenticate, requireActive, profileUpdateLimiter, validate(updateProfileSchema), profileController.createOrUpdateProfile);
-router.get("/me", authenticate, requireActive, profileViewLimiter, profileController.getProfile);
+router.get("/me", authenticate, requireActive, profileViewLimiter, cacheResponse(30), profileController.getProfile);
 router.post("/step", authenticate, requireActive, profileUpdateLimiter, validate(updateProfileStepSchema), profileController.updateProfileStep);
 router.post("/photo", authenticate, requireActive, photoUploadLimiter, upload.single("photo"), verifyUpload("photo"), profileController.uploadPhoto);
 router.delete("/photo", authenticate, requireActive, profileController.deletePhoto);

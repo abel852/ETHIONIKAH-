@@ -25,7 +25,6 @@ export default function LikedInterestPage() {
     if (!isVerified) { setLoading(false); return; }
     matchService.getLikesSent()
       .then(({ data }) => {
-        console.log("Likes sent response:", JSON.stringify(data.likes?.[0], null, 2));
         setLikes(data.likes || []);
       })
       .catch((err) => console.error("Failed to load likes:", err))
@@ -118,11 +117,7 @@ export default function LikedInterestPage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {likes.map((like: any) => {
                 const p = like.matchedUser || like.user;
-                if (!p) {
-                  console.warn("Skipping like with null user:", like.id);
-                  return null;
-                }
-                console.log("Like user data:", { id: p.id, firstName: p.firstName, lastName: p.lastName, photos: p.profile?.photos });
+                if (!p) return null;
                 const profile = p?.profile || {};
                 const fullName = [p?.firstName, p?.lastName].filter(Boolean).join(" ") || p?.username || "User";
                 return (

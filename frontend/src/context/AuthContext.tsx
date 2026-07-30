@@ -158,10 +158,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, connectionError, login, register, logout, updateUser }}>
       {connectionError === "server_down" && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center text-sm py-2 px-4 flex items-center justify-center gap-2 shadow-lg">
-          <WifiOff className="w-4 h-4 shrink-0" />
-          <span>Server is currently down. Please wait...</span>
-          <button onClick={() => window.location.reload()} className="ml-2 underline text-white/90 hover:text-white font-medium">Retry</button>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 bg-white dark:bg-charcoal-800 rounded-2xl px-10 py-8 shadow-2xl">
+            <WifiOff className="w-12 h-12 text-amber-500" />
+            <p className="text-lg font-medium text-charcoal-700 dark:text-white/90 text-center">Server is currently down</p>
+            <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-colors">
+              Retry
+            </button>
+          </div>
         </div>
       )}
       {children}

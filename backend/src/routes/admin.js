@@ -3,6 +3,7 @@ const router = express.Router();
 const ctrl = require("../controllers/adminController");
 const twoFactorCtrl = require("../controllers/twoFactorController");
 const { authenticate, authorize } = require("../middleware/auth");
+const { cacheResponse } = require("../middleware/cache");
 const auth = [authenticate, authorize("admin")];
 
 // Users
@@ -31,11 +32,11 @@ router.post("/users/:id/unlock", ...auth, ctrl.unlockUser);
 router.post("/users/:id/clear-flag", ...auth, ctrl.clearFlag);
 
 // Dashboard & Analytics
-router.get("/dashboard", ...auth, ctrl.getDashboardData);
-router.get("/analytics", ...auth, ctrl.getAnalytics);
-router.get("/retention", ...auth, ctrl.getRetentionMetrics);
-router.get("/funnel", ...auth, ctrl.getUserFunnel);
-router.get("/engagement-heatmap", ...auth, ctrl.getEngagementHeatmap);
+router.get("/dashboard", ...auth, cacheResponse(60), ctrl.getDashboardData);
+router.get("/analytics", ...auth, cacheResponse(120), ctrl.getAnalytics);
+router.get("/retention", ...auth, cacheResponse(120), ctrl.getRetentionMetrics);
+router.get("/funnel", ...auth, cacheResponse(120), ctrl.getUserFunnel);
+router.get("/engagement-heatmap", ...auth, cacheResponse(120), ctrl.getEngagementHeatmap);
 
 // Security
 router.get("/audit-logs", ...auth, ctrl.getAuditLogs);
@@ -44,16 +45,16 @@ router.get("/suspicious-activity", ...auth, ctrl.getSuspiciousActivity);
 router.get("/gdpr", ...auth, ctrl.getGDPRRequests);
 
 // RBAC
-router.get("/permissions", ...auth, ctrl.getAdminPermissions);
+router.get("/permissions", ...auth, cacheResponse(60), ctrl.getAdminPermissions);
 router.post("/permissions", ...auth, ctrl.setAdminPermission);
 router.delete("/permissions", ...auth, ctrl.removeAdminPermission);
 
 // Feature Toggles
-router.get("/feature-toggles", ...auth, ctrl.getFeatureToggles);
+router.get("/feature-toggles", ...auth, cacheResponse(60), ctrl.getFeatureToggles);
 router.put("/feature-toggles/:id", ...auth, ctrl.updateFeatureToggle);
 
 // System Settings
-router.get("/settings", ...auth, ctrl.getSystemSettings);
+router.get("/settings", ...auth, cacheResponse(60), ctrl.getSystemSettings);
 router.put("/settings", ...auth, ctrl.updateSystemSettings);
 
 // Content Flags
@@ -74,13 +75,13 @@ router.put("/notification-templates/:id", ...auth, ctrl.updateNotificationTempla
 router.get("/compliance", ...auth, ctrl.getComplianceChecks);
 
 // Activity Timeline
-router.get("/activity-timeline", ...auth, ctrl.getActivityTimeline);
+router.get("/activity-timeline", ...auth, cacheResponse(30), ctrl.getActivityTimeline);
 
 // Seed defaults
 router.post("/seed", ...auth, ctrl.seedDefaults);
 
 // Activities
-router.get("/activities", ...auth, ctrl.getActivities);
+router.get("/activities", ...auth, cacheResponse(30), ctrl.getActivities);
 
 // Admin Messaging
 router.post("/users/:id/message", ...auth, ctrl.sendUserMessage);
@@ -101,7 +102,7 @@ router.post("/notifications/2fa-reminders", ...auth, async (req, res) => {
 });
 
 // Badge counts
-router.get("/badge-counts", ...auth, ctrl.getBadgeCounts);
+router.get("/badge-counts", ...auth, cacheResponse(30), ctrl.getBadgeCounts);
 
 // Recycle bin (soft-deleted accounts)
 router.get("/deleted-users", ...auth, ctrl.getDeletedUsers);

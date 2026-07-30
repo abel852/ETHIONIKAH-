@@ -102,6 +102,15 @@ export function proxy(request: NextRequest) {
   response.headers.set("Referrer-Policy", "same-origin");
   response.headers.set("Permissions-Policy", "camera=(self), microphone=(), geolocation=()");
 
+  // Cache static assets aggressively in the browser
+  if (pathname.startsWith("/_next/static/")) {
+    response.headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  } else if (pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico|woff2?)$/)) {
+    response.headers.set("Cache-Control", "public, max-age=604800, immutable");
+  } else {
+    response.headers.set("Cache-Control", "no-cache, must-revalidate");
+  }
+
   if (isProduction) {
     response.headers.set(
       "Strict-Transport-Security",

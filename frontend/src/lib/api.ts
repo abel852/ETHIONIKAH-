@@ -7,20 +7,52 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// --- Client-side GET cache (short TTL, stale-while-revalidate) ---
+const clientCache = new Map<string, { data: any; ts: number }>();
+const CLIENT_CACHE_TTL = 15000; // 15 seconds
+
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = sessionStorage.getItem("accessToken");
     if (token) config.headers.Authorization = `Bearer ${token}`;
+
+    // Serve from client cache for GET requests (unless explicitly bypassed)
+    if (config.method === "get" && !config._skipCache) {
+      const key = `${config.baseURL}${config.url}`;
+      const entry = clientCache.get(key);
+      if (entry && Date.now() - entry.ts < CLIENT_CACHE_TTL) {
+        // Return cached response as a resolved promise
+        return Promise.resolve({ ...entry.data, __fromClientCache: true });
+      }
+    }
   }
   return config;
 });
 
-const networkToast = { id: "network-error" };
-
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Store successful GET responses in client cache
+    if (res.config?.method === "get" && res.status === 200 && !res.config._skipCache) {
+      const key = `${res.config.baseURL}${res.config.url}`;
+      clientCache.set(key, { data: res, ts: Date.now() });
+      if (clientCache.size > 100) {
+        const oldest = clientCache.keys().next().value;
+        if (oldest) clientCache.delete(oldest);
+      }
+    }
+    return res;
+  },
   async (error) => {
     if (!error.config) return Promise.reject(error);
+
+    // On network error, try to serve from stale client cache
+    if (!error.response && error.config?.method === "get") {
+      const key = `${error.config.baseURL}${error.config.url}`;
+      const entry = clientCache.get(key);
+      if (entry) return Promise.resolve(entry.data);
+    }
+
+    const networkToast = { id: "network-error" };
 
     const original = error.config;
 
