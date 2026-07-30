@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Search, CreditCard, DollarSign, TrendingUp, Clock,
   CheckCircle, XCircle, Eye, Receipt, Wallet, Shield,
-  ScanSearch, AlertTriangle, Info, User, RefreshCw,
+  ScanSearch, AlertTriangle, Info, User, RefreshCw, X,
 } from "lucide-react";
 import { Card, Button } from "@/components/common";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -42,6 +42,7 @@ export default function AdminPaymentsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [now, setNow] = useState(Date.now());
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
 
   // Transaction checker state
   const [txQuery, setTxQuery] = useState("");
@@ -331,9 +332,9 @@ export default function AdminPaymentsPage() {
                       </div>
                     </div>
                     {p.receiptUrl && (
-                      <a href={mediaUrl(p.receiptUrl)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-xs text-accent font-medium hover:underline">
+                      <button onClick={(e) => { e.stopPropagation(); setReceiptImage(mediaUrl(p.receiptUrl) || null); }} className="inline-flex items-center gap-1.5 mt-2 text-xs text-accent font-medium hover:underline">
                         <Receipt className="w-3.5 h-3.5" /> View Receipt
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}
@@ -543,9 +544,9 @@ export default function AdminPaymentsPage() {
             {selected.receiptUrl && (
               <div>
                 <p className="text-xs text-charcoal-400 dark:text-white mb-2">Receipt</p>
-                <a href={mediaUrl(selected.receiptUrl)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-accent text-sm font-medium hover:bg-accent/20">
+                <button onClick={() => setReceiptImage(mediaUrl(selected.receiptUrl) || null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-accent text-sm font-medium hover:bg-accent/20">
                   <Receipt className="w-4 h-4" /> View Receipt
-                </a>
+                </button>
               </div>
             )}
 
@@ -601,6 +602,27 @@ export default function AdminPaymentsPage() {
             )}
           </div>
         </Modal>
+      )}
+
+      {/* In-page receipt image viewer */}
+      {receiptImage && (
+        <div
+          className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setReceiptImage(null)}
+        >
+          <button
+            onClick={() => setReceiptImage(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={receiptImage}
+            alt="Receipt"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </AdminLayout>
   );
