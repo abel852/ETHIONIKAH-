@@ -38,8 +38,8 @@ export function ScreenshotGuard() {
       }
     };
 
-    // Blur when window loses focus — catches many mobile screenshot tools
-    // and desktop app switching. Use a small delay to avoid false positives
+    // Blur when window loses focus — catches mobile screenshot tools
+    // and desktop app switching. Use a delay to avoid false positives
     // from button clicks and form submissions.
     let blurTimeout: ReturnType<typeof setTimeout> | null = null;
     const onWindowBlur = () => {
@@ -81,10 +81,45 @@ export function ScreenshotGuard() {
     document.addEventListener("keydown", checkKey, true);
     document.addEventListener("keyup", checkKey, true);
 
+    // Copy/cut events — some screenshot tools trigger clipboard
+    const onCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      blur();
+    };
+    document.addEventListener("copy", onCopy);
+    document.addEventListener("cut", onCopy);
+
+    // Mobile: detect via Screen Capture API (Android Chrome 94+)
+    // Fires when screen recording or screenshot is started
+    let captureStream: MediaStream | null = null;
+    const detectScreenCapture = async () => {
+      try {
+        if (!navigator.mediaDevices?.getDisplayMedia) return;
+        captureStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        captureStream.getVideoTracks()[0].addEventListener("ended", () => {
+          // Recording/screenshot stopped — re-blur as precaution
+          blur();
+          captureStream = null;
+        });
+        blur();
+      } catch {
+        // User denied or not supported — silently ignore
+      }
+    };
+
     // Touch events: some Android screenshot tools trigger a brief touch
     let lastTouchTime = 0;
     const onTouchStart = () => { lastTouchTime = Date.now(); };
     document.addEventListener("touchstart", onTouchStart, { passive: true });
+
+    // Mobile: multi-finger swipe can trigger screenshot on some devices
+    const onTouchEnd = (e: TouchEvent) => {
+      // Three-finger touch is a common screenshot gesture on Android
+      if (e.touches.length === 0 && e.changedTouches.length >= 3) {
+        blur();
+      }
+    };
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
 
     // Cleanup
     return () => {
@@ -97,6 +132,10 @@ export function ScreenshotGuard() {
       document.removeEventListener("keydown", checkKey, true);
       document.removeEventListener("keyup", checkKey, true);
       document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("copy", onCopy);
+      document.removeEventListener("cut", onCopy);
+      if (captureStream) captureStream.getTracks().forEach(t => t.stop());
       if (blurTimeout) clearTimeout(blurTimeout);
     };
   }, [user]);
@@ -106,14 +145,14 @@ export function ScreenshotGuard() {
       {/* Blur overlay — click to dismiss */}
       {showOverlay && (
         <div
-          className="fixed inset-0 z-[99999] cursor-pointer bg-white/80 dark:bg-charcoal-900/80 flex items-center justify-center"
+          className="fixed inset-0 z-[99999] cursor-pointer bg-white/80 dark:bg-charcoal-900/80 flex items-center justify-center p-4"
           style={{ pointerEvents: "auto" }}
           onClick={() => {
             document.documentElement.classList.remove("prtsc-blur-active");
             setShowOverlay(false);
           }}
         >
-          <div className="text-center px-6">
+          <div className="text-center px-6 max-w-xs">
             <div className="text-4xl mb-3">🔒</div>
             <p className="text-sm font-semibold text-charcoal-700 dark:text-charcoal-200">
               Screenshot detected — content hidden
