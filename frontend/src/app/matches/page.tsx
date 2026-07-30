@@ -433,8 +433,9 @@ export default function MatchesPage() {
   const thirdProfile = remainingProfiles[2];
 
   return (
-    <IslamicPatternBackground showBismillah>
+    <>
       <DashboardSidebar />
+      <IslamicPatternBackground showBismillah>
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
           {/* Header */}
@@ -580,5 +581,6 @@ export default function MatchesPage() {
         </main>
       </div>
     </IslamicPatternBackground>
+    </>
   );
 }

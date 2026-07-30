@@ -57,10 +57,10 @@ export default function UserProfilePage() {
         <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <div className="max-w-2xl mx-auto p-4">
             <div className="animate-pulse space-y-4">
-              <div className="h-64 bg-charcoal-200 dark:bg-charcoal-700 rounded-2xl" />
-              <div className="h-6 w-48 bg-charcoal-200 dark:bg-charcoal-700 rounded" />
-              <div className="h-4 w-32 bg-charcoal-200 dark:bg-charcoal-700 rounded" />
-              <div className="h-20 bg-charcoal-200 dark:bg-charcoal-700 rounded" />
+              <div className="h-64 bg-charcoal-700 rounded-2xl" />
+              <div className="h-6 w-48 bg-charcoal-700 rounded" />
+              <div className="h-4 w-32 bg-charcoal-700 rounded" />
+              <div className="h-20 bg-charcoal-700 rounded" />
             </div>
           </div>
         </div>

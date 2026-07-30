@@ -177,11 +177,11 @@ export default function ProfilePage() {
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-5xl mx-auto">
           <div className="space-y-4">
-            <div className="h-52 bg-charcoal-100 dark:bg-charcoal-800 rounded-3xl animate-pulse" />
+            <div className="h-52 bg-charcoal-800 rounded-3xl animate-pulse" />
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1,2,3,4].map((i) => <div key={i} className="h-24 bg-charcoal-100 dark:bg-charcoal-800 rounded-2xl animate-pulse" />)}
+              {[1,2,3,4].map((i) => <div key={i} className="h-24 bg-charcoal-800 rounded-2xl animate-pulse" />)}
             </div>
-            <div className="h-96 bg-charcoal-100 dark:bg-charcoal-800 rounded-3xl animate-pulse" />
+            <div className="h-96 bg-charcoal-800 rounded-3xl animate-pulse" />
           </div>
         </main>
       </div>

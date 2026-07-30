@@ -37,8 +37,10 @@ export function formatRelativeTime(date: string | Date) {
   return formatDate(date);
 }
 
-export function getInitials(firstName: string, lastName: string) {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+export function getInitials(firstName?: string, lastName?: string) {
+  const f = (firstName || "").charAt(0);
+  const l = (lastName || "").charAt(0);
+  return `${f}${l}`.toUpperCase() || "U";
 }
 
 const apiOrigin = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");

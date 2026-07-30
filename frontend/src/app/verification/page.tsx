@@ -213,10 +213,10 @@ export default function VerificationPage() {
         <DashboardSidebar />
         <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
-            <div className="bg-white dark:bg-charcoal-800 rounded-2xl p-8 animate-pulse">
-              <div className="h-6 bg-charcoal-100 dark:bg-charcoal-700 rounded-lg w-1/3 mb-4" />
-              <div className="h-32 bg-charcoal-100 dark:bg-charcoal-700 rounded-xl mb-3" />
-              <div className="h-32 bg-charcoal-100 dark:bg-charcoal-700 rounded-xl" />
+            <div className="bg-charcoal-800 rounded-2xl p-8 animate-pulse">
+              <div className="h-6 bg-charcoal-700 rounded-lg w-1/3 mb-4" />
+              <div className="h-32 bg-charcoal-700 rounded-xl mb-3" />
+              <div className="h-32 bg-charcoal-700 rounded-xl" />
             </div>
           </main>
         </div>

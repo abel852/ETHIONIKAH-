@@ -68,8 +68,9 @@ export default function LikedInterestPage() {
   }
 
   return (
-    <IslamicPatternBackground>
+    <>
       <DashboardSidebar />
+      <IslamicPatternBackground>
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <div className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-5xl mx-auto">
           {/* Header */}
@@ -88,11 +89,11 @@ export default function LikedInterestPage() {
           {loading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-sm border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden animate-pulse">
-                  <div className="h-40 bg-charcoal-100 dark:bg-charcoal-700" />
+                <div key={i} className="bg-charcoal-800 rounded-2xl shadow-sm border border-charcoal-700 overflow-hidden animate-pulse">
+                  <div className="h-40 bg-charcoal-700" />
                   <div className="p-4 space-y-3">
-                    <div className="h-4 bg-charcoal-100 dark:bg-charcoal-700 rounded w-2/3" />
-                    <div className="h-3 bg-charcoal-100 dark:bg-charcoal-700 rounded w-1/2" />
+                    <div className="h-4 bg-charcoal-700 rounded w-2/3" />
+                    <div className="h-3 bg-charcoal-700 rounded w-1/2" />
                   </div>
                 </div>
               ))}
@@ -231,5 +232,6 @@ export default function LikedInterestPage() {
         </div>
       )}
     </IslamicPatternBackground>
+    </>
   );
 }
