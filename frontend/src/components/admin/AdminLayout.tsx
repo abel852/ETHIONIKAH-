@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useI18n, type Lang } from "@/context/I18nContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import api from "@/lib/api";
 
 const navSections = [
   {
@@ -138,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const fetchBadgeCounts = async () => {
     try {
-      const { data } = await (await import("@/lib/api")).default.get("/admin/badge-counts");
+      const { data } = await api.get("/admin/badge-counts");
       setBadgeCounts(data.counts || {});
     } catch {}
   };
@@ -148,7 +149,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     fetchBadgeCounts();
     const onRefresh = () => fetchBadgeCounts();
     window.addEventListener("refresh-badge-counts", onRefresh);
-    const interval = setInterval(fetchBadgeCounts, 60000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchBadgeCounts();
+    }, 120000);
     return () => {
       clearInterval(interval);
       window.removeEventListener("refresh-badge-counts", onRefresh);
@@ -184,14 +188,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!user) return;
     if (user.role !== "admin") {
-      import("@/lib/api").then(({ default: api }) => {
-        api.post("/auth/security-block", { reason: `Non-admin accessing AdminLayout: ${pathname}` }, { _noRedirect: true, _noToast: true } as any).catch(() => {});
-      });
+      api.post("/auth/security-block", { reason: `Non-admin accessing AdminLayout: ${pathname}` }, { _noRedirect: true, _noToast: true } as any).catch(() => {});
       logout();
       window.location.href = "/login";
       return;
     }
-  }, [user, logout, pathname]);
+  }, [user, logout]);
 
   // Redirect non-super-admins away from pages they don't have permission for
   useEffect(() => {

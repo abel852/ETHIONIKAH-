@@ -40,8 +40,8 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics();
-    const id = setInterval(fetchAnalytics, 60000);
-    return () => clearInterval(id);
+    const interval = setInterval(() => { if (document.hidden) return; fetchAnalytics(); }, 120000);
+    return () => clearInterval(interval);
   }, [fetchAnalytics]);
 
   const a = analytics || {};

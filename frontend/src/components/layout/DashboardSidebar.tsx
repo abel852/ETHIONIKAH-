@@ -16,6 +16,7 @@ import { mediaUrl } from "@/lib/utils";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useMessageStore } from "@/store/messages";
 import { useI18n, type Lang } from "@/context/I18nContext";
+import api from "@/lib/api";
 
 export default function DashboardSidebar() {
   const { t, lang, setLang } = useI18n();
@@ -43,14 +44,14 @@ export default function DashboardSidebar() {
 
   const fetchBanInfo = async () => {
     try {
-      const { data } = await (await import("@/lib/api")).default.get("/profile/ban-info");
+      const { data } = await api.get("/profile/ban-info");
       setBanInfo(data);
     } catch {}
   };
 
   const fetchBadgeCounts = async () => {
     try {
-      const { data } = await (await import("@/lib/api")).default.get("/profile/badge-counts");
+      const { data } = await api.get("/profile/badge-counts");
       setBadgeCounts(data.counts || {});
     } catch {}
   };
@@ -58,7 +59,11 @@ export default function DashboardSidebar() {
   useEffect(() => {
     fetchBadgeCounts();
     fetchBanInfo();
-    const interval = setInterval(() => { fetchBadgeCounts(); fetchBanInfo(); }, 60000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchBadgeCounts();
+      fetchBanInfo();
+    }, 120000);
     return () => clearInterval(interval);
   }, []);
 

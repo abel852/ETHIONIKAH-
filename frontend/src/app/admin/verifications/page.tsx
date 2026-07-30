@@ -36,7 +36,7 @@ export default function AdminVerificationsPage() {
 
   useEffect(() => {
     fetchAll();
-    const id = setInterval(fetchAll, 45000);
+    const id = setInterval(() => { if (document.hidden) return; fetchAll(); }, 120000);
     return () => clearInterval(id);
   }, [fetchAll]);
 

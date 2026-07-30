@@ -53,7 +53,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-    const id = setInterval(fetchDashboard, 45000);
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      fetchDashboard();
+    }, 120000);
     return () => clearInterval(id);
   }, [fetchDashboard]);
 

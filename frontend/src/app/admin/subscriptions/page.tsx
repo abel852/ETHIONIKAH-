@@ -46,7 +46,7 @@ export default function AdminSubscriptionsPage() {
 
   useEffect(() => {
     fetchData();
-    const id = setInterval(fetchData, 45000);
+    const id = setInterval(() => { if (document.hidden) return; fetchData(); }, 120000);
     return () => clearInterval(id);
   }, [fetchData]);
 

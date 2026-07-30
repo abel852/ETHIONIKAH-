@@ -88,7 +88,7 @@ export default function AdminComplaintsPage() {
   }, [fetchComplaints]);
 
   useEffect(() => {
-    const interval = setInterval(fetchComplaints, 45000);
+    const interval = setInterval(() => { if (document.hidden) return; fetchComplaints(); }, 120000);
     return () => clearInterval(interval);
   }, [fetchComplaints]);
 
