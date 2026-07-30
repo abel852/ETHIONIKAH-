@@ -14,7 +14,7 @@ export default function AdminVerificationsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState("all");
-  const [previewImg, setPreviewImg] = useState<string | null>(null);
+  const [previewVerification, setPreviewVerification] = useState<any | null>(null);
   const [rejectModal, setRejectModal] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -194,7 +194,7 @@ export default function AdminVerificationsPage() {
                     {/* Document Images */}
                     <div className="flex flex-col sm:flex-row gap-3 lg:ml-auto">
                       {v.idDocumentPath && (
-                        <div className="relative group cursor-pointer" onClick={() => setPreviewImg(mediaUrl(v.idDocumentPath) || "")}>
+                        <div className="relative group cursor-pointer" onClick={() => setPreviewVerification(v)}>
                           <img src={mediaUrl(v.idDocumentPath) || ""} alt="National ID"
                             className="w-full sm:w-36 h-24 object-cover rounded-xl border border-charcoal-200 dark:border-white/10" />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-xl transition-colors flex items-center justify-center">
@@ -204,7 +204,7 @@ export default function AdminVerificationsPage() {
                         </div>
                       )}
                       {v.selfiePath && (
-                        <div className="relative group cursor-pointer" onClick={() => setPreviewImg(mediaUrl(v.selfiePath) || "")}>
+                        <div className="relative group cursor-pointer" onClick={() => setPreviewVerification(v)}>
                           <img src={mediaUrl(v.selfiePath) || ""} alt="Selfie"
                             className="w-full sm:w-36 h-24 object-cover rounded-xl border border-charcoal-200 dark:border-white/10" />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-xl transition-colors flex items-center justify-center">
@@ -253,16 +253,55 @@ export default function AdminVerificationsPage() {
         </div>
       )}
 
-      {/* Image Preview Modal */}
-      {previewImg && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setPreviewImg(null)}>
-          <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setPreviewImg(null)}
-              className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white dark:bg-charcoal-800 shadow-lg flex items-center justify-center hover:bg-charcoal-100 dark:hover:bg-charcoal-700 transition-colors z-10">
-              <X className="w-4 h-4 text-charcoal-600" />
+      {/* Image Preview Modal — side-by-side comparison */}
+      {previewVerification && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4" onClick={() => setPreviewVerification(null)}>
+          <div className="relative w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
+            {/* Close button */}
+            <button onClick={() => setPreviewVerification(null)}
+              className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-red-500 text-white shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors z-10">
+              <X className="w-5 h-5" />
             </button>
-            <img src={previewImg} alt="Verification document"
-              className="w-full h-auto max-h-[85vh] object-contain rounded-2xl" />
+
+            {/* User name */}
+            <div className="text-center mb-3">
+              <p className="text-white font-semibold text-lg">
+                {previewVerification.user?.firstName} {previewVerification.user?.lastName}
+              </p>
+              <p className="text-white/50 text-sm">{previewVerification.user?.email}</p>
+            </div>
+
+            {/* Side-by-side images */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
+              {previewVerification.idDocumentPath && (
+                <div className="flex-1 max-w-md">
+                  <p className="text-white/60 text-xs text-center mb-2 font-medium">National ID</p>
+                  <img src={mediaUrl(previewVerification.idDocumentPath) || ""} alt="National ID"
+                    className="w-full h-auto max-h-[70vh] object-contain rounded-xl border border-white/10" />
+                </div>
+              )}
+              {previewVerification.selfiePath && (
+                <div className="flex-1 max-w-md">
+                  <p className="text-white/60 text-xs text-center mb-2 font-medium">Selfie Photo</p>
+                  <img src={mediaUrl(previewVerification.selfiePath) || ""} alt="Selfie"
+                    className="w-full h-auto max-h-[70vh] object-contain rounded-xl border border-white/10" />
+                </div>
+              )}
+            </div>
+
+            {/* Approve / Reject buttons */}
+            {previewVerification.status === "pending" && (
+              <div className="flex items-center justify-center gap-3 mt-4">
+                <button onClick={() => { handleApprove(previewVerification.id); setPreviewVerification(null); }}
+                  className="flex items-center gap-1.5 px-6 py-2.5 text-sm font-medium text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors">
+                  <Check className="w-4 h-4" /> Approve
+                </button>
+                <button onClick={() => { setRejectModal(previewVerification.id); setPreviewVerification(null); }}
+                  className="flex items-center gap-1.5 px-6 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
+                  <X className="w-4 h-4" /> Reject
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
