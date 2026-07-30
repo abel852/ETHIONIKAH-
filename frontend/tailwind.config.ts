@@ -13,7 +13,7 @@ const config: Config = {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         display: ["var(--font-inter)", "system-ui", "sans-serif"],
         body: ["var(--font-inter)", "system-ui", "sans-serif"],
-        cursive: ["var(--font-dancing)", "cursive"],
+        cursive: ["var(--font-nektar)", "Poppins", "sans-serif"],
         script: ["var(--font-cormorant)", "Georgia", "serif"],
       },
       colors: {

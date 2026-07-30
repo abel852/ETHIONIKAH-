@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Dancing_Script, Allura, Bonbon, Cormorant_Garamond } from "next/font/google";
+import { Inter, Poppins, Allura, Bonbon, Cormorant_Garamond } from "next/font/google";
 import { headers } from "next/headers";
 import "../styles/globals.css";
 import { AuthProvider } from "@/context/AuthContext";
@@ -11,7 +11,7 @@ import { TwoFactorPrompt } from "@/components/auth/TwoFactorPrompt";
 import { ThemeInit } from "@/components/ThemeInit";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const dancing = Dancing_Script({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-dancing", display: "swap" });
+const nektar = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-nektar", display: "swap" });
 const allura = Allura({ subsets: ["latin"], weight: ["400"], variable: "--font-allura", display: "swap" });
 const bonbon = Bonbon({ subsets: ["latin"], weight: ["400"], variable: "--font-bonbon", display: "swap" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-cormorant", display: "swap" });
@@ -78,7 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get("x-nonce") || undefined;
 
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth" className={`${inter.variable} ${dancing.variable} ${allura.variable} ${bonbon.variable} ${cormorant.variable}`} nonce={nonce}>
+    <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth" className={`${inter.variable} ${nektar.variable} ${allura.variable} ${bonbon.variable} ${cormorant.variable}`} nonce={nonce}>
       <body className="font-sans antialiased bg-background text-charcoal-900 dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300">
         <ThemeInit />
         <NetworkBanner />
