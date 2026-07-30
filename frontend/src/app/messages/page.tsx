@@ -284,8 +284,14 @@ function MessagesContent() {
           return;
         }
         console.error("Send file error:", e);
-        playMessageSound("error");
         const errMsg = e?.response?.data?.error || "Failed to send file. Please try again.";
+        // Silently drop when the receiver blocked the sender — never reveal it
+        if (errMsg.includes("cannot message this user")) {
+          setUploadProgress(0);
+          setUploading(false);
+          return;
+        }
+        playMessageSound("error");
         setToastError(true);
         setToast(errMsg);
         setTimeout(() => { setToast(null); setToastError(false); }, 5000);
@@ -346,8 +352,15 @@ function MessagesContent() {
           return;
         }
         console.error("Send image error:", e);
-        playMessageSound("error");
         const errMsg = e?.response?.data?.error || t('messages.sendImageFailed');
+        // Silently drop when the receiver blocked the sender — never reveal it
+        if (errMsg.includes("cannot message this user")) {
+          URL.revokeObjectURL(localUrl);
+          setUploadProgress(0);
+          setUploading(false);
+          return;
+        }
+        playMessageSound("error");
         setToastError(true);
         setToast(errMsg);
         setTimeout(() => { setToast(null); setToastError(false); }, 5000);
@@ -369,8 +382,14 @@ function MessagesContent() {
         startBusyCountdown(retryAfter, { type: "text", conversationId: activeConversation, content: textToSend, replyToId });
         return;
       }
-      playMessageSound("error");
       const errMsg = e?.response?.data?.error;
+      // Silently drop when the receiver blocked the sender — never reveal it
+      if (errMsg?.includes("cannot message this user")) {
+        setNewMessage("");
+        setReplyTo(null);
+        return;
+      }
+      playMessageSound("error");
       if (errMsg) {
         if (errMsg.includes("already have an active conversation")) {
           const activePartner = conversations.find(c => c.id !== activeConversation);
