@@ -16,7 +16,7 @@ const MAX_AUTO_BACKUPS = 30;
 function parseDatabaseUrl() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set");
-  const match = url.match(/^postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
+  const match = url.match(/^postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/);
   if (!match) throw new Error("Invalid DATABASE_URL format");
   return {
     user: match[1],

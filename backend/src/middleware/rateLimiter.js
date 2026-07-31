@@ -29,8 +29,9 @@ async function getRedisStore() {
     const { getGeneralClient } = require("../config/redis");
     const client = await getGeneralClient();
     if (!client) return null;
-    const RedisStore = require("rate-limit-redis");
-    redisStore = new RedisStore({
+    const redisLimit = require("rate-limit-redis");
+    const StoreConstructor = redisLimit.RedisStore || redisLimit.default || redisLimit;
+    redisStore = new StoreConstructor({
       sendCommand: (...args) => client.sendCommand(args),
     });
     console.log("[RATE-LIMIT] Redis store initialized — multi-process rate limiting active");
