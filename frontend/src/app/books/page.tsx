@@ -11,6 +11,7 @@ import {
   Clock, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IslamicPatternBackground } from "@/components/common";
 
 interface Book {
   id: string;
@@ -179,8 +180,8 @@ export default function UserBooksPage() {
   // === Payment flow views ===
   if (step !== "library" && selectedBook) {
     return (
-      <>
-        <main className="lg:ml-64 pt-14 lg:pt-0 pb-8 px-4 lg:px-8 max-w-3xl mx-auto">
+      <IslamicPatternBackground>
+      <main className="lg:ml-64 pt-14 lg:pt-0 pb-8 px-4 lg:px-8 max-w-3xl mx-auto">
           <div className="py-6">
             {error && (
               <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400 flex items-center justify-between">
@@ -358,13 +359,13 @@ export default function UserBooksPage() {
             )}
           </div>
         </main>
-      </>
+      </IslamicPatternBackground>
     );
   }
 
   // === Library view ===
   return (
-    <>
+    <IslamicPatternBackground>
       <main className="lg:ml-64 pt-14 lg:pt-0 pb-24 lg:pb-8 px-4 lg:px-8 max-w-5xl mx-auto">
         <div className="py-6">
           {/* Header */}
@@ -495,6 +496,6 @@ export default function UserBooksPage() {
           )}
         </div>
       </main>
-    </>
+    </IslamicPatternBackground>
   );
 }

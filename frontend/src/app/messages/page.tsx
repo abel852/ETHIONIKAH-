@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Send, MoreVertical, ChevronLeft, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock } from "lucide-react";
-import { Input, Button, Avatar } from "@/components/common";
+import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User } from "lucide-react";
+import { Input, Button, Avatar, IslamicPatternBackground } from "@/components/common";
 import { ScreenshotGuard } from "@/components/common";
 import { useMessageStore } from "@/store/messages";
 import { useAuth } from "@/context/AuthContext";
@@ -108,6 +108,8 @@ function MessagesContent() {
   const [mobileKeyboardOpen, setMobileKeyboardOpen] = useState(false);
   const [swipeMsgId, setSwipeMsgId] = useState<string | null>(null);
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
+  const [showShieldDetails, setShowShieldDetails] = useState(false);
+  const [showWaliDetails, setShowWaliDetails] = useState(false);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -625,50 +627,51 @@ function MessagesContent() {
   const activeConv = conversations.find((c) => c.id === activeConversation);
   const showThread = !!activeConversation && urlParamsProcessed;
 
-  // === LUXURY BLACK & GOLD THEME ===
-  // Unified premium theme — always luxury mode
+  // === PREMIUM DARK MODE THEME ===
   const isGoldChat = true;
   const isSoftChat = false;
-  const themeBg = "bg-[#0F0F10]";
+  const themeBg = "bg-transparent";
 
-  // Gold particle bokeh overlay
-  const bokehStyle = {
-    backgroundImage: `radial-gradient(circle at 15% 20%, rgba(212,175,55,0.15) 2px, transparent 2px), radial-gradient(circle at 85% 60%, rgba(242,214,117,0.10) 1.5px, transparent 1.5px), radial-gradient(circle at 50% 80%, rgba(212,175,55,0.08) 2px, transparent 2px), radial-gradient(circle at 70% 30%, rgba(242,214,117,0.06) 1px, transparent 1px), radial-gradient(circle at 30% 70%, rgba(212,175,55,0.05) 1.5px, transparent 1.5px)`,
-    backgroundSize: "90px 90px",
+  // Subtle Islamic geometric pattern overlay (2-3% opacity)
+  const islamicPatternStyle = {
+    backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.6'%3E%3Cpath d='M40 0 L50 30 L80 40 L50 50 L40 80 L30 50 L0 40 L30 30 Z'/%3E%3Cpath d='M40 15 L47 33 L65 40 L47 47 L40 65 L33 47 L15 40 L33 33 Z'/%3E%3Ccircle cx='40' cy='40' r='3'/%3E%3C/g%3E%3C/svg%3E")`,
+    backgroundSize: "80px 80px",
+    backgroundRepeat: "repeat",
   };
-  const bokehClass = "opacity-100";
 
-  // Sent bubble: gold gradient
-  const ownBubble = "bg-gradient-to-br from-[#D4AF37] to-[#F2D675] text-black rounded-br-md shadow-lg shadow-[#D4AF37]/20";
+  // Sent bubble: gradient green, 24px radius
+  const ownBubble = "bg-gradient-to-br from-[#0F766E] to-[#10B981] text-white rounded-[24px] rounded-br-[8px] shadow-lg shadow-emerald-900/20";
 
-  // Received bubble: dark charcoal
-  const otherBubble = "bg-[#222222] text-white rounded-bl-md shadow-md border border-[#2D2D2D]";
+  // Received bubble: dark gray, 24px radius, soft shadow
+  const otherBubble = "bg-[#2B2B35] text-white rounded-[24px] rounded-bl-[8px] shadow-md shadow-black/20 border border-[#2D2D2D]/50";
 
   // Typing bubble
-  const typingBubble = "bg-[#222222] border border-[#2D2D2D]";
+  const typingBubble = "bg-[#2B2B35] border border-[#2D2D2D]/50 rounded-[24px] rounded-bl-[8px]";
   const typingDot = "bg-[#D4AF37]";
 
-  // Header: frosted glass
-  const headerBg = "bg-[#181818]/80 border-[#2D2D2D]";
+  // Header: frosted glass, compact
+  const headerBg = "bg-[#111827]/80 border-[#1F1F28]";
 
   // Input bar: floating glassmorphism
-  const inputBg = "bg-[#181818]/80 border-[#2D2D2D]";
-  const inputField = "bg-[#222222] border-[#D4AF37]/30 text-white placeholder-[#8B8B8B] font-medium";
+  const inputBg = "bg-[#111827]/60 border-[#1F1F28]";
+  const inputField = "bg-transparent text-white placeholder-[#8B8B8B] font-medium";
 
-  // Send button: gold gradient
+  // Send button: gold circular with soft glow
   const sendBtn = "bg-gradient-to-br from-[#D4AF37] to-[#F2D675] text-black shadow-lg shadow-[#D4AF37]/30 hover:from-[#F2D675] hover:to-[#D4AF37]";
 
   // Bottom bar
-  const bottomBarBg = "bg-[#0F0F10] border-t border-[#2D2D2D]";
-  const bottomBarInner = "bg-[#222222] border-[#2D2D2D]";
+  const bottomBarBg = "bg-[#111827]/80 border-t border-[#1F1F28]";
+  const bottomBarInner = "bg-[#1A1A24] border-[#2D2D2D]";
 
   return (
-    <div id="messages-root" className="h-dvh flex flex-col bg-[#0F0F10] overflow-hidden">
+    <div className="relative h-dvh flex flex-col overflow-hidden">
+    <div id="messages-root" className="relative z-10 h-dvh flex flex-col overflow-hidden">
       <div className="flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0 pb-20 lg:pb-0 [padding-bottom:calc(80px+env(safe-area-inset-bottom,0px))] lg:[padding-bottom:0]">
         <div className="flex flex-1 min-h-0 min-w-0">
 
-          {/* Conversation List */}
-          <div className={`w-full lg:w-80 xl:w-96 border-r border-[#2D2D2D] bg-[#181818] flex flex-col min-w-0 ${mobileThreadOpen ? "hidden lg:flex" : "flex"}`}>
+          {/* Conversation List — with IslamicPatternBackground */}
+          <IslamicPatternBackground>
+          <div className={`w-full lg:w-80 xl:w-96 border-r border-[#2D2D2D] bg-[#181818]/40 backdrop-blur-sm flex flex-col min-w-0 ${mobileThreadOpen ? "hidden lg:flex" : "flex"}`}>
             <div className="p-4 border-b border-[#2D2D2D]">
               <h1 className="text-lg lg:text-xl font-bold text-white tracking-tight">{t('messages.title')}</h1>
               <div className="mt-3 relative">
@@ -758,30 +761,30 @@ function MessagesContent() {
               )}
             </div>
           </div>
+          </IslamicPatternBackground>
 
-          {/* Message Thread */}
-          <div className={`flex-1 flex flex-col min-h-0 min-w-0 ${themeBg} relative overflow-x-hidden ${!mobileThreadOpen ? "hidden lg:flex" : "flex"}`}>
-            {/* Decorative bokeh overlay */}
-            <div className={`absolute inset-0 pointer-events-none ${bokehClass}`} style={bokehStyle} />
+          {/* Message Thread — solid #111827 background */}
+          <div className={`flex-1 flex flex-col min-h-0 min-w-0 bg-[#111827] relative overflow-x-hidden ${!mobileThreadOpen ? "hidden lg:flex" : "flex"}`}>
+            {/* Subtle Islamic geometric pattern overlay (2-3% opacity) */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={islamicPatternStyle} />
             {showThread ? (
               <>
-                {/* Thread Header — Frosted Glass */}
-                <div className={`px-3 lg:px-4 ${mobileKeyboardOpen ? "py-1.5" : "py-2.5 lg:py-3"} border-b ${headerBg} backdrop-blur-xl flex items-center justify-between shrink-0 z-30`}>
-                  <div className="flex items-center gap-2 lg:gap-3 flex-1 min-w-0">
-                    <button onClick={() => { setMobileThreadOpen(false); setActiveConversation(null); }} className="lg:hidden p-1.5 -ml-1 rounded-full hover:bg-[#2D2D2D] transition-colors">
+                {/* Thread Header — Compact Frosted Glass */}
+                <div className={`px-3 lg:px-4 ${mobileKeyboardOpen ? "py-1" : "py-2"} border-b ${headerBg} backdrop-blur-xl flex items-center justify-between shrink-0 z-30`}>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <button onClick={() => { setMobileThreadOpen(false); setActiveConversation(null); }} className="lg:hidden p-1 -ml-1 rounded-full hover:bg-[#2D2D2D] transition-colors">
                       <ChevronLeft className="w-5 h-5 text-[#D4AF37]" />
                     </button>
-                    <button onClick={() => { if (activeConversation) router.push(`/user/${activeConversation}`); }} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
-                      {/* Profile picture with online indicator */}
+                    <button onClick={() => { if (activeConversation) router.push(`/user/${activeConversation}`); }} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                       <div className="relative shrink-0">
                         <Avatar size="sm" firstName={(activeConv?.name || urlName || "")?.split(" ")[0] || ""} lastName={(activeConv?.name || urlName || "")?.split(" ").slice(1).join(" ") || ""} src={mediaUrl(activeConv?.avatar)} status={activeConv?.isOnline ? "online" : "offline"} />
                         {activeConv?.isOnline && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#22C55E] border-2 border-[#181818]" />
+                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#22C55E] border-2 border-[#111827]" />
                         )}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className={`font-bold ${mobileKeyboardOpen ? "text-xs" : "text-sm"} text-white hover:underline truncate`}>{activeConv?.name || urlName || t('messages.userFallback')}</span>
+                          <span className={`font-bold ${mobileKeyboardOpen ? "text-xs" : "text-sm"} text-white truncate`}>{activeConv?.name || urlName || t('messages.userFallback')}</span>
                           {activeConv?.isVerified && (
                             <span className="shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#D4AF37]/20">
                               <svg className="w-2.5 h-2.5 text-[#D4AF37]" fill="currentColor" viewBox="0 0 20 20">
@@ -790,25 +793,16 @@ function MessagesContent() {
                             </span>
                           )}
                           {activeConv?.membershipPlan === "platinum" && (
-                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-500 to-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)] ring-1 ring-purple-300/50">
+                            <span className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-500 to-purple-600 text-white shadow-[0_0_8px_rgba(168,85,247,0.4)] ring-1 ring-purple-300/50">
                               <Gem className="w-2.5 h-2.5 fill-white/30" />
-                              Platinum
                             </span>
                           )}
                           {activeConv?.membershipPlan === "gold" && (
-                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F2D675] to-[#D4AF37] text-black shadow-[0_0_10px_rgba(212,175,55,0.5)] ring-1 ring-[#F2D675]/50">
+                            <span className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F2D675] to-[#D4AF37] text-black shadow-[0_0_8px_rgba(212,175,55,0.4)] ring-1 ring-[#F2D675]/50">
                               <Crown className="w-2.5 h-2.5 fill-black/20" />
-                              Gold
-                            </span>
-                          )}
-                          {(!activeConv?.membershipPlan) && (
-                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-full bg-transparent text-[#D4AF37] ring-1 ring-[#D4AF37]/40">
-                              <Sparkles className="w-2.5 h-2.5" />
-                              Free
                             </span>
                           )}
                         </div>
-                        {!mobileKeyboardOpen && (activeConv?.username || urlUsername ? <p className="text-[11px] font-medium truncate text-[#D4AF37]">@{activeConv?.username || urlUsername}</p> : null)}
                         {activeConv?.isOnline ? (
                           <p className={`${mobileKeyboardOpen ? "text-[10px]" : "text-xs"} text-[#22C55E]`}>{t('messages.online')}</p>
                         ) : (
@@ -817,36 +811,26 @@ function MessagesContent() {
                       </div>
                     </button>
                   </div>
-                  {/* Action buttons: More menu */}
                   <div className="flex items-center gap-1 relative">
-                    <button onClick={() => setShowHeaderMenu(!showHeaderMenu)} className="p-2 rounded-full hover:bg-[#2D2D2D] transition-colors">
+                    <button onClick={() => setShowHeaderMenu(!showHeaderMenu)} className="p-1.5 rounded-full hover:bg-[#2D2D2D] transition-colors">
                       <MoreVertical className="w-4 h-4 text-[#D4AF37]" />
                     </button>
                     {showHeaderMenu && (
-                      <div ref={headerMenuRef} className="absolute right-0 top-full mt-1 z-50 rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[190px] overflow-hidden bg-[#222222]">
+                      <div ref={headerMenuRef} className="absolute right-0 top-full mt-1 z-50 rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[190px] overflow-hidden bg-[#1A1A24]">
                         <button onClick={() => { setShowHeaderMenu(false); setShowReportDialog(true); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
                           <Flag className="w-4 h-4 shrink-0" /> {t('messages.reportUser')}
                         </button>
                         {blockedUsers.includes(activeConversation!) ? (
-                          <button onClick={() => {
-                            setShowHeaderMenu(false);
-                            unblockUser(activeConversation!);
-                          }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                          <button onClick={() => { setShowHeaderMenu(false); unblockUser(activeConversation!); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
                             <ShieldOff className="w-4 h-4 shrink-0" /> {t('messages.unblock')}
                           </button>
                         ) : (
-                          <button onClick={() => {
-                            setShowHeaderMenu(false);
-                            setBlockConfirm({ otherUserId: activeConversation!, name: activeConv?.name || urlName || "this user" });
-                          }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
+                          <button onClick={() => { setShowHeaderMenu(false); setBlockConfirm({ otherUserId: activeConversation!, name: activeConv?.name || urlName || "this user" }); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
                             <ShieldOff className="w-4 h-4 shrink-0" /> {t('messages.blockUser')}
                           </button>
                         )}
                         <div className="border-t border-[#2D2D2D] my-1" />
-                        <button onClick={() => {
-                          setShowHeaderMenu(false);
-                          setDeleteConfirm({ otherUserId: activeConversation!, name: activeConv?.name || urlName || "this user" });
-                        }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
+                        <button onClick={() => { setShowHeaderMenu(false); setDeleteConfirm({ otherUserId: activeConversation!, name: activeConv?.name || urlName || "this user" }); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
                           <Trash2 className="w-4 h-4 shrink-0" /> {t('messages.deleteConversation')}
                         </button>
                       </div>
@@ -854,368 +838,284 @@ function MessagesContent() {
                   </div>
                 </div>
 
-                {/* Match Context Banner */}
-                {(matchReason || activeConv?.compatibilityReason) && !mobileKeyboardOpen && (
-                  <div className="px-3 lg:px-4 py-2 border-b border-[#2D2D2D] bg-[#D4AF37]/5 shrink-0">
-                    <p className="text-xs text-[#D4AF37] font-medium text-center flex items-center justify-center gap-1.5">
-                      <Heart className="w-3.5 h-3.5" />
-                      {matchReason || activeConv?.compatibilityReason}
-                    </p>
-                  </div>
-                )}
+                {/* === COMPACT STATUS BAR — One line, 3 sections, expandable === */}
+                {activeConversation && !mobileKeyboardOpen && (
+                  <div className="shrink-0 z-20 px-2 lg:px-3 pt-2">
+                    <div className="flex items-stretch h-[48px] lg:h-[50px] rounded-[18px] bg-[#1A1A24] border border-[#2D2D2D]/60 overflow-hidden">
+                      {/* Section 1: Shield — expandable for approval details */}
+                      {(chatPermRequests.length > 0 || sentPermStatus.length > 0 || incomingConvRequests.length > 0 || blockedUsers.includes(activeConversation)) ? (
+                        <button
+                          onClick={() => { setShowShieldDetails(!showShieldDetails); setShowWaliDetails(false); }}
+                          className="flex items-center gap-1.5 px-3 lg:px-4 hover:bg-[#222222] transition-colors shrink-0"
+                        >
+                          <Shield className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                          <ChevronRight className={`w-3.5 h-3.5 text-[#8B8B8B] transition-transform ${showShieldDetails ? "rotate-90" : ""}`} />
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-3 lg:px-4 shrink-0">
+                          <Shield className="w-4 h-4 text-[#D4AF37]/40 shrink-0" />
+                          <ChevronRight className="w-3.5 h-3.5 text-[#8B8B8B]/40 shrink-0" />
+                        </div>
+                      )}
+                      {/* Divider */}
+                      <div className="w-px bg-[#2D2D2D]/60 my-2" />
 
-                {/* Blocked Banner */}
-                {activeConversation && blockedUsers.includes(activeConversation) && (
-                  <div className="px-3 lg:px-4 py-2.5 border-b border-[#2D2D2D] bg-red-900/10 shrink-0">
-                    <div className="flex items-center justify-center gap-2 text-sm">
-                      <ShieldOff className="w-4 h-4 text-red-500 shrink-0" />
-                      <span className="text-red-400 font-medium">{t('messages.blockedBanner')}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Incoming Conversation Request Banner */}
-                {activeConversation && incomingConvRequests.length > 0 && (
-                  <div className="px-3 lg:px-4 py-3 border-b border-[#2D2D2D] bg-[#D4AF37]/5 shrink-0 space-y-2">
-                    {incomingConvRequests.map((req) => (
-                      <div key={req.id} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center shrink-0">
-                          <Send className="w-4 h-4 text-[#D4AF37]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-[#D4AF37]">Conversation Request</p>
-                          <p className="text-xs text-[#C8C8C8] truncate">
-                            {req.requester?.firstName} {req.requester?.lastName} would like to start a conversation with you.
-                          </p>
-                        </div>
-                        <div className="flex gap-1.5 shrink-0">
-                          <button
-                            onClick={async () => {
-                              try {
-                                await conversationRequestService.respond(req.id, "accepted");
-                                setIncomingConvRequests(prev => prev.filter(r => r.id !== req.id));
-                                setToastError(false);
-                                setToast("Conversation request accepted! You can now chat.");
-                                setTimeout(() => setToast(null), 4000);
-                              } catch {
-                                setToastError(true);
-                                setToast("Failed to accept. Try again.");
-                                setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                              }
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:bg-green-600 transition-colors flex items-center gap-1"
-                          >
-                            <Check className="w-3.5 h-3.5" /> Accept
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await conversationRequestService.respond(req.id, "declined");
-                                setIncomingConvRequests(prev => prev.filter(r => r.id !== req.id));
-                                setToastError(false);
-                                setToast("Conversation request declined.");
-                                setTimeout(() => setToast(null), 4000);
-                              } catch {
-                                setToastError(true);
-                                setToast("Failed to decline. Try again.");
-                                setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                              }
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors flex items-center gap-1"
-                          >
-                            <X className="w-3.5 h-3.5" /> Decline
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* In-chat permission requests (incoming — partner wants to talk to someone else) */}
-                {activeConversation && chatPermRequests.length > 0 && (
-                  <div className="px-3 lg:px-4 py-3 border-b border-[#2D2D2D] bg-[#D4AF37]/5 shrink-0 space-y-2">
-                    {chatPermRequests.map((perm) => (
-                      <div key={perm.id} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center shrink-0">
-                          <Shield className="w-4 h-4 text-[#D4AF37]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-[#D4AF37]">
-                            Permission Request
-                          </p>
-                          <p className="text-xs text-[#C8C8C8] truncate">
-                            {perm.requester?.firstName} wants to talk to {perm.targetUser?.firstName} {perm.targetUser?.lastName}
-                          </p>
-                        </div>
-                        <div className="flex gap-1.5 shrink-0">
-                          <button
-                            onClick={async () => {
-                              setChatPermLoading(perm.id);
-                              try {
-                                await conversationPermissionService.respondToPermission(perm.id, "approved");
-                                setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
-                                setToastError(false);
-                                setToast("Permission granted. They can now start a new conversation.");
-                                setTimeout(() => setToast(null), 4000);
-                              } catch {
-                                setToastError(true);
-                                setToast("Failed to respond. Try again.");
-                                setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                              } finally {
-                                setChatPermLoading(null);
-                              }
-                            }}
-                            disabled={chatPermLoading === perm.id}
-                            className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:bg-green-600 disabled:opacity-50 transition-colors flex items-center gap-1"
-                          >
-                            <Check className="w-3.5 h-3.5" /> Accept
-                          </button>
-                          <button
-                            onClick={async () => {
-                              setChatPermLoading(perm.id);
-                              try {
-                                await conversationPermissionService.respondToPermission(perm.id, "denied");
-                                setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
-                                setToastError(false);
-                                setToast("Permission denied.");
-                                setTimeout(() => setToast(null), 4000);
-                              } catch {
-                                setToastError(true);
-                                setToast("Failed to respond. Try again.");
-                                setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                              } finally {
-                                setChatPermLoading(null);
-                              }
-                            }}
-                            disabled={chatPermLoading === perm.id}
-                            className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
-                          >
-                            <X className="w-3.5 h-3.5" /> Reject
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Sent permission status (outgoing — you asked this partner to talk to someone else) */}
-                {activeConversation && sentPermStatus.length > 0 && (
-                  <div className="px-3 lg:px-4 py-3 border-b border-[#2D2D2D] bg-[#181818] shrink-0 space-y-2">
-                    {sentPermStatus.map((perm) => (
-                      <div key={perm.id} className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          perm.status === "approved" ? "bg-green-900/20" :
-                          perm.status === "denied" ? "bg-red-900/20" :
-                          "bg-[#D4AF37]/10"
-                        }`}>
-                          {perm.status === "approved" ? <Check className="w-4 h-4 text-green-400" /> :
-                           perm.status === "denied" ? <X className="w-4 h-4 text-red-400" /> :
-                           <Shield className="w-4 h-4 text-[#D4AF37]" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-white">
-                            {perm.status === "pending" ? "Permission Pending" :
-                             perm.status === "approved" ? "Permission Approved" : "Permission Denied"}
-                          </p>
-                          <p className="text-xs text-[#8B8B8B] truncate">
-                            {perm.status === "pending" ? `Waiting for ${perm.partner?.firstName || "partner"} to approve your request to talk to ${perm.targetUser?.firstName} ${perm.targetUser?.lastName}` :
-                             perm.status === "approved" ? `${perm.partner?.firstName || "Partner"} approved — you can now talk to ${perm.targetUser?.firstName} ${perm.targetUser?.lastName}` :
-                             `${perm.partner?.firstName || "Partner"} denied your request to talk to ${perm.targetUser?.firstName} ${perm.targetUser?.lastName}`}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Exclusive Partnership Active Badge */}
-                {activeConversation && partnership?.status === "active" && (
-                  <div className="px-3 lg:px-4 py-2 border-b border-[#2D2D2D] bg-gradient-to-r from-[#D4AF37]/10 to-[#F2D675]/5 shrink-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Heart className="w-4 h-4 text-[#D4AF37] fill-[#D4AF37]" />
-                        <span className="text-xs font-semibold text-[#D4AF37]">Exclusive Marriage Process</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {/* Wali controls — depend on invitation status */}
-                        {waliStatus?.status === "active" ? (
-                          <button
-                            onClick={() => setShowRevokeWaliConfirm(true)}
-                            className="text-[10px] text-red-400 hover:text-red-500 font-medium transition-colors flex items-center gap-1"
-                          >
-                            <UserCheck className="w-3 h-3" /> Remove Wali
-                          </button>
-                        ) : waliStatus?.status === "pending_approval" ? (
-                          waliStatus.createdById === myId ? (
-                            <span className="text-[10px] text-[#8B8B8B] font-medium flex items-center gap-1">
-                              <UserCheck className="w-3 h-3" /> Waiting for partner approval...
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-2">
+                      {/* Section 2: Marriage Process — center */}
+                      <div className="flex-1 flex items-center justify-center min-w-0">
+                        {partnership?.status === "active" ? (
+                          <div className="flex items-center gap-1.5">
+                            <Heart className="w-3.5 h-3.5 text-[#D4AF37] fill-[#D4AF37] shrink-0" />
+                            <span className="text-xs font-medium text-[#D4AF37] truncate">Marriage Process</span>
+                            {partnership && (
                               <button
-                                onClick={async () => {
-                                  try {
-                                    await waliService.approve(partnership.id);
-                                    setToastError(false);
-                                    setToast("Wali invitation approved. Email sent to Wali.");
-                                    setTimeout(() => setToast(null), 4000);
-                                    waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => {});
-                                  } catch (err: any) {
-                                    setToastError(true);
-                                    setToast(err?.response?.data?.error || "Failed to approve Wali invitation");
-                                    setTimeout(() => { setToast(null); setToastError(false); }, 5000);
-                                  }
-                                }}
-                                className="text-[10px] text-green-400 hover:text-green-500 font-medium transition-colors flex items-center gap-1"
+                                onClick={() => setShowEndPartnershipConfirm(true)}
+                                className="text-[10px] text-red-400/60 hover:text-red-400 font-medium transition-colors ml-1 shrink-0"
                               >
-                                <Check className="w-3 h-3" /> Approve Wali
+                                End
                               </button>
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await waliService.decline(partnership.id);
-                                    setToastError(false);
-                                    setToast("Wali invitation declined.");
-                                    setTimeout(() => setToast(null), 4000);
-                                    waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => {});
-                                  } catch (err: any) {
-                                    setToastError(true);
-                                    setToast(err?.response?.data?.error || "Failed to decline");
-                                    setTimeout(() => { setToast(null); setToastError(false); }, 5000);
-                                  }
-                                }}
-                                className="text-[10px] text-red-400 hover:text-red-500 font-medium transition-colors"
-                              >
-                                Decline
-                              </button>
-                            </div>
-                          )
+                            )}
+                          </div>
+                        ) : partnershipStatus?.receivedRequest?.status === "pending" ? (
+                          <div className="flex items-center gap-2">
+                            <Heart className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                            <span className="text-xs font-medium text-[#D4AF37]">Marriage Process</span>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await exclusivePartnershipService.respondToRequest(partnershipStatus.receivedRequest.id, "accepted");
+                                  setToastError(false);
+                                  setToast("Partnership accepted!");
+                                  setTimeout(() => setToast(null), 4000);
+                                  exclusivePartnershipService.checkStatus(activeConversation).then(({ data }) => {
+                                    setPartnershipStatus(data);
+                                    setPartnership(data.partnership);
+                                  });
+                                } catch {
+                                  setToastError(true);
+                                  setToast("Failed to accept.");
+                                  setTimeout(() => { setToast(null); setToastError(false); }, 4000);
+                                }
+                              }}
+                              className="px-2 py-0.5 rounded-md bg-green-500 text-white text-[10px] font-medium hover:bg-green-600 transition-colors shrink-0"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await exclusivePartnershipService.respondToRequest(partnershipStatus.receivedRequest.id, "declined");
+                                  setToastError(false);
+                                  setToast("Partnership request declined.");
+                                  setTimeout(() => setToast(null), 4000);
+                                  exclusivePartnershipService.checkStatus(activeConversation).then(({ data }) => {
+                                    setPartnershipStatus(data);
+                                    setPartnership(data.partnership);
+                                  });
+                                } catch {
+                                  setToastError(true);
+                                  setToast("Failed to decline.");
+                                  setTimeout(() => { setToast(null); setToastError(false); }, 4000);
+                                }
+                              }}
+                              className="px-2 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-medium hover:bg-red-600 transition-colors shrink-0"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        ) : partnershipStatus?.sentRequest?.status === "pending" ? (
+                          <div className="flex items-center gap-1.5">
+                            <Heart className="w-3.5 h-3.5 text-[#D4AF37]/50 shrink-0" />
+                            <span className="text-xs font-medium text-[#8B8B8B] truncate">Request Sent</span>
+                          </div>
                         ) : (
                           <button
-                            onClick={() => { setWaliDialogStep(1); setWaliName(""); setWaliRelationship(""); setWaliEmail(""); setPasswordError(""); setConfirmPassword(""); setShowWaliDialog(true); }}
-                            className="text-[10px] text-[#D4AF37] hover:text-[#F2D675] font-medium transition-colors flex items-center gap-1"
+                            onClick={() => setShowPartnershipDialog(true)}
+                            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                           >
-                            <UserCheck className="w-3 h-3" /> Invite Wali
+                            <Heart className="w-3.5 h-3.5 text-[#D4AF37]/60 shrink-0" />
+                            <span className="text-xs font-medium text-[#D4AF37]/80">Marriage Process</span>
                           </button>
                         )}
-                        <button
-                          onClick={() => setShowEndPartnershipConfirm(true)}
-                          className="text-[10px] text-red-400 hover:text-red-500 font-medium transition-colors"
-                        >
-                          End Partnership
-                        </button>
                       </div>
-                    </div>
-                    {/* Wali status info */}
-                    {waliStatus?.status === "active" && (
-                      <div className="mt-1.5 flex items-center gap-1.5">
-                        <span className="text-[10px] text-[#8B8B8B]">
-                          Wali: {waliStatus.waliName} ({waliStatus.relationship}) — active
+
+                      {/* Divider */}
+                      <div className="w-px bg-[#2D2D2D]/60 my-2" />
+
+                      {/* Section 3: Wali — right, expandable */}
+                      <button
+                        onClick={() => { setShowWaliDetails(!showWaliDetails); setShowShieldDetails(false); }}
+                        className="flex items-center gap-1.5 px-3 lg:px-4 hover:bg-[#222222] transition-colors shrink-0"
+                      >
+                        <UserCheck className={`w-4 h-4 shrink-0 ${waliStatus?.status === "active" ? "text-[#D4AF37]" : "text-[#8B8B8B]"}`} />
+                        <span className="text-xs font-medium text-[#D1D5DB] hidden sm:inline truncate max-w-[100px]">
+                          {waliStatus?.status === "active" ? `Wali: ${waliStatus.waliName} (Active)` :
+                           waliStatus?.status === "pending_approval" ? "Wali: Pending" :
+                           partnership?.status === "active" ? "Wali: None" : "Wali: —"}
                         </span>
+                        <span className="text-xs font-medium text-[#D1D5DB] sm:hidden">Wali</span>
+                        <ChevronRight className={`w-3.5 h-3.5 text-[#8B8B8B] transition-transform shrink-0 ${showWaliDetails ? "rotate-90" : ""}`} />
+                      </button>
+                    </div>
+
+                    {/* Shield expanded panel */}
+                    {showShieldDetails && (
+                      <div className="mt-1.5 rounded-[18px] bg-[#1A1A24] border border-[#2D2D2D]/60 p-3 space-y-2.5 z-30">
+                        {/* Blocked */}
+                        {blockedUsers.includes(activeConversation) && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <ShieldOff className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                            <span className="text-red-400 font-medium">{t('messages.blockedBanner')}</span>
+                            <button onClick={() => unblockUser(activeConversation)} className="ml-auto text-[10px] text-red-400 hover:text-red-500 font-medium shrink-0">Unblock</button>
+                          </div>
+                        )}
+                        {/* Incoming conversation requests */}
+                        {incomingConvRequests.map((req) => (
+                          <div key={req.id} className="flex items-center gap-2">
+                            <Send className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                            <span className="text-xs text-[#C8C8C8] truncate flex-1">{req.requester?.firstName} wants to chat</span>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await conversationRequestService.respond(req.id, "accepted");
+                                  setIncomingConvRequests(prev => prev.filter(r => r.id !== req.id));
+                                  setToastError(false); setToast("Request accepted!"); setTimeout(() => setToast(null), 4000);
+                                } catch { setToastError(true); setToast("Failed."); setTimeout(() => { setToast(null); setToastError(false); }, 4000); }
+                              }}
+                              className="px-2 py-0.5 rounded-md bg-green-500 text-white text-[10px] font-medium hover:bg-green-600 shrink-0"
+                            >Accept</button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await conversationRequestService.respond(req.id, "declined");
+                                  setIncomingConvRequests(prev => prev.filter(r => r.id !== req.id));
+                                  setToastError(false); setToast("Declined."); setTimeout(() => setToast(null), 4000);
+                                } catch { setToastError(true); setToast("Failed."); setTimeout(() => { setToast(null); setToastError(false); }, 4000); }
+                              }}
+                              className="px-2 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-medium hover:bg-red-600 shrink-0"
+                            >Decline</button>
+                          </div>
+                        ))}
+                        {/* Incoming permission requests */}
+                        {chatPermRequests.map((perm) => (
+                          <div key={perm.id} className="flex items-center gap-2">
+                            <Shield className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                            <span className="text-xs text-[#C8C8C8] truncate flex-1">{perm.requester?.firstName} → {perm.targetUser?.firstName}</span>
+                            <button
+                              onClick={async () => {
+                                setChatPermLoading(perm.id);
+                                try {
+                                  await conversationPermissionService.respondToPermission(perm.id, "approved");
+                                  setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
+                                  setToastError(false); setToast("Permission granted."); setTimeout(() => setToast(null), 4000);
+                                } catch { setToastError(true); setToast("Failed."); setTimeout(() => { setToast(null); setToastError(false); }, 4000); }
+                                finally { setChatPermLoading(null); }
+                              }}
+                              disabled={chatPermLoading === perm.id}
+                              className="px-2 py-0.5 rounded-md bg-green-500 text-white text-[10px] font-medium hover:bg-green-600 disabled:opacity-50 shrink-0"
+                            >Accept</button>
+                            <button
+                              onClick={async () => {
+                                setChatPermLoading(perm.id);
+                                try {
+                                  await conversationPermissionService.respondToPermission(perm.id, "denied");
+                                  setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
+                                  setToastError(false); setToast("Permission denied."); setTimeout(() => setToast(null), 4000);
+                                } catch { setToastError(true); setToast("Failed."); setTimeout(() => { setToast(null); setToastError(false); }, 4000); }
+                                finally { setChatPermLoading(null); }
+                              }}
+                              disabled={chatPermLoading === perm.id}
+                              className="px-2 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-medium hover:bg-red-600 disabled:opacity-50 shrink-0"
+                            >Reject</button>
+                          </div>
+                        ))}
+                        {/* Sent permission status */}
+                        {sentPermStatus.map((perm) => (
+                          <div key={perm.id} className="flex items-center gap-2">
+                            {perm.status === "approved" ? <Check className="w-3.5 h-3.5 text-green-400 shrink-0" /> :
+                             perm.status === "denied" ? <X className="w-3.5 h-3.5 text-red-400 shrink-0" /> :
+                             <Shield className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />}
+                            <span className="text-xs text-[#C8C8C8] truncate flex-1">
+                              {perm.status === "pending" ? `Pending: ${perm.targetUser?.firstName}` :
+                               perm.status === "approved" ? `Approved: ${perm.targetUser?.firstName}` :
+                               `Denied: ${perm.targetUser?.firstName}`}
+                            </span>
+                          </div>
+                        ))}
+                        {/* Match reason */}
+                        {(matchReason || activeConv?.compatibilityReason) && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Heart className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                            <span className="text-[#D4AF37] truncate">{matchReason || activeConv?.compatibilityReason}</span>
+                          </div>
+                        )}
                       </div>
                     )}
-                    {waliStatus?.status === "pending_approval" && waliStatus.createdById === myId && (
-                      <div className="mt-1.5 flex items-center gap-1.5">
-                        <span className="text-[10px] text-[#8B8B8B]">
-                          Wali: {waliStatus.waliName} ({waliStatus.relationship}) — waiting for partner approval
-                        </span>
+
+                    {/* Wali expanded panel */}
+                    {showWaliDetails && (
+                      <div className="mt-1.5 rounded-[18px] bg-[#1A1A24] border border-[#2D2D2D]/60 p-3 space-y-2 z-30">
+                        {partnership?.status === "active" ? (
+                          <>
+                            {waliStatus?.status === "active" ? (
+                              <div className="flex items-center gap-2">
+                                <UserCheck className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                                <span className="text-xs text-[#D1D5DB]">{waliStatus.waliName} ({waliStatus.relationship})</span>
+                                <button
+                                  onClick={() => setShowRevokeWaliConfirm(true)}
+                                  className="ml-auto text-[10px] text-red-400 hover:text-red-500 font-medium shrink-0"
+                                >Remove</button>
+                              </div>
+                            ) : waliStatus?.status === "pending_approval" ? (
+                              waliStatus.createdById === myId ? (
+                                <div className="flex items-center gap-2">
+                                  <UserCheck className="w-3.5 h-3.5 text-[#8B8B8B] shrink-0" />
+                                  <span className="text-xs text-[#8B8B8B]">{waliStatus.waliName} — awaiting partner approval</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <UserCheck className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                                  <span className="text-xs text-[#C8C8C8] truncate flex-1">{waliStatus.waliName} — approve?</span>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await waliService.approve(partnership.id);
+                                        setToastError(false); setToast("Wali approved."); setTimeout(() => setToast(null), 4000);
+                                        waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => {});
+                                      } catch (err: any) {
+                                        setToastError(true); setToast(err?.response?.data?.error || "Failed"); setTimeout(() => { setToast(null); setToastError(false); }, 5000);
+                                      }
+                                    }}
+                                    className="px-2 py-0.5 rounded-md bg-green-500 text-white text-[10px] font-medium hover:bg-green-600 shrink-0"
+                                  >Approve</button>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await waliService.decline(partnership.id);
+                                        setToastError(false); setToast("Wali declined."); setTimeout(() => setToast(null), 4000);
+                                        waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => {});
+                                      } catch (err: any) {
+                                        setToastError(true); setToast(err?.response?.data?.error || "Failed"); setTimeout(() => { setToast(null); setToastError(false); }, 5000);
+                                      }
+                                    }}
+                                    className="px-2 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-medium hover:bg-red-600 shrink-0"
+                                  >Decline</button>
+                                </div>
+                              )
+                            ) : (
+                              <button
+                                onClick={() => { setWaliDialogStep(1); setWaliName(""); setWaliRelationship(""); setWaliEmail(""); setPasswordError(""); setConfirmPassword(""); setShowWaliDialog(true); }}
+                                className="flex items-center gap-2 text-xs text-[#D4AF37] hover:text-[#F2D675] font-medium transition-colors w-full"
+                              >
+                                <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                                Invite Wali
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-xs text-[#8B8B8B]">Start a Marriage Process to invite a Wali.</p>
+                        )}
                       </div>
                     )}
-                    {waliStatus?.status === "pending_approval" && waliStatus.createdById !== myId && (
-                      <div className="mt-1.5 flex items-center gap-1.5">
-                        <span className="text-[10px] text-[#8B8B8B]">
-                          Wali: {waliStatus.waliName} ({waliStatus.relationship}) — awaiting your approval
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Exclusive Partnership Pending Request (incoming) */}
-                {activeConversation && partnershipStatus?.receivedRequest?.status === "pending" && (
-                  <div className="px-3 lg:px-4 py-3 border-b border-[#2D2D2D] bg-[#D4AF37]/5 shrink-0">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center shrink-0">
-                        <Heart className="w-4 h-4 text-[#D4AF37]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-[#D4AF37]">Exclusive Marriage Process Request</p>
-                        <p className="text-xs text-[#C8C8C8] truncate">
-                          {activeConv?.name || urlName} wants to continue the marriage process exclusively with you.
-                        </p>
-                      </div>
-                      <div className="flex gap-1.5 shrink-0">
-                        <button
-                          onClick={async () => {
-                            try {
-                              await exclusivePartnershipService.respondToRequest(partnershipStatus.receivedRequest.id, "accepted");
-                              setToastError(false);
-                              setToast("Partnership accepted! You are now exclusive partners.");
-                              setTimeout(() => setToast(null), 4000);
-                              exclusivePartnershipService.checkStatus(activeConversation).then(({ data }) => {
-                                setPartnershipStatus(data);
-                                setPartnership(data.partnership);
-                              });
-                            } catch {
-                              setToastError(true);
-                              setToast("Failed to accept. Try again.");
-                              setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:bg-green-600 transition-colors flex items-center gap-1"
-                        >
-                          <Check className="w-3.5 h-3.5" /> Accept
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await exclusivePartnershipService.respondToRequest(partnershipStatus.receivedRequest.id, "declined");
-                              setToastError(false);
-                              setToast("Partnership request declined.");
-                              setTimeout(() => setToast(null), 4000);
-                              exclusivePartnershipService.checkStatus(activeConversation).then(({ data }) => {
-                                setPartnershipStatus(data);
-                                setPartnership(data.partnership);
-                              });
-                            } catch {
-                              setToastError(true);
-                              setToast("Failed to decline. Try again.");
-                              setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors flex items-center gap-1"
-                        >
-                          <X className="w-3.5 h-3.5" /> Decline
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Exclusive Partnership Pending (outgoing — you sent the request) */}
-                {activeConversation && partnershipStatus?.sentRequest?.status === "pending" && !partnership && (
-                  <div className="px-3 lg:px-4 py-2 border-b border-[#2D2D2D] bg-[#181818] shrink-0">
-                    <div className="flex items-center gap-2">
-                      <Heart className="w-4 h-4 text-[#D4AF37]/50" />
-                      <p className="text-xs text-[#8B8B8B]">
-                        Exclusive partnership request sent. Waiting for {activeConv?.name || urlName} to respond.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Start Exclusive Partnership Button (only if no partnership and no pending requests) */}
-                {activeConversation && !partnership &&
-                  partnershipStatus?.sentRequest?.status !== "pending" &&
-                  partnershipStatus?.receivedRequest?.status !== "pending" && (
-                  <div className="px-3 lg:px-4 py-2 border-b border-[#2D2D2D] shrink-0">
-                    <button
-                      onClick={() => setShowPartnershipDialog(true)}
-                      className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 text-[#D4AF37] text-xs font-medium transition-colors"
-                    >
-                      <Heart className="w-3.5 h-3.5" />
-                      Request Exclusive Marriage Process
-                    </button>
                   </div>
                 )}
 
@@ -1325,7 +1225,7 @@ function MessagesContent() {
                           <div
                             className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%] lg:max-w-[55%] transition-transform duration-200 ${swipeMsgId === msg.id ? (isOwn ? "translate-x-8" : "-translate-x-8") : ""}`}
                           >
-                            <div className={`rounded-3xl text-sm overflow-hidden transition-all hover:shadow-lg ${isOwn ? ownBubble : otherBubble}`}>
+                            <div className={`overflow-hidden transition-all hover:shadow-lg ${isOwn ? ownBubble : otherBubble}`} style={{ fontSize: "clamp(0.75rem, 3.5vw, 0.875rem)" }}>
                               {msg.replyTo && (
                                 <div
                                   onClick={() => msg.replyTo?.id && scrollToMessage(msg.replyTo.id)}
@@ -1413,7 +1313,7 @@ function MessagesContent() {
                                       </div>
                                     </div>
                                   ) : (
-                                    <p className="px-4 pt-2.5 pb-1 leading-relaxed font-medium">{msg.content}</p>
+                                    <p className="px-4 pt-2.5 pb-1 leading-relaxed font-medium break-words whitespace-pre-wrap">{msg.content}</p>
                                   )
                                 ) : null;
                               })()}
@@ -1421,16 +1321,16 @@ function MessagesContent() {
                                 {msg.isEdited && (
                                   <span className={`text-[10px] italic ${isOwn ? "text-black/50" : "text-[#8B8B8B]"}`}>edited</span>
                                 )}
-                                <p className={`text-xs font-semibold ${isOwn ? "text-black/70" : "text-[#8B8B8B]"}`}>
+                                <p className="font-semibold" style={{ fontSize: "clamp(0.625rem, 2.5vw, 0.75rem)", color: isOwn ? "#D1D5DB" : "#8B8B8B" }}>
                                   {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                                 </p>
                                 {isOwn && (
                                   msg.readAt ? (
-                                    <CheckCheck className="w-4 h-4 text-blue-500" />
+                                    <CheckCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
                                   ) : msg.deliveredAt ? (
-                                    <CheckCheck className="w-4 h-4 text-black/50" />
+                                    <CheckCheck className="w-3.5 h-3.5 text-white/50" />
                                   ) : (
-                                    <Check className="w-4 h-4 text-black/40" />
+                                    <Check className="w-3.5 h-3.5 text-white/40" />
                                   )
                                 )}
                               </div>
@@ -1443,7 +1343,7 @@ function MessagesContent() {
                   {/* Typing Indicator */}
                   {activeConversation && typingUsers[activeConversation] && (
                     <div className="flex items-end gap-2 text-xs text-[#8B8B8B]">
-                      <div className={`flex gap-1 items-center px-4 py-3 rounded-3xl rounded-bl-md shadow-sm ${typingBubble}`}>
+                      <div className={`flex gap-1 items-center px-4 py-3 shadow-sm ${typingBubble}`}>
                         <span className={`w-2 h-2 rounded-full ${typingDot} animate-bounce`} style={{ animationDelay: "0ms" }} />
                         <span className={`w-2 h-2 rounded-full ${typingDot} animate-bounce`} style={{ animationDelay: "150ms" }} />
                         <span className={`w-2 h-2 rounded-full ${typingDot} animate-bounce`} style={{ animationDelay: "300ms" }} />
@@ -1529,7 +1429,7 @@ function MessagesContent() {
                       )}
                       {/* Emoji picker */}
                       {showEmojiPicker && (
-                        <div ref={emojiPickerRef} className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#222222] rounded-2xl shadow-2xl border border-[#2D2D2D] p-3 max-h-[40vh] overflow-y-auto w-[90vw] max-w-md">
+                        <div ref={emojiPickerRef} className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1A1A24] rounded-[20px] shadow-2xl border border-[#2D2D2D] p-3 max-h-[40vh] overflow-y-auto w-[90vw] max-w-md">
                           <div className="grid grid-cols-7 gap-1">
                             {["😊","🥰","😍","❤️","💕","😘","😇","🤲","🌙","⭐","🌸","🌹","💐","🕌","🤝","💍","🎉","🥺","😌","💭","✨","🙏","😁","😂","🤗","😎","🥹","😅","😳","🤔","😢","😭","👍","👋","🫂"].map((emoji, idx) => (
                               <button
@@ -1554,45 +1454,48 @@ function MessagesContent() {
                           Server busy — retrying in {busyCountdown}s…
                         </div>
                       )}
-                      {/* Floating input bar — glassmorphism, fully responsive for all phones */}
-                      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-center gap-1 sm:gap-1.5 lg:gap-2 h-[44px] sm:h-[54px] lg:h-[58px] rounded-[22px] sm:rounded-[27px] lg:rounded-[29px] bg-[#181818]/80 backdrop-blur-xl border border-[#D4AF37]/20 shadow-lg shadow-black/20 px-1.5 sm:px-2 lg:px-3 w-full box-border overflow-hidden">
+                      {/* Floating input bar — premium pill, 60px, gold send with glow */}
+                      <div className="relative">
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-4 rounded-full bg-[#D4AF37]/20 blur-xl pointer-events-none" />
+                      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex items-center gap-1.5 h-[60px] rounded-[30px] bg-[#1A1A24] border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2.5 w-full box-border overflow-hidden">
                         {/* Emoji button */}
                         <button
                           type="button"
                           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                           disabled={serverBusy}
-                          className="w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 disabled:opacity-40 disabled:hover:scale-100 hover:bg-[#2D2D2D]"
+                          className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 disabled:opacity-40 disabled:hover:scale-100 hover:bg-[#2D2D2D]"
                         >
-                          <Smile className="w-4 h-4 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-[#D4AF37]" />
+                          <Smile className="w-5 h-5 text-[#D4AF37]" />
                         </button>
                         {/* Attachment button */}
-                        <label className={`w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 cursor-pointer ${serverBusy ? "opacity-40 pointer-events-none" : "hover:bg-[#2D2D2D]"}`}>
-                          <Paperclip className="w-4 h-4 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-[#D4AF37]" />
+                        <label className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 cursor-pointer ${serverBusy ? "opacity-40 pointer-events-none" : "hover:bg-[#2D2D2D]"}`}>
+                          <Paperclip className="w-5 h-5 text-[#D4AF37]" />
                           <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" className="hidden" onChange={handleImageSelect} disabled={serverBusy} />
                         </label>
-                        {/* Input field — min-w-0 so it shrinks properly, flex-1 to fill remaining space */}
+                        {/* Input field */}
                         <input
                           value={newMessage}
                           onChange={(e) => handleInputChange(e.target.value)}
                           placeholder={serverBusy ? "Busy…" : "Message…"}
                           disabled={uploading || serverBusy}
-                          className="flex-1 min-w-0 h-8 sm:h-9 lg:h-11 bg-transparent text-xs sm:text-sm lg:text-base font-medium text-white placeholder-[#8B8B8B] outline-none border-none px-1"
+                          className="flex-1 min-w-0 h-10 bg-white/15 rounded-full text-sm font-medium text-white placeholder-[#8B8B8B] outline-none border-none px-4"
                         />
-                        {/* Send button — gold gradient */}
+                        {/* Send button — gold circular with soft glow */}
                         <button
                           type="submit"
                           disabled={(!newMessage.trim() && !imagePreview) || uploading || serverBusy}
-                          className={`w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 rounded-full flex items-center justify-center transition-all hover:scale-110 disabled:opacity-40 disabled:hover:scale-100 shrink-0 ${serverBusy ? "bg-[#D4AF37]/50" : sendBtn}`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 disabled:opacity-40 disabled:hover:scale-100 shrink-0 shadow-lg shadow-[#D4AF37]/30 ${serverBusy ? "bg-[#D4AF37]/50" : sendBtn}`}
                         >
                           {serverBusy ? (
-                            <span className="text-[8px] sm:text-[10px] lg:text-xs font-bold text-white">{busyCountdown}s</span>
+                            <span className="text-[10px] font-bold text-white">{busyCountdown}s</span>
                           ) : uploading ? (
-                            <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                            <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                           ) : (
-                            <Send className="w-4 h-4 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                            <Send className="w-5 h-5" />
                           )}
                         </button>
                       </form>
+                      </div>
                     </div>
                   </div>
                 ) : activeConversation && blockedUsers.includes(activeConversation) ? (
@@ -1624,6 +1527,36 @@ function MessagesContent() {
           </div>
         </div>
       </div>
+
+      {/* Floating Bottom Navigation — blur background, gold active indicator */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2">
+        <div className="mx-auto max-w-sm flex items-center justify-around rounded-[22px] bg-[#111827]/80 backdrop-blur-xl border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2 py-2">
+          <a href="/discover" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
+            <Compass className="w-5 h-5 text-[#8B8B8B]" />
+            <span className="text-[10px] font-medium text-[#8B8B8B]">Discover</span>
+          </a>
+          <a href="/matches" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
+            <Heart className="w-5 h-5 text-[#8B8B8B]" />
+            <span className="text-[10px] font-medium text-[#8B8B8B]">Matches</span>
+          </a>
+          <a href="/messages" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors">
+            <div className="relative">
+              <MessageCircle className="w-5 h-5 text-[#D4AF37]" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D4AF37]" />
+            </div>
+            <span className="text-[10px] font-bold text-[#D4AF37]">Messages</span>
+            <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />
+          </a>
+          <a href="/notifications" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
+            <Sparkles className="w-5 h-5 text-[#8B8B8B]" />
+            <span className="text-[10px] font-medium text-[#8B8B8B]">Activity</span>
+          </a>
+          <a href="/profile" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
+            <User className="w-5 h-5 text-[#8B8B8B]" />
+            <span className="text-[10px] font-medium text-[#8B8B8B]">Profile</span>
+          </a>
+        </div>
+      </nav>
 
       {/* Report Dialog */}
       {showReportDialog && (
@@ -2181,6 +2114,7 @@ function MessagesContent() {
           />
         </div>
       )}
+    </div>
     </div>
   );
 }
