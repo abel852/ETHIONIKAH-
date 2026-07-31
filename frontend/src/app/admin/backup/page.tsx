@@ -8,7 +8,7 @@ import api from "@/lib/api";
 import {
   Database, Download, Upload, RefreshCw, Trash2, AlertTriangle,
   CheckCircle, Loader2, FileText, HardDrive, Clock, XCircle,
-  Archive, Package,
+  Archive, Package, X, RotateCcw,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -24,9 +24,12 @@ export default function BackupPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ percent: number; speedMBps: number; uploadedMB: number; totalMB: number } | null>(null);
+  const [uploadError, setUploadError] = useState(false);
+  const [lastFile, setLastFile] = useState<File | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Restore modal state
   const [restoreStatus, setRestoreStatus] = useState<RestoreStatus>("idle");
@@ -150,20 +153,21 @@ export default function BackupPage() {
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const startUpload = async (file: File) => {
     if (!file.name.endsWith(".sql") && !file.name.endsWith(".tar.gz")) {
       toast.error("Only .sql and .tar.gz backup files are allowed");
       return;
     }
     setUploading(true);
+    setUploadError(false);
     setUploadProgress({ percent: 0, speedMBps: 0, uploadedMB: 0, totalMB: file.size / (1024 * 1024) });
     const startTime = Date.now();
+    abortControllerRef.current = new AbortController();
     try {
       const fd = new FormData();
       fd.append("backupFile", file);
       const { data } = await api.post("/admin/backup/upload", fd, {
+        signal: abortControllerRef.current.signal,
         onUploadProgress: (progressEvent) => {
           const uploaded = progressEvent.loaded || 0;
           const total = progressEvent.total || file.size;
@@ -180,13 +184,36 @@ export default function BackupPage() {
       });
       toast.success(`Backup uploaded (${data.sizeMB} MB)`);
       fetchBackups();
+      setLastFile(null);
+      setUploadProgress(null);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to upload backup");
+      if (err?.code === "ERR_CANCELED" || err?.name === "CanceledError") {
+        toast("Upload cancelled");
+        setUploadProgress(null);
+      } else {
+        setUploadError(true);
+        toast.error(err?.response?.data?.error || "Failed to upload backup");
+      }
     } finally {
       setUploading(false);
-      setUploadProgress(null);
+      abortControllerRef.current = null;
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLastFile(file);
+    startUpload(file);
+  };
+
+  const handleCancelUpload = () => {
+    abortControllerRef.current?.abort();
+  };
+
+  const handleRetryUpload = () => {
+    if (lastFile) startUpload(lastFile);
   };
 
   if (!isSuperAdmin) {
@@ -253,15 +280,37 @@ export default function BackupPage() {
         </div>
 
         {/* Upload progress bar */}
-        {uploading && uploadProgress && (
+        {(uploading || uploadError) && uploadProgress && (
           <div className="mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uploading backup…</span>
-              <span className="text-sm font-bold text-amber-500">{uploadProgress.percent}%</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {uploadError ? "Upload failed" : "Uploading backup…"}
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-amber-500">{uploadProgress.percent}%</span>
+                {uploading && (
+                  <button
+                    onClick={handleCancelUpload}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                    Cancel
+                  </button>
+                )}
+                {uploadError && (
+                  <button
+                    onClick={handleRetryUpload}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Retry
+                  </button>
+                )}
+              </div>
             </div>
             <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className="h-full bg-amber-500 rounded-full transition-all duration-300 ease-out"
+                className={`h-full rounded-full transition-all duration-300 ease-out ${uploadError ? "bg-red-500" : "bg-amber-500"}`}
                 style={{ width: `${uploadProgress.percent}%` }}
               />
             </div>
