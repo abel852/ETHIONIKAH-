@@ -472,8 +472,32 @@ exports.createFullBackup = async (req, res) => {
     //   db-<timestamp>.sql
     //   uploads/ (all subdirectories and files)
     const sqlFilename = `db-${timestamp}.sql`;
-    const tarCmd = `tar -czf "${filepath}" -C "${BACKUP_DIR}" "${path.basename(tempSqlPath)}" -C "${path.dirname(UPLOADS_DIR)}" "${path.basename(UPLOADS_DIR)}" --transform "s|${path.basename(tempSqlPath)}|${sqlFilename}|"`;
-    await execAsync(tarCmd, { maxBuffer: 1024 * 1024 * 200 });
+    
+    // Rename temp SQL to final name inside archive (compatible with both GNU tar and bsdtar)
+    const renamedSqlPath = path.join(BACKUP_DIR, sqlFilename);
+    fs.renameSync(tempSqlPath, renamedSqlPath);
+    tempSqlPath = renamedSqlPath;
+    
+    let tarCmd;
+    const uploadsParent = path.dirname(UPLOADS_DIR);
+    const uploadsName = path.basename(UPLOADS_DIR);
+    
+    if (process.platform === "win32") {
+      // bsdtar on Windows — no --transform support, file already renamed
+      tarCmd = `tar -czf "${filepath}" -C "${BACKUP_DIR}" "${sqlFilename}" -C "${uploadsParent}" "${uploadsName}"`;
+    } else {
+      // GNU tar on Linux
+      tarCmd = `tar -czf "${filepath}" -C "${BACKUP_DIR}" "${sqlFilename}" -C "${uploadsParent}" "${uploadsName}"`;
+    }
+    try {
+      await execAsync(tarCmd, { maxBuffer: 1024 * 1024 * 200 });
+    } catch (tarErr) {
+      if (!fs.existsSync(filepath) || fs.statSync(filepath).size === 0) {
+        console.error("Full backup: tar failed:", tarErr.message);
+        return res.status(500).json({ error: "Failed to create backup archive: " + (tarErr.stderr || tarErr.message).slice(0, 200) });
+      }
+      console.warn("Full backup: tar completed with warnings:", tarErr.stderr?.slice(0, 200));
+    }
 
     // Clean up temp SQL file
     if (fs.existsSync(tempSqlPath)) fs.unlinkSync(tempSqlPath);
@@ -528,7 +552,7 @@ exports.createFullBackup = async (req, res) => {
       try { fs.unlinkSync(tempSqlPath); } catch {}
     }
     console.error("Full backup creation error:", error.message);
-    res.status(500).json({ error: "Failed to create full backup" });
+    res.status(500).json({ error: "Failed to create full backup: " + error.message });
   }
 };
 
