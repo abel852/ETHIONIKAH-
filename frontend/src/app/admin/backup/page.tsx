@@ -23,6 +23,7 @@ export default function BackupPage() {
   const [restoring, setRestoring] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ percent: number; speedMBps: number; uploadedMB: number; totalMB: number } | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -157,16 +158,33 @@ export default function BackupPage() {
       return;
     }
     setUploading(true);
+    setUploadProgress({ percent: 0, speedMBps: 0, uploadedMB: 0, totalMB: file.size / (1024 * 1024) });
+    const startTime = Date.now();
     try {
       const fd = new FormData();
       fd.append("backupFile", file);
-      const { data } = await api.post("/admin/backup/upload", fd);
+      const { data } = await api.post("/admin/backup/upload", fd, {
+        onUploadProgress: (progressEvent) => {
+          const uploaded = progressEvent.loaded || 0;
+          const total = progressEvent.total || file.size;
+          const percent = total > 0 ? Math.round((uploaded / total) * 100) : 0;
+          const elapsedSec = (Date.now() - startTime) / 1000;
+          const speedMBps = elapsedSec > 0 ? (uploaded / (1024 * 1024)) / elapsedSec : 0;
+          setUploadProgress({
+            percent,
+            speedMBps,
+            uploadedMB: uploaded / (1024 * 1024),
+            totalMB: total / (1024 * 1024),
+          });
+        },
+      });
       toast.success(`Backup uploaded (${data.sizeMB} MB)`);
       fetchBackups();
     } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to upload backup");
     } finally {
       setUploading(false);
+      setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -233,6 +251,26 @@ export default function BackupPage() {
             </Button>
           </div>
         </div>
+
+        {/* Upload progress bar */}
+        {uploading && uploadProgress && (
+          <div className="mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uploading backup…</span>
+              <span className="text-sm font-bold text-amber-500">{uploadProgress.percent}%</span>
+            </div>
+            <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress.percent}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span>{uploadProgress.uploadedMB.toFixed(1)} MB / {uploadProgress.totalMB.toFixed(1)} MB</span>
+              <span>{uploadProgress.speedMBps.toFixed(1)} MB/s</span>
+            </div>
+          </div>
+        )}
 
         {/* Warning banner */}
         <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 flex items-start gap-3">
