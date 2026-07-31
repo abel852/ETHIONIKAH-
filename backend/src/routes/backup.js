@@ -26,7 +26,6 @@ const backupStorage = multer.diskStorage({
 
 const uploadBackup = multer({
   storage: backupStorage,
-  limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.originalname.endsWith(".sql") || file.originalname.endsWith(".tar.gz")) {
       cb(null, true);
