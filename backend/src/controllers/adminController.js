@@ -899,6 +899,34 @@ exports.markUsersViewed = async (req, res) => {
   }
 };
 
+// === MARK AS VIEWED (generic — clears badge counts) ===
+exports.markAsViewed = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const now = new Date();
+    switch (type) {
+      case "verifications":
+        await prisma.verification.updateMany({ where: { status: "pending", viewed_at: null }, data: { viewed_at: now } });
+        break;
+      case "complaints":
+        await prisma.complaint.updateMany({ where: { status: "open", viewed_at: null }, data: { viewed_at: now } });
+        break;
+      case "reports":
+        await prisma.report.updateMany({ where: { status: { in: ["open", "investigating"] }, viewed_at: null }, data: { viewed_at: now } });
+        break;
+      case "users":
+        await prisma.user.updateMany({ where: { isActive: false, role: { not: "admin" }, admin_viewed_at: null }, data: { admin_viewed_at: now } });
+        break;
+      default:
+        return res.status(400).json({ error: "Invalid type" });
+    }
+    res.json({ message: `${type} marked as viewed` });
+  } catch (error) {
+    console.error("Mark as viewed error:", error);
+    res.status(500).json({ error: "Failed to mark as viewed" });
+  }
+};
+
 // === ACCOUNT DELETION RECYCLE BIN ===
 const DELETION_GRACE_DAYS = 30;
 

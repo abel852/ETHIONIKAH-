@@ -101,8 +101,11 @@ router.post("/notifications/2fa-reminders", ...auth, async (req, res) => {
   }
 });
 
-// Badge counts
-router.get("/badge-counts", ...auth, cacheResponse(30), ctrl.getBadgeCounts);
+// Badge counts (no cache — always fresh)
+router.get("/badge-counts", ...auth, ctrl.getBadgeCounts);
+
+// Mark items as viewed (clears badge count)
+router.post("/mark-viewed/:type", ...auth, ctrl.markAsViewed);
 
 // Recycle bin (soft-deleted accounts)
 router.get("/deleted-users", ...auth, ctrl.getDeletedUsers);

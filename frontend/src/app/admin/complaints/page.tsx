@@ -11,6 +11,7 @@ import { adminService } from "@/services/admin";
 import { formatRelativeTime } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { useI18n } from "@/context/I18nContext";
+import api from "@/lib/api";
 
 const glass = "bg-white dark:bg-white/[0.06] backdrop-blur-xl border-charcoal-100 dark:border-white/10";
 
@@ -85,6 +86,9 @@ export default function AdminComplaintsPage() {
   useEffect(() => {
     setLoading(true);
     fetchComplaints();
+    api.post("/admin/mark-viewed/complaints", {}, { _noToast: true } as any).then(() => {
+      window.dispatchEvent(new Event("refresh-badge-counts"));
+    }).catch(() => {});
   }, [fetchComplaints]);
 
   useEffect(() => {
