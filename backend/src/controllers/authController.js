@@ -212,8 +212,9 @@ const login = async (req, res) => {
     const lockoutInfo = await checkLockout(email);
     if (lockoutInfo) {
       return res.status(429).json({
-        error: "Something went wrong. Please try again later.",
+        error: lockoutInfo.message || "Something went wrong. Please try again later.",
         code: "ACCOUNT_LOCKED",
+        lockout: lockoutInfo,
       });
     }
 
@@ -244,14 +245,18 @@ const login = async (req, res) => {
       const failInfo = await recordFailedLogin(email, ip);
       if (failInfo && failInfo.locked) {
         return res.status(429).json({
-          error: "Something went wrong. Please try again later.",
+          error: failInfo.message || "Something went wrong. Please try again later.",
           code: "ACCOUNT_LOCKED",
+          lockout: failInfo,
         });
       }
       // Not locked yet — tell user how many attempts remain
       return res.status(401).json({
         error: "Invalid credentials",
         code: "INVALID_CREDENTIALS",
+        attemptsRemaining: failInfo?.attemptsRemaining,
+        lockoutLevel: failInfo?.lockoutLevel,
+        message: failInfo?.message,
       });
     }
 
@@ -329,8 +334,9 @@ const loginWithPhone = async (req, res) => {
     const lockoutInfo = await checkLockout(user.email);
     if (lockoutInfo) {
       return res.status(429).json({
-        error: "Something went wrong. Please try again later.",
+        error: lockoutInfo.message || "Something went wrong. Please try again later.",
         code: "ACCOUNT_LOCKED",
+        lockout: lockoutInfo,
       });
     }
 
@@ -339,13 +345,17 @@ const loginWithPhone = async (req, res) => {
       const failInfo = await recordFailedLogin(user.email, ip);
       if (failInfo && failInfo.locked) {
         return res.status(429).json({
-          error: "Something went wrong. Please try again later.",
+          error: failInfo.message || "Something went wrong. Please try again later.",
           code: "ACCOUNT_LOCKED",
+          lockout: failInfo,
         });
       }
       return res.status(401).json({
         error: "Invalid credentials",
         code: "INVALID_CREDENTIALS",
+        attemptsRemaining: failInfo?.attemptsRemaining,
+        lockoutLevel: failInfo?.lockoutLevel,
+        message: failInfo?.message,
       });
     }
 

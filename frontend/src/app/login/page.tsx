@@ -43,6 +43,7 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState("");
   const [showContactAdmin, setShowContactAdmin] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [attemptsInfo, setAttemptsInfo] = useState<{remaining: number; nextLockout: string} | null>(null);
 
   useEffect(() => {
     if (requires2FA && twoFactorRef.current) twoFactorRef.current.focus();
@@ -101,6 +102,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
+    setAttemptsInfo(null);
 
     try {
       const payload = loginMethod === "email" ? { email, password } : { phone, password };
@@ -134,7 +136,8 @@ export default function LoginPage() {
         const level = resp.lockoutLevel || 0;
         const lockLabels = ["5 minutes", "30 minutes", "12 hours", "3 days"];
         const nextLock = lockLabels[level] || "permanent lock";
-        let msg = `Invalid credentials. You have ${remaining} account attempt${remaining > 1 ? "s" : ""} remaining. Next lockout: ${nextLock}.`;
+        setAttemptsInfo({ remaining, nextLockout: nextLock });
+        let msg = `Invalid credentials. You have ${remaining} attempt${remaining > 1 ? "s" : ""} remaining before lockout.`;
         if (resp.ipAttemptsRemaining !== undefined && resp.ipAttemptsRemaining <= 1) {
           msg += ` Warning: Only ${resp.ipAttemptsRemaining} IP attempt left before 1-hour IP block!`;
         }
@@ -442,6 +445,22 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {/* Attempts remaining warning */}
+              {attemptsInfo && !lockout && (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">{attemptsInfo.remaining}</span>
+                      <span className="text-sm font-medium text-amber-700 dark:text-amber-400">attempt{attemptsInfo.remaining > 1 ? "s" : ""} remaining</span>
+                    </div>
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                      Next lockout: {attemptsInfo.nextLockout}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Lockout countdown timer */}
               {lockout && !lockout.permanent && countdown && (
                 <div className="flex flex-col items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
@@ -453,7 +472,7 @@ export default function LoginPage() {
                     {countdown}
                   </div>
                   <p className="text-xs text-amber-600 dark:text-amber-500 text-center">
-                    Attempt {lockout.lockoutCount} of 5. Lockout escalates with each attempt.
+                    Lockout level {lockout.lockoutLevel || 1}. Lockout escalates with each round.
                   </p>
                 </div>
               )}
