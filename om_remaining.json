@@ -1,0 +1,1190 @@
+[
+  {
+    "key": "app.name",
+    "value": "Ethio Nikah"
+  },
+  {
+    "key": "nav.openMenu",
+    "value": "Open menu"
+  },
+  {
+    "key": "nav.closeMenu",
+    "value": "Close menu"
+  },
+  {
+    "key": "nav.pro",
+    "value": "PRO"
+  },
+  {
+    "key": "auth.home",
+    "value": "Home"
+  },
+  {
+    "key": "auth.emailMethod",
+    "value": "Email"
+  },
+  {
+    "key": "auth.phoneMethod",
+    "value": "Phone"
+  },
+  {
+    "key": "auth.sideTitle",
+    "value": "Find Your Naseeb"
+  },
+  {
+    "key": "auth.sideQuote",
+    "value": "And among His signs is this, that He created for you mates from among yourselves, that you may dwell in tranquility with them."
+  },
+  {
+    "key": "auth.sideQuoteSource",
+    "value": "— Quran, Surah Ar-Rum (30:21)"
+  },
+  {
+    "key": "register.step2.weight41to50",
+    "value": "41 - 50"
+  },
+  {
+    "key": "register.step2.weight51to60",
+    "value": "51 - 60"
+  },
+  {
+    "key": "register.step2.weight61to70",
+    "value": "61 - 70"
+  },
+  {
+    "key": "register.step2.weight71to80",
+    "value": "71 - 80"
+  },
+  {
+    "key": "register.step2.appearanceBlack",
+    "value": "Black"
+  },
+  {
+    "key": "register.step3.sunni",
+    "value": "Sunni"
+  },
+  {
+    "key": "register.step3.shia",
+    "value": "Shia"
+  },
+  {
+    "key": "register.step3.sufi",
+    "value": "Sufi"
+  },
+  {
+    "key": "register.step3.salafi",
+    "value": "Salafi"
+  },
+  {
+    "key": "register.step4.diploma",
+    "value": "Diploma"
+  },
+  {
+    "key": "register.step4.phd",
+    "value": "PhD"
+  },
+  {
+    "key": "register.step4.range5000to10000",
+    "value": "5,000 - 10,000 ETB"
+  },
+  {
+    "key": "register.step4.range10000to20000",
+    "value": "10,000 - 20,000 ETB"
+  },
+  {
+    "key": "register.step4.range20000to50000",
+    "value": "20,000 - 50,000 ETB"
+  },
+  {
+    "key": "register.step10.dwarfismAchondroplasia",
+    "value": "Achondroplasia"
+  },
+  {
+    "key": "register.step10.dwarfismHypochondroplasia",
+    "value": "Hypochondroplasia"
+  },
+  {
+    "key": "profile.premium",
+    "value": "Premium"
+  },
+  {
+    "key": "profile.googleAuth",
+    "value": "Google Authenticator"
+  },
+  {
+    "key": "settings.twoFactorDesc",
+    "value": "Google Authenticator 2FA"
+  },
+  {
+    "key": "settings.twoFactorMobileDesc",
+    "value": "Google Authenticator 2FA"
+  },
+  {
+    "key": "settings.turnOff",
+    "value": "Turn off"
+  },
+  {
+    "key": "settings.turnOn",
+    "value": "Turn on"
+  },
+  {
+    "key": "settings.backToSettings",
+    "value": "Back to Settings"
+  },
+  {
+    "key": "settings.themeDisplayDesc",
+    "value": "Theme & display"
+  },
+  {
+    "key": "settings.photoUploaded",
+    "value": "Photo uploaded"
+  },
+  {
+    "key": "settings.photoUploadFailed",
+    "value": "Failed to upload photo"
+  },
+  {
+    "key": "settings.nameUpdated",
+    "value": "Name updated"
+  },
+  {
+    "key": "settings.nameUpdateFailed",
+    "value": "Failed to update name"
+  },
+  {
+    "key": "settings.emailUpdated",
+    "value": "Email updated"
+  },
+  {
+    "key": "settings.emailUpdateFailed",
+    "value": "Failed to update email"
+  },
+  {
+    "key": "settings.passwordChangeSoon",
+    "value": "Password change will be available soon"
+  },
+  {
+    "key": "settings.user",
+    "value": "User"
+  },
+  {
+    "key": "settings.noEmail",
+    "value": "No email"
+  },
+  {
+    "key": "settings.fullName",
+    "value": "Full Name"
+  },
+  {
+    "key": "settings.emailAddress",
+    "value": "Email Address"
+  },
+  {
+    "key": "settings.password",
+    "value": "Password"
+  },
+  {
+    "key": "settings.currentPassword",
+    "value": "Current password"
+  },
+  {
+    "key": "settings.change",
+    "value": "Change"
+  },
+  {
+    "key": "settings.passwordHint",
+    "value": "Minimum 8 characters with a number and a letter"
+  },
+  {
+    "key": "settings.notSubmitted",
+    "value": "Not Submitted"
+  },
+  {
+    "key": "settings.pendingReview",
+    "value": "Pending Review"
+  },
+  {
+    "key": "settings.approved",
+    "value": "Approved"
+  },
+  {
+    "key": "settings.rejected",
+    "value": "Rejected"
+  },
+  {
+    "key": "settings.idVerification",
+    "value": "ID Verification"
+  },
+  {
+    "key": "settings.idVerificationDesc",
+    "value": "National ID + Selfie upload required"
+  },
+  {
+    "key": "settings.adminNote",
+    "value": "Admin Note"
+  },
+  {
+    "key": "settings.viewStatus",
+    "value": "View Status"
+  },
+  {
+    "key": "settings.goToVerification",
+    "value": "Go to Verification"
+  },
+  {
+    "key": "settings.pushNotifications",
+    "value": "Push Notifications"
+  },
+  {
+    "key": "settings.pushNotificationsDesc",
+    "value": "Receive alerts on your device"
+  },
+  {
+    "key": "settings.emailNotifications",
+    "value": "Email Notifications"
+  },
+  {
+    "key": "settings.emailNotificationsDesc",
+    "value": "Get notified via email"
+  },
+  {
+    "key": "settings.smsNotifications",
+    "value": "SMS Notifications"
+  },
+  {
+    "key": "settings.smsNotificationsDesc",
+    "value": "Receive text message updates"
+  },
+  {
+    "key": "settings.faq",
+    "value": "FAQ"
+  },
+  {
+    "key": "settings.contactSupport",
+    "value": "Contact Support"
+  },
+  {
+    "key": "settings.reportProblem",
+    "value": "Report a Problem"
+  },
+  {
+    "key": "settings.safetyTips",
+    "value": "Safety Tips"
+  },
+  {
+    "key": "settings.codeOfConduct",
+    "value": "Code of Conduct"
+  },
+  {
+    "key": "settings.privacyGuidelines",
+    "value": "Privacy Guidelines"
+  },
+  {
+    "key": "settings.prohibitedBehavior",
+    "value": "Prohibited Behavior"
+  },
+  {
+    "key": "settings.reportingViolations",
+    "value": "Reporting Violations"
+  },
+  {
+    "key": "settings.termsOfService",
+    "value": "Terms of Service"
+  },
+  {
+    "key": "settings.privacyPolicy",
+    "value": "Privacy Policy"
+  },
+  {
+    "key": "settings.cookiePolicy",
+    "value": "Cookie Policy"
+  },
+  {
+    "key": "settings.dataDeletion",
+    "value": "Data Deletion Request"
+  },
+  {
+    "key": "settings.googleCalendar",
+    "value": "Google Calendar"
+  },
+  {
+    "key": "settings.googleCalendarDesc",
+    "value": "Sync your availability for scheduling"
+  },
+  {
+    "key": "settings.appleCalendar",
+    "value": "Apple Calendar"
+  },
+  {
+    "key": "settings.appleCalendarDesc",
+    "value": "iCloud calendar integration"
+  },
+  {
+    "key": "settings.zoom",
+    "value": "Zoom"
+  },
+  {
+    "key": "settings.zoomDesc",
+    "value": "Enable video call scheduling"
+  },
+  {
+    "key": "settings.whatsapp",
+    "value": "WhatsApp"
+  },
+  {
+    "key": "settings.whatsappDesc",
+    "value": "Receive notifications via WhatsApp"
+  },
+  {
+    "key": "settings.telegram",
+    "value": "Telegram"
+  },
+  {
+    "key": "settings.telegramDesc",
+    "value": "Bot notifications and updates"
+  },
+  {
+    "key": "settings.connected",
+    "value": "Connected"
+  },
+  {
+    "key": "settings.notConnected",
+    "value": "Not Connected"
+  },
+  {
+    "key": "settings.connect",
+    "value": "Connect"
+  },
+  {
+    "key": "settings.twoFactorSetupFailed",
+    "value": "Failed to setup 2FA"
+  },
+  {
+    "key": "settings.twoFactorDisabled",
+    "value": "Two-factor authentication disabled"
+  },
+  {
+    "key": "settings.twoFactorDisableFailed",
+    "value": "Failed to disable 2FA"
+  },
+  {
+    "key": "settings.regenerateFailed",
+    "value": "Failed to regenerate"
+  },
+  {
+    "key": "settings.codesCopied",
+    "value": "Codes copied to clipboard"
+  },
+  {
+    "key": "settings.codesDownloaded",
+    "value": "Codes downloaded"
+  },
+  {
+    "key": "settings.recoveryCodes",
+    "value": "Backup Recovery Codes"
+  },
+  {
+    "key": "settings.recoveryCodesDesc",
+    "value": "Save these codes in a safe place. Each code can be used only once to access your account if you lose your phone."
+  },
+  {
+    "key": "settings.codeN",
+    "value": "Code {n}"
+  },
+  {
+    "key": "settings.existingEntry",
+    "value": "Use your existing authenticator entry"
+  },
+  {
+    "key": "settings.existingEntryDesc",
+    "value": "Your previously saved secret is still valid. Enter the code from your existing Google Authenticator entry."
+  },
+  {
+    "key": "settings.scanQR",
+    "value": "Scan this QR code with Google Authenticator"
+  },
+  {
+    "key": "settings.manualKey",
+    "value": "Or enter this key manually:"
+  },
+  {
+    "key": "settings.status",
+    "value": "Status"
+  },
+  {
+    "key": "settings.protectedBy2FA",
+    "value": "Account is protected by 2FA"
+  },
+  {
+    "key": "settings.no2FA",
+    "value": "No 2FA configured"
+  },
+  {
+    "key": "settings.recoveryCodesRemaining",
+    "value": "{count} code(s) remaining. Use these if you lose access to your authenticator app."
+  },
+  {
+    "key": "settings.remainingCodes",
+    "value": "Remaining codes (masked for security):"
+  },
+  {
+    "key": "settings.disable2FA",
+    "value": "Disable Two-Factor Auth"
+  },
+  {
+    "key": "settings.disable2FADesc",
+    "value": "Turn off Google Authenticator protection"
+  },
+  {
+    "key": "settings.enable2FA",
+    "value": "Enable Two-Factor Auth"
+  },
+  {
+    "key": "settings.enable2FADesc",
+    "value": "Secure your account with Google Authenticator"
+  },
+  {
+    "key": "settings.confirmDisable2FA",
+    "value": "Confirm to disable 2FA"
+  },
+  {
+    "key": "settings.enterPassword",
+    "value": "Enter your password"
+  },
+  {
+    "key": "settings.enterCode",
+    "value": "Enter the 6-digit code from the app"
+  },
+  {
+    "key": "settings.authenticatorCode",
+    "value": "Authenticator Code"
+  },
+  {
+    "key": "settings.copyCodes",
+    "value": "Copy Codes"
+  },
+  {
+    "key": "settings.download",
+    "value": "Download"
+  },
+  {
+    "key": "settings.iveSavedThem",
+    "value": "I've Saved Them"
+  },
+  {
+    "key": "settings.confirm",
+    "value": "Confirm"
+  },
+  {
+    "key": "settings.generateNewKey",
+    "value": "I don't have access — generate a new key"
+  },
+  {
+    "key": "settings.enableWithExisting",
+    "value": "Enable with existing entry"
+  },
+  {
+    "key": "settings.verifyAndEnable",
+    "value": "Verify & Enable"
+  },
+  {
+    "key": "settings.manage",
+    "value": "Manage"
+  },
+  {
+    "key": "settings.regenerate",
+    "value": "Regenerate"
+  },
+  {
+    "key": "settings.disable",
+    "value": "Disable"
+  },
+  {
+    "key": "settings.enable",
+    "value": "Enable"
+  },
+  {
+    "key": "settings.disable2FAButton",
+    "value": "Disable 2FA"
+  },
+  {
+    "key": "settings.connectedTitle",
+    "value": "Connected!"
+  },
+  {
+    "key": "settings.useSameEmail",
+    "value": "Use the same email"
+  },
+  {
+    "key": "settings.twoFactorInfo",
+    "value": "Two-factor authentication uses time-based one-time passwords (TOTP) from apps like Google Authenticator or Authy. You will need to enter a code from the app each time you sign in."
+  },
+  {
+    "key": "settings.verifyIdentity",
+    "value": "Verify your identity by uploading your ID and selfie"
+  },
+  {
+    "key": "settings.chooseNotifications",
+    "value": "Choose which notifications you receive"
+  },
+  {
+    "key": "settings.recoveryRegenerated",
+    "value": "Recovery codes regenerated"
+  },
+  {
+    "key": "settings.genericFailed",
+    "value": "Failed"
+  },
+  {
+    "key": "messages.reportSpam",
+    "value": "Spam"
+  },
+  {
+    "key": "messages.sendImageFailed",
+    "value": "Failed to send image."
+  },
+  {
+    "key": "messages.submitReportError",
+    "value": "Failed to submit report"
+  },
+  {
+    "key": "messages.userFallback",
+    "value": "User"
+  },
+  {
+    "key": "messages.thisUser",
+    "value": "this user"
+  },
+  {
+    "key": "verification.title",
+    "value": "Verification"
+  },
+  {
+    "key": "verification.subtitlePending",
+    "value": "Your verification status"
+  },
+  {
+    "key": "verification.subtitleUpload",
+    "value": "Upload your ID and selfie for admin review"
+  },
+  {
+    "key": "verification.verifiedTitle",
+    "value": "You're Verified!"
+  },
+  {
+    "key": "verification.verifiedDesc",
+    "value": "Your identity has been approved by the admin team."
+  },
+  {
+    "key": "verification.pendingTitle",
+    "value": "Pending Review"
+  },
+  {
+    "key": "verification.pendingDesc",
+    "value": "Your documents are being reviewed by the admin team."
+  },
+  {
+    "key": "verification.rejectedTitle",
+    "value": "Verification Rejected"
+  },
+  {
+    "key": "verification.rejectedDesc",
+    "value": "Please re-upload your documents with clear photos."
+  },
+  {
+    "key": "verification.loadStatusFailed",
+    "value": "Failed to load verification status"
+  },
+  {
+    "key": "verification.cameraDenied",
+    "value": "Camera permission denied. Select a file instead."
+  },
+  {
+    "key": "verification.blurryPhoto",
+    "value": "Photo is too blurry. Please take a clear photo where your ID text is readable."
+  },
+  {
+    "key": "verification.blurryId",
+    "value": "Photo is too blurry. Please upload a clear image where the text on your ID is readable."
+  },
+  {
+    "key": "verification.selectBothPhotos",
+    "value": "Please select both ID and selfie photos"
+  },
+  {
+    "key": "verification.submitSuccess",
+    "value": "Verification submitted for review"
+  },
+  {
+    "key": "verification.submitFailed",
+    "value": "Failed to submit"
+  },
+  {
+    "key": "verification.nationalId",
+    "value": "National ID"
+  },
+  {
+    "key": "verification.nationalIdHint",
+    "value": "Upload a clear photo of your government-issued ID"
+  },
+  {
+    "key": "verification.selfieWithId",
+    "value": "Selfie with ID"
+  },
+  {
+    "key": "verification.selfieHint",
+    "value": "Hold your ID by your hand and take a clear selfie"
+  },
+  {
+    "key": "verification.selected",
+    "value": "Selected"
+  },
+  {
+    "key": "verification.uploaded",
+    "value": "Uploaded"
+  },
+  {
+    "key": "verification.tapToUploadId",
+    "value": "Tap to upload ID photo"
+  },
+  {
+    "key": "verification.fileTypes",
+    "value": "JPEG, PNG or WebP (max 5MB)"
+  },
+  {
+    "key": "verification.openCamera",
+    "value": "Open camera"
+  },
+  {
+    "key": "verification.takeSelfie",
+    "value": "Take a selfie photo"
+  },
+  {
+    "key": "verification.submitForReview",
+    "value": "Submit for Review"
+  },
+  {
+    "key": "verification.clearFiles",
+    "value": "Clear selected files"
+  },
+  {
+    "key": "verification.whyTitle",
+    "value": "Why Get Verified?"
+  },
+  {
+    "key": "verification.whyDesc",
+    "value": "Verified profiles receive a badge, appear higher in search results, and get more match requests. Your documents are encrypted and only visible to the admin team."
+  },
+  {
+    "key": "verification.refreshStatus",
+    "value": "Refresh status"
+  },
+  {
+    "key": "verification.cancel",
+    "value": "Cancel"
+  },
+  {
+    "key": "verification.tapToCapture",
+    "value": "Tap the circle to capture"
+  },
+  {
+    "key": "matches.memberFallback",
+    "value": "Member"
+  },
+  {
+    "key": "matches.locationNotSet",
+    "value": "Location not set"
+  },
+  {
+    "key": "matches.sendMessage",
+    "value": "Send message"
+  },
+  {
+    "key": "matches.verifyToSendMessage",
+    "value": "Verify your account to send messages"
+  },
+  {
+    "key": "matches.backToProfile",
+    "value": "Back to Profile"
+  },
+  {
+    "key": "matches.whoLikedYou",
+    "value": "Who Liked You"
+  },
+  {
+    "key": "matches.noLikesYet",
+    "value": "No Likes Yet"
+  },
+  {
+    "key": "matches.noLikesDesc",
+    "value": "When someone likes your profile, they will appear here."
+  },
+  {
+    "key": "matches.message",
+    "value": "Message"
+  },
+  {
+    "key": "health.dwarfismAchondroplasia",
+    "value": "Achondroplasia"
+  },
+  {
+    "key": "health.dwarfismHypochondroplasia",
+    "value": "Hypochondroplasia"
+  },
+  {
+    "key": "footer.tagline",
+    "value": "Find your righteous spouse in a safe, Sharia-compliant environment. Premium matchmaking for the Muslim community."
+  },
+  {
+    "key": "footer.rights",
+    "value": "All rights reserved."
+  },
+  {
+    "key": "footer.platform",
+    "value": "Platform"
+  },
+  {
+    "key": "footer.support",
+    "value": "Support"
+  },
+  {
+    "key": "footer.legal",
+    "value": "Legal"
+  },
+  {
+    "key": "footer.browseMatches",
+    "value": "Browse Matches"
+  },
+  {
+    "key": "footer.search",
+    "value": "Search"
+  },
+  {
+    "key": "footer.verification",
+    "value": "Verification"
+  },
+  {
+    "key": "footer.privacySettings",
+    "value": "Privacy Settings"
+  },
+  {
+    "key": "footer.faq",
+    "value": "FAQ"
+  },
+  {
+    "key": "footer.contactUs",
+    "value": "Contact Us"
+  },
+  {
+    "key": "footer.reportAbuse",
+    "value": "Report Abuse"
+  },
+  {
+    "key": "footer.safetyTips",
+    "value": "Safety Tips"
+  },
+  {
+    "key": "footer.terms",
+    "value": "Terms & Conditions"
+  },
+  {
+    "key": "footer.privacyPolicy",
+    "value": "Privacy Policy"
+  },
+  {
+    "key": "footer.communityGuidelines",
+    "value": "Community Guidelines"
+  },
+  {
+    "key": "footer.shariaCompliance",
+    "value": "Sharia Compliance"
+  },
+  {
+    "key": "home.heroTitle",
+    "value": "Where Faith, Trust"
+  },
+  {
+    "key": "home.heroTitleLine2",
+    "value": "and {highlight} Meet"
+  },
+  {
+    "key": "home.heroHighlight",
+    "value": "Marriage"
+  },
+  {
+    "key": "home.heroCtaSecondary",
+    "value": "Explore Matches"
+  },
+  {
+    "key": "home.heroBadge2",
+    "value": "Privacy Protected"
+  },
+  {
+    "key": "home.heroBadge3",
+    "value": "Sharia Compliant"
+  },
+  {
+    "key": "home.ctaTitle",
+    "value": "Your Righteous Spouse {highlight}"
+  },
+  {
+    "key": "home.ctaHighlight",
+    "value": "Awaits"
+  },
+  {
+    "key": "home.ctaPrimary",
+    "value": "Create Free Account"
+  },
+  {
+    "key": "home.ctaSecondary",
+    "value": "Sign In"
+  },
+  {
+    "key": "home.featuresEyebrow",
+    "value": "Platform Features"
+  },
+  {
+    "key": "home.featuresTitle",
+    "value": "Everything You Need to Find Your Spouse"
+  },
+  {
+    "key": "home.featuresSubtitle",
+    "value": "Powerful tools designed around Islamic values to help you find your righteous partner with confidence."
+  },
+  {
+    "key": "home.feature1Title",
+    "value": "Smart Compatibility Matching"
+  },
+  {
+    "key": "home.feature1Desc",
+    "value": "Our algorithm considers deen, character, education, lifestyle, and life goals to find truly compatible matches — not just surface-level traits."
+  },
+  {
+    "key": "home.feature2Title",
+    "value": "Verified & Authentic Profiles"
+  },
+  {
+    "key": "home.feature2Desc",
+    "value": "Every member goes through manual ID verification. No bots, no fake accounts. Only genuine Muslims serious about marriage."
+  },
+  {
+    "key": "home.feature3Title",
+    "value": "Private & Secure Messaging"
+  },
+  {
+    "key": "home.feature3Desc",
+    "value": "Communicate safely with end-to-end encrypted messages. You control who can contact you and what information you share."
+  },
+  {
+    "key": "home.feature4Title",
+    "value": "Wali & Family Involvement"
+  },
+  {
+    "key": "home.feature4Desc",
+    "value": "Optionally invite your wali or family members to review profiles and participate in the process — maintaining Islamic guidelines every step."
+  },
+  {
+    "key": "home.feature5Title",
+    "value": "Advanced Search Filters"
+  },
+  {
+    "key": "home.feature5Desc",
+    "value": "Filter potential matches by city, education, occupation, religious commitment, marital status, and more to find exactly what you're looking for."
+  },
+  {
+    "key": "home.feature6Title",
+    "value": "Health & Transparency Tools"
+  },
+  {
+    "key": "home.feature6Desc",
+    "value": "Optional, encrypted health information sharing lets you make informed decisions with complete privacy and mutual consent."
+  },
+  {
+    "key": "home.premiumGold",
+    "value": "Gold"
+  },
+  {
+    "key": "home.premiumGoldDesc",
+    "value": "Essential upgrade"
+  },
+  {
+    "key": "home.premiumGoldPrice",
+    "value": "Free"
+  },
+  {
+    "key": "home.premiumGoldPeriod",
+    "value": "for Gold members"
+  },
+  {
+    "key": "home.premiumGoldCta",
+    "value": "Get Started Free"
+  },
+  {
+    "key": "home.premiumPlatinum",
+    "value": "Platinum"
+  },
+  {
+    "key": "home.premiumPlatinumDesc",
+    "value": "Maximum exposure"
+  },
+  {
+    "key": "home.premiumPlatinumPrice",
+    "value": "Premium"
+  },
+  {
+    "key": "home.premiumPlatinumPeriod",
+    "value": "unlock all features"
+  },
+  {
+    "key": "home.premiumPlatinumBadge",
+    "value": "Best Value"
+  },
+  {
+    "key": "home.premiumPlatinumCta",
+    "value": "Go Platinum"
+  },
+  {
+    "key": "home.premiumFeature1",
+    "value": "Unlimited Messages"
+  },
+  {
+    "key": "home.premiumFeature1Desc",
+    "value": "Chat freely with any verified member"
+  },
+  {
+    "key": "home.premiumFeature2",
+    "value": "Priority Visibility"
+  },
+  {
+    "key": "home.premiumFeature2Desc",
+    "value": "Your profile appears first in searches"
+  },
+  {
+    "key": "home.premiumFeature3",
+    "value": "Advanced Filters"
+  },
+  {
+    "key": "home.premiumFeature3Desc",
+    "value": "Filter by city, occupation, education & more"
+  },
+  {
+    "key": "home.premiumFeature4",
+    "value": "Profile Badge"
+  },
+  {
+    "key": "home.premiumFeature4Desc",
+    "value": "Stand out with a premium badge on your profile"
+  },
+  {
+    "key": "home.premiumFeature5",
+    "value": "Read Receipts"
+  },
+  {
+    "key": "home.premiumFeature5Desc",
+    "value": "Know when your messages are seen"
+  },
+  {
+    "key": "home.premiumFeature6",
+    "value": "Dedicated Support"
+  },
+  {
+    "key": "home.premiumFeature6Desc",
+    "value": "Priority customer service"
+  },
+  {
+    "key": "home.premiumFooter",
+    "value": "Sign up free — upgrade anytime. No hidden fees."
+  },
+  {
+    "key": "home.trust1Title",
+    "value": "Identity Verified"
+  },
+  {
+    "key": "home.trust1Desc",
+    "value": "Every member undergoes manual ID verification. No bots, no fake profiles, no compromises on authenticity."
+  },
+  {
+    "key": "home.trust2Title",
+    "value": "Privacy First"
+  },
+  {
+    "key": "home.trust2Desc",
+    "value": "Your data is protected with enterprise-grade encryption. You control what you share and with whom."
+  },
+  {
+    "key": "home.trust3Title",
+    "value": "Islamically Compliant"
+  },
+  {
+    "key": "home.trust3Desc",
+    "value": "Designed around Islamic values. Guardian involvement, respectful communication, and marriage-first approach."
+  },
+  {
+    "key": "home.trust4Title",
+    "value": "Family Inclusive"
+  },
+  {
+    "key": "home.trust4Desc",
+    "value": "Optional wali access allows family to participate in the process with dignity and transparency."
+  },
+  {
+    "key": "home.journeyEyebrow",
+    "value": "Your Journey"
+  },
+  {
+    "key": "home.journeyTitle",
+    "value": "The Path to a Blessed Union"
+  },
+  {
+    "key": "home.journeySubtitle",
+    "value": "Every great marriage begins with intention. Here is how we walk with you."
+  },
+  {
+    "key": "home.journeyStep1Title",
+    "value": "Create Profile"
+  },
+  {
+    "key": "home.journeyStep1Desc",
+    "value": "Share your story, values, and what you seek in a spouse. Thoughtful questions guide every step."
+  },
+  {
+    "key": "home.journeyStep2Title",
+    "value": "Get Verified"
+  },
+  {
+    "key": "home.journeyStep2Desc",
+    "value": "Upload your ID and take a selfie. Our team reviews and verifies your identity within 24 hours."
+  },
+  {
+    "key": "home.journeyStep3Title",
+    "value": "Find Compatible Matches"
+  },
+  {
+    "key": "home.journeyStep3Desc",
+    "value": "Our algorithm matches you based on deen, character, education, and life goals — not just appearances."
+  },
+  {
+    "key": "home.journeyStep4Title",
+    "value": "Respectful Communication"
+  },
+  {
+    "key": "home.journeyStep4Desc",
+    "value": "Engage in meaningful conversations within a safe, monitored environment with full privacy controls."
+  },
+  {
+    "key": "home.journeyStep5Title",
+    "value": "Family Engagement"
+  },
+  {
+    "key": "home.journeyStep5Desc",
+    "value": "Invite your wali or family to review profiles and participate in the process when you're ready."
+  },
+  {
+    "key": "home.journeyStep6Title",
+    "value": "Blessed Marriage"
+  },
+  {
+    "key": "home.journeyStep6Desc",
+    "value": "When hearts align, we support your journey toward a blessed union grounded in faith and mutual respect."
+  },
+  {
+    "key": "home.benefitsEyebrow",
+    "value": "Why Join Ethio Nikah"
+  },
+  {
+    "key": "home.benefitsTitle",
+    "value": "Everything You Need for a Blessed Marriage"
+  },
+  {
+    "key": "home.benefitsSubtitle",
+    "value": "A platform built on Islamic values, designed to help you find your righteous spouse with confidence and peace of mind."
+  },
+  {
+    "key": "home.benefit1Title",
+    "value": "Free to Join"
+  },
+  {
+    "key": "home.benefit1Desc",
+    "value": "Create your profile and browse compatible matches at no cost. No hidden fees, no credit card required to start."
+  },
+  {
+    "key": "home.benefit2Title",
+    "value": "100% Verified Members"
+  },
+  {
+    "key": "home.benefit2Desc",
+    "value": "Every member goes through ID verification. No fake profiles, no bots — only genuine Muslims serious about marriage."
+  },
+  {
+    "key": "home.benefit3Title",
+    "value": "Sharia-Compliant Process"
+  },
+  {
+    "key": "home.benefit3Desc",
+    "value": "Wali involvement, modest interactions, and Islamic guidelines built into every step of your journey."
+  },
+  {
+    "key": "home.benefit4Title",
+    "value": "Smart Compatibility Matching"
+  },
+  {
+    "key": "home.benefit4Desc",
+    "value": "Our algorithm matches you based on deen, character, education, and life goals — not just appearances."
+  },
+  {
+    "key": "home.benefit5Title",
+    "value": "Private & Secure"
+  },
+  {
+    "key": "home.benefit5Desc",
+    "value": "Your data is encrypted and never shared. You control who sees your profile, photos, and contact information."
+  },
+  {
+    "key": "home.benefit6Title",
+    "value": "Family Involvement"
+  },
+  {
+    "key": "home.benefit6Desc",
+    "value": "Invite your wali or family members to review profiles and participate in the process when you're ready."
+  },
+  {
+    "key": "home.benefit7Title",
+    "value": "Health Transparency"
+  },
+  {
+    "key": "home.benefit7Desc",
+    "value": "Optional, encrypted health information sharing lets you make informed decisions with complete privacy and mutual consent."
+  },
+  {
+    "key": "home.benefit8Title",
+    "value": "Local & Trusted"
+  },
+  {
+    "key": "home.benefit8Desc",
+    "value": "Built specifically for the Ethiopian Muslim community. Connect with singles from Addis Ababa, Dire Dawa, Adama, and across the country."
+  },
+  {
+    "key": "home.benefitsCta",
+    "value": "Create Your Free Profile"
+  },
+  {
+    "key": "home.benefitsCtaDesc",
+    "value": "Join today — it takes only 5 minutes"
+  },
+  {
+    "key": "admin.menu",
+    "value": "Menu"
+  },
+  {
+    "key": "admin.analytics.arpu",
+    "value": "ARPU"
+  },
+  {
+    "key": "admin.verifications.selfie",
+    "value": "Selfie"
+  },
+  {
+    "key": "matches.platinum",
+    "value": "Platinum"
+  }
+]
