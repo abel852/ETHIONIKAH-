@@ -5,14 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Save, User, MapPin, Calendar, Briefcase, GraduationCap,
-  Heart, BookOpen, Globe, Users, Home, Sparkles, Upload, Camera,
+  Heart, BookOpen, Globe, Users, Home, Sparkles, Upload,
   FileText, Eye, EyeOff, ChevronRight, AtSign, CheckCircle, XCircle, Loader2,
   Lock,
 } from "lucide-react";
 import { Button, Input, Card, Badge } from "@/components/common";
 import { profileService } from "@/services/profile";
 import { useAuth } from "@/context/AuthContext";
-import { mediaUrl } from "@/lib/utils";
 import api from "@/lib/api";
 
 const sections = [
@@ -236,27 +235,14 @@ export default function EditProfilePage() {
     }
   };
 
-  const handlePhotoUpload = async () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const { data } = await profileService.uploadPhoto(file);
-        updateUser({ photos: [...(user?.photos || []), data.photoUrl].filter(Boolean) });
-      } catch {
-        // error handled silently
-      }
-    };
-    input.click();
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-blur-image flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-blur-image">
+          <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -266,9 +252,9 @@ export default function EditProfilePage() {
       case "basic":
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Basic Information</h3>
+            <h3 className="text-base font-display font-bold text-charcoal-900 dark:text-white mb-4 pb-2 border-b border-charcoal-100 dark:border-charcoal-700">Basic Information</h3>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">
                 Username <span className="text-charcoal-400 font-normal">(@username)</span>
               </label>
               <div className="relative">
@@ -289,58 +275,58 @@ export default function EditProfilePage() {
               {usernameCheck === "available" && <p className="text-xs text-green-500 mt-1">Username available!</p>}
               {usernameCheck === "taken" && <p className="text-xs text-red-500 mt-1">Username already taken</p>}
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
                   First Name <Lock className="w-3 h-3 text-charcoal-400" />
                 </label>
                 <Input name="firstName" value={formData.firstName || ""} disabled className="opacity-60 cursor-not-allowed" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
                   Last Name <Lock className="w-3 h-3 text-charcoal-400" />
                 </label>
                 <Input name="lastName" value={formData.lastName || ""} disabled className="opacity-60 cursor-not-allowed" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
                 Date of Birth <Lock className="w-3 h-3 text-charcoal-400" />
               </label>
               <Input name="dateOfBirth" type="date" value={formData.dateOfBirth || ""} disabled className="opacity-60 cursor-not-allowed" />
               <p className="text-xs text-charcoal-400 mt-1">Date of birth cannot be changed after registration.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide flex items-center gap-1.5">
                 Gender <Lock className="w-3 h-3 text-charcoal-400" />
               </label>
-              <select name="gender" value={formData.gender || "male"} disabled className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl opacity-60 cursor-not-allowed">
+              <select name="gender" value={formData.gender || "male"} disabled className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select opacity-60 cursor-not-allowed text-sm sm:text-base">
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
               <p className="text-xs text-charcoal-400 mt-1">Gender is permanent and cannot be changed after registration.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Nationality</label>
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Nationality</label>
               <Input name="nationality" value={formData.nationality || ""} onChange={handleChange} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Country</label>
+                <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Country</label>
                 <Input name="country" value={formData.country || ""} onChange={handleChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">City</label>
+                <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">City</label>
                 <Input name="city" value={formData.city || ""} onChange={handleChange} />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Height (cm)</label>
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Height (cm)</label>
               <Input name="height" type="number" value={formData.height || ""} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Weight (kg)</label>
-              <select name="weight" value={formData.weight || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Weight (kg)</label>
+              <select name="weight" value={formData.weight || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="">Select weight range</option>
                 <option value="below_40">Below 40</option>
                 <option value="41_50">41 - 50</option>
@@ -351,8 +337,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Appearance (Skin Color)</label>
-              <select name="appearance" value={formData.appearance || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Appearance (Skin Color)</label>
+              <select name="appearance" value={formData.appearance || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="">Select appearance</option>
                 <option value="light">Light</option>
                 <option value="reddish_brown">Reddish Brown</option>
@@ -361,8 +347,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Marital Status</label>
-              <select name="maritalStatus" value={formData.maritalStatus || "single_never"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Marital Status</label>
+              <select name="maritalStatus" value={formData.maritalStatus || "single_never"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="single_never">Single (Virgin)</option>
                 <option value="single_previous">Single (had relationship before)</option>
                 {formData.gender === "male" && <option value="married">Married</option>}
@@ -371,16 +357,16 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Children Status</label>
-              <select name="childrenStatus" value={formData.childrenStatus || "none"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Children Status</label>
+              <select name="childrenStatus" value={formData.childrenStatus || "none"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="none">None</option>
                 <option value="living_with_me">Living with me</option>
                 <option value="not_living_with_me">Not living with me</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Children Count</label>
-              <select name="childrenCount" value={formData.childrenCount || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Children Count</label>
+              <select name="childrenCount" value={formData.childrenCount || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="">Select</option>
                 <option value="0">0</option>
                 <option value="1">1</option>
@@ -391,8 +377,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Children Custody</label>
-              <select name="childrenCustody" value={formData.childrenCustody || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Children Custody</label>
+              <select name="childrenCustody" value={formData.childrenCustody || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="">Select</option>
                 <option value="full_custody">Full Custody</option>
                 <option value="shared_custody">Shared Custody</option>
@@ -404,10 +390,10 @@ export default function EditProfilePage() {
       case "religious":
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Religious Information</h3>
+            <h3 className="text-base font-display font-bold text-charcoal-900 dark:text-white mb-4 pb-2 border-b border-charcoal-100 dark:border-charcoal-700">Religious Information</h3>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Religious Commitment</label>
-              <select name="religiousCommitment" value={formData.religiousCommitment || "practicing"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Religious Commitment</label>
+              <select name="religiousCommitment" value={formData.religiousCommitment || "practicing"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="practicing">Practicing</option>
                 <option value="moderately_practicing">Moderately Practicing</option>
                 <option value="traditional">Traditional</option>
@@ -415,8 +401,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Prayer Habits</label>
-              <select name="prayerHabits" value={formData.prayerHabits || "always"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Prayer Habits</label>
+              <select name="prayerHabits" value={formData.prayerHabits || "always"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="always">Always (5 times)</option>
                 <option value="usually">Usually</option>
                 <option value="sometimes">Sometimes</option>
@@ -424,8 +410,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Quran Reading Frequency</label>
-              <select name="quranReadingFrequency" value={formData.quranReadingFrequency || "daily"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Quran Reading Frequency</label>
+              <select name="quranReadingFrequency" value={formData.quranReadingFrequency || "daily"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
@@ -433,8 +419,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Islamic Classes Attendance</label>
-              <select name="islamicClassesAttendance" value={formData.islamicClassesAttendance || "sometimes"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Islamic Classes Attendance</label>
+              <select name="islamicClassesAttendance" value={formData.islamicClassesAttendance || "sometimes"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="regularly">Regularly</option>
                 <option value="sometimes">Sometimes</option>
                 <option value="rarely">Rarely</option>
@@ -442,8 +428,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Islamic Tradition</label>
-              <select name="islamicTradition" value={formData.islamicTradition || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Islamic Tradition</label>
+              <select name="islamicTradition" value={formData.islamicTradition || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="">Select</option>
                 <option value="sunni">Sunni</option>
                 <option value="salafi">Salafi</option>
@@ -453,13 +439,13 @@ export default function EditProfilePage() {
             </div>
             {formData.islamicTradition === "other" && (
               <div>
-                <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Other Tradition (specify)</label>
+                <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Other Tradition (specify)</label>
                 <Input name="islamicTraditionOther" value={formData.islamicTraditionOther || ""} onChange={handleChange} />
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Preferred Religious Commitment in Spouse</label>
-              <select name="preferredReligiousCommitment" value={formData.preferredReligiousCommitment || "practicing"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Preferred Religious Commitment in Spouse</label>
+              <select name="preferredReligiousCommitment" value={formData.preferredReligiousCommitment || "practicing"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="practicing">Practicing</option>
                 <option value="moderately_practicing">Moderately Practicing</option>
                 <option value="traditional">Traditional</option>
@@ -471,10 +457,10 @@ export default function EditProfilePage() {
       case "education":
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Education & Career</h3>
+            <h3 className="text-base font-display font-bold text-charcoal-900 dark:text-white mb-4 pb-2 border-b border-charcoal-100 dark:border-charcoal-700">Education & Career</h3>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Highest Education Level</label>
-              <select name="educationLevel" value={formData.educationLevel || "bachelor"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Highest Education Level</label>
+              <select name="educationLevel" value={formData.educationLevel || "bachelor"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="high_school">High School</option>
                 <option value="diploma">Diploma</option>
                 <option value="bachelor">Bachelor's Degree</option>
@@ -484,12 +470,12 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Occupation</label>
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Occupation</label>
               <Input name="occupation" value={formData.occupation || ""} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Employment Status</label>
-              <select name="employmentStatus" value={formData.employmentStatus || "employed"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Employment Status</label>
+              <select name="employmentStatus" value={formData.employmentStatus || "employed"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="employed">Employed</option>
                 <option value="self_employed">Self-Employed</option>
                 <option value="student">Student</option>
@@ -498,8 +484,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Monthly Income Range (Optional)</label>
-              <select name="monthlyIncomeRange" value={formData.monthlyIncomeRange || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Monthly Income Range (Optional)</label>
+              <select name="monthlyIncomeRange" value={formData.monthlyIncomeRange || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="">Select</option>
                 <option value="below_5000">Below 5,000 ETB</option>
                 <option value="5000_10000">5,000 - 10,000 ETB</option>
@@ -513,18 +499,18 @@ export default function EditProfilePage() {
       case "intentions":
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Marriage Intentions</h3>
+            <h3 className="text-base font-display font-bold text-charcoal-900 dark:text-white mb-4 pb-2 border-b border-charcoal-100 dark:border-charcoal-700">Marriage Intentions</h3>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Reason for Joining</label>
-              <select name="reasonForJoining" value={formData.reasonForJoining || "seeking_marriage"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Reason for Joining</label>
+              <select name="reasonForJoining" value={formData.reasonForJoining || "seeking_marriage"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="seeking_marriage">Seeking Marriage</option>
                 <option value="family_assisted">Family-Assisted</option>
                 <option value="exploring">Exploring Options</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Desired Marriage Timeline</label>
-              <select name="desiredMarriageTimeline" value={formData.desiredMarriageTimeline || "1_year"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Desired Marriage Timeline</label>
+              <select name="desiredMarriageTimeline" value={formData.desiredMarriageTimeline || "1_year"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="asap">As soon as possible</option>
                 <option value="6_months">Within 6 months</option>
                 <option value="1_year">Within 1 year</option>
@@ -532,8 +518,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Children Preference</label>
-              <select name="childrenPreference" value={formData.childrenPreference || "yes"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Children Preference</label>
+              <select name="childrenPreference" value={formData.childrenPreference || "yes"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="yes">Yes, want children</option>
                 <option value="no">No, don't want children</option>
                 <option value="maybe">Maybe / Undecided</option>
@@ -544,18 +530,18 @@ export default function EditProfilePage() {
       case "family":
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Family Background</h3>
+            <h3 className="text-base font-display font-bold text-charcoal-900 dark:text-white mb-4 pb-2 border-b border-charcoal-100 dark:border-charcoal-700">Family Background</h3>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Ethnic Background (Optional)</label>
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Ethnic Background (Optional)</label>
               <Input name="ethnicBackground" value={formData.ethnicBackground || ""} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Mother Tongue</label>
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Mother Tongue</label>
               <Input name="motherTongue" value={formData.motherTongue || ""} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Family Involvement Preference</label>
-              <select name="familyInvolvement" value={formData.familyInvolvement || "moderate"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Family Involvement Preference</label>
+              <select name="familyInvolvement" value={formData.familyInvolvement || "moderate"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="high">Highly Involved</option>
                 <option value="moderate">Moderate</option>
                 <option value="minimal">Minimal</option>
@@ -566,10 +552,10 @@ export default function EditProfilePage() {
       case "lifestyle":
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Lifestyle</h3>
+            <h3 className="text-base font-display font-bold text-charcoal-900 dark:text-white mb-4 pb-2 border-b border-charcoal-100 dark:border-charcoal-700">Lifestyle</h3>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Smoking Habits</label>
-              <select name="smokingHabits" value={formData.smokingHabits || "never"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Smoking Habits</label>
+              <select name="smokingHabits" value={formData.smokingHabits || "never"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="never">Never</option>
                 <option value="occasionally">Occasionally</option>
                 <option value="regularly">Regularly</option>
@@ -577,16 +563,16 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Khat Usage</label>
-              <select name="khatUsage" value={formData.khatUsage || "never"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Khat Usage</label>
+              <select name="khatUsage" value={formData.khatUsage || "never"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="never">Never</option>
                 <option value="occasionally">Occasionally</option>
                 <option value="regularly">Regularly</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Exercise Habits</label>
-              <select name="exerciseHabits" value={formData.exerciseHabits || "weekly"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Exercise Habits</label>
+              <select name="exerciseHabits" value={formData.exerciseHabits || "weekly"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="occasionally">Occasionally</option>
@@ -594,8 +580,8 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Living Preference After Marriage</label>
-              <select name="livingPreference" value={formData.livingPreference || "independent"} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Living Preference After Marriage</label>
+              <select name="livingPreference" value={formData.livingPreference || "independent"} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
                 <option value="independent">Independent</option>
                 <option value="with_family">With Family</option>
                 <option value="flexible">Flexible</option>
@@ -606,29 +592,29 @@ export default function EditProfilePage() {
       case "personality":
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Personality & Interests</h3>
+            <h3 className="text-base font-display font-bold text-charcoal-900 dark:text-white mb-4 pb-2 border-b border-charcoal-100 dark:border-charcoal-700">Personality & Interests</h3>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Self Description</label>
-              <textarea name="selfDescription" rows={4} value={formData.selfDescription || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none" />
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Self Description</label>
+              <textarea name="selfDescription" rows={4} value={formData.selfDescription || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 resize-none transition-all" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Qualities (select all that apply)</label>
-              <div className="grid grid-cols-2 gap-2">
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Qualities (select all that apply)</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {["Honest", "Patient", "Caring", "Respectful", "Kind", "Generous", "Humble", "Ambitious"].map((quality) => (
-                  <label key={quality} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-charcoal-200 dark:border-charcoal-700 cursor-pointer hover:border-accent">
-                    <input type="checkbox" name="qualities" value={quality.toLowerCase()} checked={(formData.qualities || []).includes(quality.toLowerCase())} onChange={handleChange} className="rounded" />
-                    <span className="text-sm">{quality}</span>
+                  <label key={quality} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-[#E9E9E9] dark:border-charcoal-700 cursor-pointer hover:border-accent hover:bg-accent/5 dark:hover:bg-accent/10 transition-all">
+                    <input type="checkbox" name="qualities" value={quality.toLowerCase()} checked={(formData.qualities || []).includes(quality.toLowerCase())} onChange={handleChange} className="rounded border-charcoal-300 text-accent focus:ring-accent/20" />
+                    <span className="text-xs sm:text-sm font-medium">{quality}</span>
                   </label>
                 ))}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Interests & Hobbies</label>
-              <textarea name="interests" rows={3} value={formData.interests || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none" />
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Interests & Hobbies</label>
+              <textarea name="interests" rows={3} value={formData.interests || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 resize-none transition-all" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">Personal Preference</label>
-              <textarea name="personalPreference" rows={3} value={formData.personalPreference || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none" placeholder="Any personal preferences you'd like to share..." />
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Personal Preference</label>
+              <textarea name="personalPreference" rows={3} value={formData.personalPreference || ""} onChange={handleChange} className="w-full px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 resize-none transition-all" placeholder="Any personal preferences you'd like to share..." />
             </div>
           </div>
         );
@@ -639,19 +625,44 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen bg-blur-image">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/profile" className="p-2 hover:bg-charcoal-200 dark:hover:bg-charcoal-700 rounded-lg transition-colors">
+      <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
+        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <Link href="/profile" className="p-2 hover:bg-charcoal-200 dark:hover:bg-charcoal-700 rounded-lg transition-colors flex-shrink-0">
             <ArrowLeft className="w-5 h-5 text-charcoal-600 dark:text-charcoal-400" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white">Edit Profile</h1>
-            <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">Update your profile information</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-display font-bold text-charcoal-900 dark:text-white truncate">Edit Profile</h1>
+            <p className="text-charcoal-500 dark:text-charcoal-400 text-xs sm:text-sm">Update your profile information</p>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
+          {/* Mobile: horizontal scrollable section tabs */}
+          <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            <div className="flex gap-2.5 pb-3 pt-1 min-w-max">
+              {sections.map((section) => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl whitespace-nowrap transition-all duration-200 active:scale-95 ${
+                      activeSection === section.id
+                        ? "bg-gradient-to-r from-accent to-accent-dark text-white shadow-md shadow-accent/30"
+                        : "text-charcoal-500 dark:text-charcoal-400 bg-white dark:bg-charcoal-800 border border-charcoal-200 dark:border-charcoal-700"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${activeSection === section.id ? "text-white" : "text-charcoal-400 dark:text-charcoal-500"}`} />
+                    <span className="text-sm font-semibold">{section.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Desktop: sidebar nav */}
+          <div className="hidden lg:block lg:col-span-1">
             <Card>
               <nav className="space-y-1">
                 {sections.map((section) => {
@@ -660,38 +671,15 @@ export default function EditProfilePage() {
                     <button
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                        activeSection === section.id
-                          ? "bg-accent text-white"
-                          : "text-charcoal-600 dark:text-charcoal-400 hover:bg-charcoal-100 dark:hover:bg-charcoal-700"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeSection === section.id ? "bg-gradient-to-r from-accent to-accent-dark text-white shadow-md shadow-accent/30" : "text-charcoal-600 dark:text-charcoal-400 hover:bg-charcoal-100 dark:hover:bg-charcoal-700"}`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{section.label}</span>
-                      {activeSection === section.id && <ChevronRight className="w-4 h-4 ml-auto" />}
+                      <Icon className={`w-4 h-4 ${activeSection === section.id ? "text-white" : "text-charcoal-400 dark:text-charcoal-500"}`} />
+                      <span className="text-sm font-semibold">{section.label}</span>
+                      {activeSection === section.id && <ChevronRight className="w-4 h-4 ml-auto text-white" />}
                     </button>
                   );
                 })}
               </nav>
-            </Card>
-
-            <Card className="mt-4">
-              <h3 className="font-semibold text-charcoal-900 dark:text-white mb-4">Profile Photo</h3>
-              <div className="flex flex-col items-center gap-3">
-                {user?.photos?.[0] ? (
-                  <div className="w-20 h-20 rounded-full overflow-hidden">
-                    <img src={mediaUrl(user.photos[0])} alt="Profile" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center text-white text-2xl font-bold">
-                  {[formData.firstName, formData.lastName].filter(Boolean).map((n) => n[0]).join("") || "U"}
-                </div>
-                )}
-                <Button variant="outline" size="sm" className="w-full" onClick={handlePhotoUpload}>
-                  <Camera className="w-4 h-4 mr-2" />
-                  Change Photo
-                </Button>
-              </div>
             </Card>
           </div>
 
@@ -701,21 +689,22 @@ export default function EditProfilePage() {
                 {renderSection()}
               </div>
 
-              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-charcoal-200 dark:border-charcoal-700">
-                <Link href="/profile">
-                  <Button variant="ghost">Cancel</Button>
+              <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-charcoal-100 dark:border-charcoal-700">
+                <Link href="/profile" className="sm:contents">
+                  <Button variant="ghost" className="w-full sm:w-auto rounded-xl">Cancel</Button>
                 </Link>
-                <Button onClick={handleSave} loading={isSaving}>
+                <Button onClick={handleSave} loading={isSaving} className="w-full sm:w-auto rounded-xl shadow-md hover:shadow-lg transition-all">
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
                 </Button>
-                <Button onClick={handleCompleteProfile} loading={isCompleting} variant="primary">
+                <Button onClick={handleCompleteProfile} loading={isCompleting} variant="primary" className="w-full sm:w-auto rounded-xl shadow-md shadow-accent/20 hover:shadow-lg hover:shadow-accent/30 transition-all">
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Mark as Complete
                 </Button>
               </div>
             </Card>
           </div>
+        </div>
         </div>
       </div>
     </div>

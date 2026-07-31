@@ -145,7 +145,7 @@ function HeroSection() {
   const heroBadges = [t("home.heroBadge1"), t("home.heroBadge2"), t("home.heroBadge3")];
 
   return (
-    <section ref={ref} className="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden bg-charcoal-900">
+    <section ref={ref} className="relative h-screen min-h-[700px] flex items-center justify-center pt-16 md:pt-20 overflow-hidden bg-charcoal-900">
       <div className="absolute inset-0 overflow-hidden">
         <Image src="/images/hero-mosque.svg" alt="" fill sizes="100vw" className="object-cover opacity-70" priority />
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal-900/50 via-charcoal-900/30 to-charcoal-900/60" />
@@ -197,14 +197,14 @@ function HeroSection() {
           </span>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-cursive font-bold text-white leading-[1.1] mb-6">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-cursive font-bold text-white leading-[1.15] mb-4 sm:mb-6">
           {t("home.heroTitle")}{" "}
           <span className="block mt-2">
             <HighlightText text={t("home.heroTitleLine2", { highlight })} highlight={highlight} />
           </span>
         </h1>
 
-        <p className="text-xl md:text-2xl text-charcoal-200 max-w-2xl mx-auto mb-8 leading-relaxed font-script">
+        <p className="text-lg sm:text-xl md:text-2xl text-charcoal-200 max-w-2xl mx-auto mb-6 sm:mb-8 leading-relaxed font-script">
           {t("home.heroDesc")}
         </p>
 

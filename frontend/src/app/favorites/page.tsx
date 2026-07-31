@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Heart, MapPin, Briefcase, X, Crown, Gem } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button, Badge, VerifiedBadge, IslamicPatternBackground } from "@/components/common";
 import { mediaUrl, cn } from "@/lib/utils";
 import { useMatchStore } from "@/store/matches";
@@ -17,7 +16,6 @@ export default function FavoritesPage() {
 
   return (
     <>
-      <DashboardSidebar />
       <IslamicPatternBackground>
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8">

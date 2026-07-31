@@ -9,6 +9,7 @@ import { I18nProvider } from "@/context/I18nContext";
 import { ToastProvider, NetworkBanner } from "@/components/common";
 import { TwoFactorPrompt } from "@/components/auth/TwoFactorPrompt";
 import { ThemeInit } from "@/components/ThemeInit";
+import { AppShell } from "@/components/layout/AppShell";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const nektar = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-nektar", display: "swap" });
@@ -86,7 +87,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <RouteGuard>
             <I18nProvider>
               <SocketProvider>
-                {children}
+                <AppShell>
+                  {children}
+                </AppShell>
                 <TwoFactorPrompt />
               </SocketProvider>
             </I18nProvider>

@@ -608,7 +608,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </main>
       </div>
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Nav — priority-based 5 items */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t safe-area-bottom"
         style={{
@@ -618,55 +618,65 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           borderColor: d ? s.sidebarBorder : "#d0d3d6",
         }}
       >
-        <div className="flex items-center justify-around px-2 py-1 overflow-x-auto">
-          {filteredNavItems.slice(0, 5).map((link) => {
-            const active = isActive(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl"
-                style={{
-                  color: active
-                    ? d
-                      ? s.gold
-                      : "#1a1a2e"
-                    : d
-                    ? s.textMuted
-                    : "#555",
-                }}
-              >
-                {active && (
-                  <div
-                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full"
-                    style={{
-                      background: d
-                        ? `linear-gradient(90deg, ${s.gold}, ${s.goldLight})`
-                        : "#1a1a2e",
-                    }}
-                  />
-                )}
-                <div className="relative">
-                  <link.icon className="w-5 h-5" />
-                  {badgeForHref(link.href) !== null && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold px-0.5 leading-none"
+        <div className="flex items-center justify-around px-1 py-1">
+          {(() => {
+            const mobilePriority = [
+              { href: "/admin", icon: LayoutDashboard, labelKey: "admin.nav.dashboard", perm: "overview.dashboard" },
+              { href: "/admin/users", icon: Users, labelKey: "admin.nav.users", perm: "users.view" },
+              { href: "/admin/verifications", icon: ShieldCheck, labelKey: "admin.nav.verifications", perm: "verifications.view" },
+              { href: "/admin/complaints", icon: FileText, labelKey: "admin.nav.complaints", perm: "complaints.view" },
+              { href: "/admin/books", icon: BookOpen, labelKey: "admin.nav.books", perm: "books.view" },
+            ];
+            const mobileItems = mobilePriority.filter((i) => hasPerm(i.perm));
+            return mobileItems.map((link) => {
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl"
+                  style={{
+                    color: active
+                      ? d
+                        ? s.gold
+                        : "#1a1a2e"
+                      : d
+                      ? s.textMuted
+                      : "#555",
+                  }}
+                >
+                  {active && (
+                    <div
+                      className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full"
                       style={{
                         background: d
-                          ? "linear-gradient(135deg, #ef4444, #dc2626)"
-                          : "#dc2626",
-                        color: "#fff",
-                        boxShadow: d
-                          ? "0 2px 4px rgba(239,68,68,0.4)"
-                          : "0 1px 2px rgba(0,0,0,0.2)",
-                      }}>
-                      {badgeForHref(link.href)}
-                    </span>
+                          ? `linear-gradient(90deg, ${s.gold}, ${s.goldLight})`
+                          : "#1a1a2e",
+                      }}
+                    />
                   )}
-                </div>
-                <span className="text-[10px] font-medium">{t(link.labelKey)}</span>
-              </Link>
-            );
-          })}
+                  <div className="relative">
+                    <link.icon className="w-5 h-5" />
+                    {badgeForHref(link.href) !== null && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold px-0.5 leading-none"
+                        style={{
+                          background: d
+                            ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                            : "#dc2626",
+                          color: "#fff",
+                          boxShadow: d
+                            ? "0 2px 4px rgba(239,68,68,0.4)"
+                            : "0 1px 2px rgba(0,0,0,0.2)",
+                        }}>
+                        {badgeForHref(link.href)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-medium">{t(link.labelKey)}</span>
+                </Link>
+              );
+            });
+          })()}
         </div>
       </nav>
     </div>

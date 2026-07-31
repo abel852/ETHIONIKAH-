@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, Heart, MessageCircle, MapPin, Briefcase, BookOpen, Users, Sparkles, RefreshCw, Crown, Gem, CheckCircle2, AlertTriangle, MessageSquare } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
+import { X, Heart, MessageCircle, MapPin, Briefcase, BookOpen, Users, Sparkles, RefreshCw, Crown, Gem, CheckCircle2, AlertTriangle, MessageSquare, Send, Loader2 } from "lucide-react";
 import { Button, VerifiedBadge, IslamicPatternBackground } from "@/components/common";
-import { mediaUrl } from "@/lib/utils";
+import { mediaUrl, getInitials } from "@/lib/utils";
 import { useMatchStore } from "@/store/matches";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/context/I18nContext";
 import { matchService } from "@/services/matches";
+import { conversationRequestService } from "@/services/conversationRequest";
 import api from "@/lib/api";
 
 function SwipeCard({ profile, onSwipe, isTop, zIndex, chatCount }: {
@@ -27,7 +27,7 @@ function SwipeCard({ profile, onSwipe, isTop, zIndex, chatCount }: {
   const [exitDir, setExitDir] = useState<"left" | "right" | null>(null);
   const startPos = useRef({ x: 0, y: 0 });
 
-  const initials = [profile.firstName, profile.lastName].filter(Boolean).map((n: string) => n[0]).join("") || "U";
+  const initials = getInitials(profile.firstName, profile.lastName);
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || t("matches.memberFallback");
 
   const isGold = profile.membershipPlan === "gold";
@@ -329,11 +329,17 @@ export default function MatchesPage() {
   const [needsProfile, setNeedsProfile] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [chatCounts, setChatCounts] = useState<Record<string, number>>({});
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [requestTarget, setRequestTarget] = useState<any>(null);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [requestToast, setRequestToast] = useState<string | null>(null);
+  const [requestStatusMap, setRequestStatusMap] = useState<Record<string, string>>({});
 
   const loadMatches = useCallback(async (page = 1, silent = false) => {
     if (page === 1 && !silent) setIsLoading(true);
     try {
-      const { data } = await api.get("/matches/suggested", { params: { page, limit: 12 } });
+      const { data } = await api.get("/matches/suggested", { params: { page, limit: 12 }, _noToast: true } as any);
       const matches = data.matches || [];
       setProfiles(page === 1 ? matches : (prev) => [...prev, ...matches]);
       setNeedsProfile(data.needsProfile || false);
@@ -344,11 +350,13 @@ export default function MatchesPage() {
           setCurrentIndex((prev) => prev >= matches.length ? 0 : prev);
         }
       }
-      matches.forEach((m: any) => {
-        api.get(`/messages/active-partners/${m.id}`, { _noToast: true } as any)
-          .then(({ data }) => setChatCounts((prev) => ({ ...prev, [m.id]: data.count || 0 })))
-          .catch(() => {});
-      });
+      if (page === 1 && !silent) {
+        matches.forEach((m: any) => {
+          api.get(`/messages/active-partners/${m.id}`, { _noToast: true } as any)
+            .then(({ data }) => setChatCounts((prev) => ({ ...prev, [m.id]: data.count || 0 })))
+            .catch(() => {});
+        });
+      }
     } catch {
       // silently ignore - auto-reload will retry
     } finally {
@@ -364,11 +372,11 @@ export default function MatchesPage() {
     }).catch(() => {});
   }, [loadMatches]);
 
-  // Auto-reload every 5 seconds
+  // Auto-reload every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       if (!document.hidden) loadMatches(1, true);
-    }, 5000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [loadMatches]);
 
@@ -395,15 +403,31 @@ export default function MatchesPage() {
     }
   };
 
-  const handleMessage = (profile: any) => {
+  const handleStartConversation = (profile: any) => {
     if (user?.verificationStatus !== "verified") {
       router.push("/verification");
       return;
     }
-    const name = encodeURIComponent(`${profile.firstName} ${profile.lastName}`);
-    const params = new URLSearchParams({ user: profile.id, name });
-    if (profile.username) params.set("username", profile.username);
-    router.push(`/messages?${params}`);
+    setRequestTarget(profile);
+    setRequestMessage("");
+    setShowRequestDialog(true);
+  };
+
+  const sendConversationRequest = async () => {
+    if (!requestTarget) return;
+    setSendingRequest(true);
+    try {
+      await conversationRequestService.create(requestTarget.id, requestMessage || undefined);
+      setRequestStatusMap((prev) => ({ ...prev, [requestTarget.id]: "pending" }));
+      setRequestToast("Conversation request sent!");
+      setShowRequestDialog(false);
+      setRequestMessage("");
+    } catch (err: any) {
+      setRequestToast(err?.response?.data?.error || "Failed to send request");
+    } finally {
+      setSendingRequest(false);
+      setTimeout(() => setRequestToast(null), 4000);
+    }
   };
 
   const handleRefresh = useCallback(() => {
@@ -434,7 +458,6 @@ export default function MatchesPage() {
 
   return (
     <>
-      <DashboardSidebar />
       <IslamicPatternBackground showBismillah>
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
@@ -552,11 +575,11 @@ export default function MatchesPage() {
                   <X className="w-7 h-7" />
                 </button>
                 <button
-                  onClick={() => handleMessage(currentProfile)}
+                  onClick={() => handleStartConversation(currentProfile)}
                   disabled={!currentProfile}
                   className="w-12 h-12 rounded-full bg-white dark:bg-charcoal-800 shadow-lg border-2 border-amber-200 dark:border-amber-800/50 flex items-center justify-center text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:scale-110 transition-all disabled:opacity-40"
                 >
-                  <MessageCircle className="w-5 h-5" />
+                  <Send className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => handleSwipe("right", currentProfile?.id)}
@@ -580,6 +603,55 @@ export default function MatchesPage() {
 
         </main>
       </div>
+
+      {/* Conversation Request Dialog */}
+      {showRequestDialog && requestTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowRequestDialog(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-sm bg-white dark:bg-charcoal-800 rounded-2xl shadow-2xl border border-charcoal-200 dark:border-charcoal-700 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                <Send className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-lg font-bold text-charcoal-900 dark:text-white mb-2">Start Conversation</h3>
+              <p className="text-sm text-charcoal-500 dark:text-charcoal-400">
+                Send a conversation request to <span className="font-semibold text-accent">{[requestTarget.firstName, requestTarget.lastName].filter(Boolean).join(" ")}</span>.
+              </p>
+            </div>
+            <textarea
+              value={requestMessage}
+              onChange={(e) => setRequestMessage(e.target.value)}
+              placeholder="Add an optional message..."
+              rows={3}
+              className="w-full text-sm bg-charcoal-50 dark:bg-charcoal-900 border border-charcoal-200 dark:border-charcoal-700 rounded-lg px-3 py-2 text-charcoal-900 dark:text-white placeholder-charcoal-400 resize-none mb-4 outline-none focus:border-accent/40"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setShowRequestDialog(false); setRequestMessage(""); }}
+                className="px-4 py-2 text-sm font-medium text-charcoal-500 dark:text-charcoal-400 hover:bg-charcoal-100 dark:hover:bg-charcoal-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={sendConversationRequest}
+                disabled={sendingRequest}
+                className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-accent to-accent/80 text-white rounded-lg hover:from-accent/90 hover:to-accent/70 disabled:opacity-50 transition-all flex items-center gap-2"
+              >
+                {sendingRequest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {sendingRequest ? "Sending..." : "Send Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {requestToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-charcoal-900 dark:bg-charcoal-700 text-white text-sm shadow-lg">
+          {requestToast}
+        </div>
+      )}
+
     </IslamicPatternBackground>
     </>
   );

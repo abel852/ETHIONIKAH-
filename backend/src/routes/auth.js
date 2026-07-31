@@ -34,5 +34,6 @@ router.post("/2fa/regenerate-codes", authenticate, twoFactorController.regenerat
 router.post("/2fa/trust-device", authenticate, twoFactorController.trustedDevice);
 router.get("/2fa/lockout-status", authenticate, twoFactorController.checkLockout);
 router.post("/2fa/admin-reset/:id", authenticate, authorize("admin"), twoFactorController.adminReset2FA);
+router.post("/verify-password", authenticate, throttle(5, 60000), authController.verifyPassword);
 
 module.exports = router;

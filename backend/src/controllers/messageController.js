@@ -187,20 +187,16 @@ async function checkAndDeductCredit(senderId, isNew) {
 }
 
 /**
- * Enforce one active conversation at a time for free and Gold users.
- * - Accepted matches bypass the rule.
- * - Platinum subscriptions bypass the rule (polygamy access).
- * - Gold subscriptions do NOT bypass — Gold users need permission for multiple conversations.
- * - Contact credits do NOT bypass the one-conversation rule — they only
- *   allow messaging unmatched users (the credit is consumed per new conversation).
- * - Polygamy: if sender has approved permission from current partner(s), allowed.
- * - Only SENT messages count as active conversations (received don't lock you).
+ * Enforce conversation rules based on ExclusivePartnership (not message history).
+ * - If sender has an ACTIVE ExclusivePartnership with someone else (not the receiver),
+ *   they must have approved ConversationPermission from that partner to message this receiver.
+ * - No message-based partner detection.
+ * - No match bypass, no platinum bypass.
  * Returns { allowed: true } or { allowed: false, error, status }.
  */
 async function checkOneConversationRule(senderId, receiverId) {
   try {
     // Check for denied permission — blocks both directions
-    // If A asked B for permission to talk to C and B denied, neither A nor C can message each other
     const deniedPermission = await prisma.conversationPermission.findFirst({
       where: {
         status: "denied",
@@ -214,24 +210,11 @@ async function checkOneConversationRule(senderId, receiverId) {
       return {
         allowed: false,
         status: 403,
-        error: "You cannot message this user because the conversation permission was denied by the current partner.",
+        error: "You cannot message this user because the conversation permission was denied by your exclusive partner.",
       };
     }
 
-    // Check if this is an existing conversation (prior messages between the two)
-    const priorMessages = await prisma.message.count({
-      where: {
-        OR: [
-          { senderId, receiverId },
-          { senderId: receiverId, receiverId: senderId },
-        ],
-      },
-    });
-    const isNewConversation = priorMessages === 0;
-
-    // If sender has ANY pending permission request, they can ONLY talk to
-    // the partner they requested permission from. All other conversations
-    // (new AND existing) are blocked until the request is resolved.
+    // Check if sender has ANY pending permission request
     const anyPendingPermission = await prisma.conversationPermission.findFirst({
       where: {
         requesterId: senderId,
@@ -239,95 +222,57 @@ async function checkOneConversationRule(senderId, receiverId) {
       },
     });
     if (anyPendingPermission) {
-      // Only allowed to message the partner (the person who needs to approve/deny)
+      // Only allowed to message the partner they requested permission from
       if (receiverId !== anyPendingPermission.partnerId) {
         return {
           allowed: false,
           status: 403,
-          error: "You have a pending permission request. You can only message your current partner until they approve or deny your request to talk to someone new.",
+          error: "You have a pending permission request. You can only message your exclusive partner until they approve or deny your request to talk to someone new.",
         };
       }
-      // Messaging the partner — allowed
       return { allowed: true };
     }
 
-    // Accepted match — always allowed (but only for existing conversations or when no pending permission)
-    const match = await prisma.match.findFirst({
+    // Check if sender has an ACTIVE ExclusivePartnership
+    const activePartnership = await prisma.exclusivePartnership.findFirst({
       where: {
         OR: [
-          { userId: senderId, matchedUserId: receiverId },
-          { userId: receiverId, matchedUserId: senderId },
+          { userAId: senderId, status: "active" },
+          { userBId: senderId, status: "active" },
         ],
-        status: "accepted",
       },
     });
-    if (match) return { allowed: true };
 
-    // Platinum subscription — bypass one-conversation rule (polygamy access)
-    // Gold members still need permission for multiple conversations
-    const senderSubscription = await prisma.subscription.findFirst({
-      where: {
-        userId: senderId,
-        status: "active",
-        planType: "platinum",
-        endDate: { gte: new Date() },
-      },
-      select: { planType: true },
-    });
-    if (senderSubscription) {
-      const receiver = await prisma.user.findUnique({
-        where: { id: receiverId },
-        select: { isVerified: true },
-      });
-      if (!receiver?.isVerified) {
-        return { allowed: false, status: 403, error: "You can only message verified users." };
+    if (activePartnership) {
+      const partnerId = activePartnership.userAId === senderId
+        ? activePartnership.userBId
+        : activePartnership.userAId;
+
+      // If messaging the partner directly — allowed
+      if (receiverId === partnerId) {
+        return { allowed: true };
       }
-      return { allowed: true };
-    }
 
-    // Only count SENT (non-deleted) messages as active conversations.
-    // Received messages from others don't lock the user — if two people
-    // message someone with no conversations, that person can freely reply
-    // to ONE of them. After that, talking to anyone else requires
-    // permission or deleting the current conversation.
-    const sentMessages = await prisma.message.findMany({
-      where: {
-        senderId: senderId,
-        receiverId: { not: receiverId },
-        deletedForSender: false,
-      },
-      select: { receiverId: true },
-      distinct: ["receiverId"],
-    });
-
-    const existingPartners = sentMessages.map((m) => m.receiverId);
-
-    if (existingPartners.length > 0) {
-      // Check if sender has approved polygamy permission from current partner(s)
-      const approvedPermissions = await prisma.conversationPermission.findMany({
+      // Messaging someone else — check for approved permission
+      const approvedPermission = await prisma.conversationPermission.findFirst({
         where: {
           requesterId: senderId,
           targetUserId: receiverId,
+          partnerId,
           status: "approved",
-          partnerId: { in: existingPartners },
         },
-        select: { partnerId: true },
       });
 
-      const approvedPartnerIds = approvedPermissions.map((p) => p.partnerId);
-      const missingPartners = existingPartners.filter((pid) => !approvedPartnerIds.includes(pid));
-
-      if (missingPartners.length > 0) {
+      if (!approvedPermission) {
         return {
           allowed: false,
           status: 403,
-          error: "You already have an active conversation. To start a new one, you must delete your current conversation, or request permission from your current partner to talk to someone new.",
+          error: "You are currently in an Exclusive Marriage Process. To start a conversation with someone new, you must request permission from your exclusive partner.",
         };
       }
     }
 
-    // No active conversations blocking — but user still needs credits or a match
-    // to message an unmatched user. Credit check happens in sendMessage.
+    // No active partnership blocking — allowed
     return { allowed: true };
   } catch {
     return { allowed: false, status: 500, error: "Unable to verify conversation status. Please try again." };
@@ -360,18 +305,14 @@ const sendMessage = async (req, res) => {
       if (!replyToMsg) return res.status(400).json({ error: "Message to reply to not found" });
     }
 
-    // One active conversation rule
+    // One active conversation rule (based on ExclusivePartnership)
     const convCheck = await checkOneConversationRule(senderId, receiverId);
     if (!convCheck.allowed) {
       return res.status(convCheck.status).json({ error: convCheck.error });
     }
 
-    // Credit check: only deduct for brand-new conversations
-    const isNew = await isNewConversation(senderId, receiverId);
-    const creditResult = await checkAndDeductCredit(senderId, isNew);
-    if (!creditResult.ok) {
-      return res.status(creditResult.status).json({ error: creditResult.error });
-    }
+    // Credits are now deducted when a ConversationRequest is accepted, not per message.
+    // No credit check needed here.
 
     const message = await prisma.message.create({
       data: {
@@ -389,7 +330,7 @@ const sendMessage = async (req, res) => {
 
     emitNewMessage(message, receiverId);
 
-    res.status(201).json({ message, creditsUsed: creditResult.creditsUsed, creditsRemaining: creditResult.creditsRemaining });
+    res.status(201).json({ message });
   } catch (error) {
     console.error("Send message error:", error);
     res.status(500).json({ error: "Failed to send message" });
@@ -875,7 +816,7 @@ const sendImage = async (req, res) => {
     }
 
     let imageUrl;
-    if (isR2Enabled) {
+    if (isR2Enabled()) {
       imageUrl = await uploadMulterFile(req.file, "chat-images");
     } else {
       imageUrl = "uploads/chat-images/" + req.file.filename;
@@ -935,7 +876,7 @@ const sendFile = async (req, res) => {
     }
 
     let fileUrl;
-    if (isR2Enabled) {
+    if (isR2Enabled()) {
       fileUrl = await uploadMulterFile(req.file, "chat-files");
     } else {
       fileUrl = "uploads/chat-files/" + req.file.filename;

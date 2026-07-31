@@ -230,7 +230,7 @@ const uploadPhoto = async (req, res) => {
 
     let photoUrl;
 
-    if (isR2Enabled) {
+    if (isR2Enabled()) {
       photoUrl = await uploadMulterFile(req.file, "profile-photos");
     } else {
       photoUrl = `/uploads/${req.file.filename}`;

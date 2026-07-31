@@ -17,7 +17,7 @@ const extractArray = (data: any): Notification[] =>
 
 function hasAuthToken(): boolean {
   if (typeof window === "undefined") return false;
-  return !!sessionStorage.getItem("accessToken");
+  return !!localStorage.getItem("accessToken");
 }
 
 export const useNotificationStore = create<NotificationState>((set) => ({

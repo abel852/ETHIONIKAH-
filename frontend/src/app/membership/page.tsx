@@ -6,7 +6,6 @@ import {
   Copy, Upload, Clock, CheckCircle2, XCircle, Loader2, Wallet as WalletIcon,
   Lock,
 } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button } from "@/components/common";
 import { paymentService } from "@/services/payment";
 import { profileService } from "@/services/profile";
@@ -370,7 +369,6 @@ export default function MembershipPage() {
 
   return (
     <div className="min-h-screen bg-blur-image">
-      <DashboardSidebar />
       <main className="lg:ml-64 pt-14 lg:pt-0 pb-24 lg:pb-8 px-4 lg:px-8 max-w-5xl mx-auto">
         <div className="py-6">
           <div>

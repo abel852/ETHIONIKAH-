@@ -747,7 +747,7 @@ const uploadReceiptFile = async (req, res) => {
       return res.status(400).json({ error: "No receipt file provided" });
     }
     let receiptUrl;
-    if (isR2Enabled) {
+    if (isR2Enabled()) {
       receiptUrl = await uploadMulterFile(req.file, "receipts");
     } else {
       receiptUrl = `/uploads/receipts/${req.file.filename}`;

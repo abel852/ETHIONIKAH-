@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, ArrowLeft, MapPin, Briefcase, MessageCircle } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button, Avatar, VerifiedBadge } from "@/components/common";
 import { matchService } from "@/services/matches";
 import { mediaUrl } from "@/lib/utils";
@@ -23,7 +22,6 @@ export default function LikesReceivedPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-charcoal-50 via-white to-accent/5 dark:from-charcoal-950 dark:via-charcoal-900 dark:to-accent/5">
-      <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
           <div className="mb-6">

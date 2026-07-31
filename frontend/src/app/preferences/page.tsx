@@ -110,15 +110,20 @@ export default function PreferencesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-blur-image flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-blur-image">
+          <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin h-8 w-8 border-2 border-accent border-t-transparent rounded-full" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-blur-image">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4 mb-8">
           <Link href="/profile" className="p-2 hover:bg-charcoal-200 dark:hover:bg-charcoal-700 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5 text-charcoal-600 dark:text-charcoal-400" />
@@ -347,6 +352,7 @@ export default function PreferencesPage() {
             </div>
           </div>
         </Card>
+      </div>
       </div>
     </div>
   );

@@ -13,18 +13,8 @@ const CLIENT_CACHE_TTL = 15000; // 15 seconds
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = sessionStorage.getItem("accessToken");
+    const token = localStorage.getItem("accessToken");
     if (token) config.headers.Authorization = `Bearer ${token}`;
-
-    // Serve from client cache for GET requests (unless explicitly bypassed)
-    if (config.method === "get" && !config._skipCache) {
-      const key = `${config.baseURL}${config.url}`;
-      const entry = clientCache.get(key);
-      if (entry && Date.now() - entry.ts < CLIENT_CACHE_TTL) {
-        // Return cached response as a resolved promise
-        return Promise.resolve({ ...entry.data, __fromClientCache: true });
-      }
-    }
   }
   return config;
 });
@@ -60,8 +50,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       // Session invalidated (tokenVersion mismatch) — don't retry, redirect immediately
       if (error.response?.data?.error?.includes("Session invalidated") || error.response?.data?.error?.includes("Account not found")) {
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("refreshToken");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         if (typeof document !== "undefined") {
           document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -76,18 +66,18 @@ api.interceptors.response.use(
       }
       original._retry = true;
       try {
-        const refreshToken = sessionStorage.getItem("refreshToken");
+        const refreshToken = localStorage.getItem("refreshToken");
         if (!refreshToken) throw new Error("No refresh token");
         const { data } = await axios.post(`${api.defaults.baseURL}/auth/refresh`, { refreshToken });
-        sessionStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("accessToken", data.accessToken);
         if (typeof document !== "undefined") {
           document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`;
         }
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(original);
       } catch {
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("refreshToken");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         if (typeof document !== "undefined") {
           document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -117,8 +107,8 @@ api.interceptors.response.use(
 
     // Catch-all: any 401 that wasn't handled above — redirect to login
     if (status === 401) {
-      sessionStorage.removeItem("accessToken");
-      sessionStorage.removeItem("refreshToken");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
       if (typeof document !== "undefined") {
         document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -146,8 +136,8 @@ api.interceptors.response.use(
         serverMsg?.includes("Insufficient permissions") ||
         error.response.data?.code === "ACCOUNT_DELETED"
       ) {
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("refreshToken");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
         localStorage.removeItem("trustedDeviceToken");
         if (typeof document !== "undefined") {

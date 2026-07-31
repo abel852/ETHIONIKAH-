@@ -15,7 +15,7 @@ const submitVerification = async (req, res) => {
 
     let idDocumentPath, selfiePath;
 
-    if (isR2Enabled) {
+    if (isR2Enabled()) {
       idDocumentPath = await uploadMulterFile(idPhoto, "national-ids");
       selfiePath = await uploadMulterFile(selfiePhoto, "selfies");
     } else {

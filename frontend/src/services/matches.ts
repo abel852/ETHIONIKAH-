@@ -12,7 +12,7 @@ export const matchService = {
   addFavorite: (favoritedUserId: string) => api.post("/matches/favorites", { favoritedUserId }),
   removeFavorite: (favoritedUserId: string) => api.delete(`/matches/favorites/${favoritedUserId}`),
   getLikesReceived: () => api.get("/matches/likes-received"),
-  getLikesSent: () => api.get("/matches/likes-sent"),
+  getLikesSent: () => api.get("/matches/likes-sent", { _noToast: true } as any),
   getVisitors: () => api.get("/matches/visitors"),
   removeInterest: (matchedUserId: string) => api.post("/matches/remove-interest", { matchedUserId }),
 };

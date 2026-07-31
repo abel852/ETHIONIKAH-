@@ -89,6 +89,13 @@ model User {
   permissionRequestsReceived ConversationPermission[] @relation("PermissionPartner")
   permissionTargets          ConversationPermission[] @relation("PermissionTarget")
   bookPurchases              BookPurchase[]
+  conversationRequestsSent     ConversationRequest[]   @relation("ConversationRequester")
+  conversationRequestsReceived ConversationRequest[]   @relation("ConversationReceiver")
+  exclusivePartnershipsA      ExclusivePartnership[]  @relation("PartnershipUserA")
+  exclusivePartnershipsB      ExclusivePartnership[]  @relation("PartnershipUserB")
+  partnershipRequestsSent      ExclusivePartnershipRequest[] @relation("PartnershipRequester")
+  partnershipRequestsReceived  ExclusivePartnershipRequest[] @relation("PartnershipReceiver")
+  waliInvitationsCreated       WaliInvitation[]              @relation("WaliCreatedBy")
 
   @@index([isActive, isVerified, deletedAt])
   @@index([role, isActive])
@@ -147,7 +154,7 @@ model Profile {
   isProfileComplete        Boolean           @default(false) @map("is_profile_complete")
   createdAt                DateTime          @default(now()) @map("created_at")
   updatedAt                DateTime          @updatedAt @map("updated_at")
-  health_info              health_info?
+  healthInfo               HealthInfo?
   user                     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   spousePreference         SpousePreference?
 
@@ -569,7 +576,7 @@ model SystemSetting {
   @@map("system_settings")
 }
 
-model health_info {
+model HealthInfo {
   id                          String   @id @db.Uuid
   profile_id                  String   @unique @db.Uuid
   hiv_status                  String?
@@ -591,7 +598,9 @@ model health_info {
   health_match_preference     String?  @default("any")
   created_at                  DateTime @default(now())
   updated_at                  DateTime
-  profiles                    Profile  @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+  profile                     Profile  @relation(fields: [profile_id], references: [id], onDelete: Cascade)
+
+  @@map("health_info")
 }
 
 model ProfileView {
@@ -671,6 +680,77 @@ model BookPurchase {
 
   @@unique([userId, bookId])
   @@map("book_purchases")
+}
+
+model ConversationRequest {
+  id           String    @id @default(uuid()) @db.Uuid
+  requesterId  String    @map("requester_id") @db.Uuid
+  receiverId   String    @map("receiver_id") @db.Uuid
+  status       String    @default("pending") // pending | accepted | declined | expired
+  message      String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  respondedAt  DateTime? @map("responded_at")
+  requester    User      @relation("ConversationRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver     User      @relation("ConversationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+  @@index([receiverId, status])
+  @@index([requesterId, status])
+  @@map("conversation_requests")
+}
+
+model ExclusivePartnership {
+  id         String    @id @default(uuid()) @db.Uuid
+  userAId    String    @map("user_a_id") @db.Uuid
+  userBId    String    @map("user_b_id") @db.Uuid
+  status     String    @default("pending") // pending | active | ended
+  createdAt  DateTime  @default(now()) @map("created_at")
+  endedAt    DateTime? @map("ended_at")
+  userA      User      @relation("PartnershipUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB      User      @relation("PartnershipUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  waliInvitations WaliInvitation[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId, status])
+  @@index([userBId, status])
+  @@map("exclusive_partnerships")
+}
+
+model ExclusivePartnershipRequest {
+  id           String    @id @default(uuid()) @db.Uuid
+  requesterId  String    @map("requester_id") @db.Uuid
+  receiverId   String    @map("receiver_id") @db.Uuid
+  status       String    @default("pending") // pending | accepted | declined
+  message      String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  respondedAt  DateTime? @map("responded_at")
+  requester    User      @relation("PartnershipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver     User      @relation("PartnershipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+  @@index([receiverId, status])
+  @@map("exclusive_partnership_requests")
+}
+
+model WaliInvitation {
+  id              String    @id @default(uuid()) @db.Uuid
+  partnershipId   String    @map("partnership_id") @db.Uuid
+  createdById     String    @map("created_by_id") @db.Uuid
+  waliName        String    @map("wali_name")
+  relationship    String
+  waliEmail       String    @map("wali_email")
+  secureTokenHash String    @map("secure_token_hash")
+  status          String    @default("pending_approval") // pending_approval | active | revoked | expired | declined
+  expiresAt       DateTime  @map("expires_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  revokedAt       DateTime? @map("revoked_at")
+  lastAccessedAt  DateTime? @map("last_accessed_at")
+  partnership     ExclusivePartnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  createdBy       User      @relation("WaliCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([partnershipId])
+  @@index([secureTokenHash])
+  @@map("wali_invitations")
 }
 
 enum Gender {

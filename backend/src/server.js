@@ -170,6 +170,9 @@ const notificationRoutes = require("./routes/notification");
 const healthRoutes = require("./routes/health");
 const preferencesRoutes = require("./routes/preferences");
 const conversationPermissionRoutes = require("./routes/conversationPermission");
+const conversationRequestRoutes = require("./routes/conversationRequest");
+const exclusivePartnershipRoutes = require("./routes/exclusivePartnership");
+const waliRoutes = require("./routes/wali");
 const backupRoutes = require("./routes/backup");
 const bookRoutes = require("./routes/book");
 require("./utils/cleanup"); // schedules cleanup of old verification images
@@ -203,6 +206,9 @@ app.use("/api/notifications", authedLimiter, notificationRoutes);
 app.use("/api/health", authedLimiter, healthRoutes);
 app.use("/api/users/preferences", authedLimiter, preferencesRoutes);
 app.use("/api/conversation-permissions", authedLimiter, conversationPermissionRoutes);
+app.use("/api/conversation-requests", authedLimiter, conversationRequestRoutes);
+app.use("/api/exclusive-partnerships", authedLimiter, exclusivePartnershipRoutes);
+app.use("/api/wali", authedLimiter, waliRoutes);
 app.use("/api", bookRoutes);
 
 app.get("/api/health", (_req, res) => {
@@ -277,6 +283,14 @@ try {
   initStorageCron();
 } catch (e) {
   console.log("[STORAGE] R2 monitoring not initialized:", e.message);
+}
+
+// Initialize conversation request expiry cron job
+try {
+  const { initConversationRequestExpiryCron } = require("./utils/conversationRequestExpiry");
+  initConversationRequestExpiryCron();
+} catch (e) {
+  console.log("[CONV-EXPIRY] Conversation request expiry not initialized:", e.message);
 }
 
 // ============================================================

@@ -212,6 +212,7 @@ async function sendRenewalReminderEmail(to, firstName, planName, endDate, daysLe
 
 module.exports = {
   sendEmail,
+  emailTemplate,
   sendPasswordResetEmail,
   sendOtpEmail,
   sendNotificationEmail,

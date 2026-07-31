@@ -102,7 +102,8 @@ export default function DashboardSidebar() {
         </div>
       )}
 
-      {/* Mobile Top Bar */}
+      {/* Mobile Top Bar — hidden on messages page for full-screen chat */}
+      {pathname !== "/messages" && (
       <div className={`lg:hidden fixed ${isBanned ? "top-[40px]" : "top-0"} left-0 right-0 z-50 flex items-center justify-between px-4 h-14 bg-white/95 dark:bg-charcoal-900/95 backdrop-blur-xl border-b border-charcoal-100/50 dark:border-charcoal-800`}>
         <div className="flex items-center gap-2">
           <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg shrink-0 border border-accent" />
@@ -128,57 +129,121 @@ export default function DashboardSidebar() {
           {!isBanned && <NotificationBell />}
         </div>
       </div>
+      )}
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Nav — 5 clean items: Matches, Liked, Messages, Books, Profile */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-charcoal-900/95 backdrop-blur-xl border-t border-charcoal-100/50 dark:border-charcoal-800 safe-area-bottom">
-        <div className="flex items-center justify-around px-2 py-1">
-          {mainNav.map((link) => {
-            const isActive = pathname === link.href;
-            const disabled = (link.requiresVerification && !isVerified) || isBanned;
-            return disabled ? (
-              <div key={link.href} className="flex flex-col items-center gap-0.5 py-2 px-3 opacity-40 cursor-not-allowed">
+        <div className="flex items-center justify-around px-1 py-1">
+          {/* Matches */}
+          {!isBanned && (
+            <Link href="/matches" className={cn(
+              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
+              pathname === "/matches" ? "text-accent bg-accent/10" : "text-charcoal-400"
+            )}>
+              {pathname === "/matches" && (
+                <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent" />
+              )}
+              <div className="relative">
+                <Heart className={cn("w-5 h-5", pathname === "/matches" && "text-accent")} fill={pathname === "/matches" ? "#D4AF37" : "none"} />
+                {badgeForHref("/matches") !== null && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold px-0.5 leading-none bg-red-500 text-white shadow-md">
+                    {badgeForHref("/matches")}
+                  </span>
+                )}
+              </div>
+              <span className={cn("text-[10px]", pathname === "/matches" ? "font-bold" : "font-medium")}>{t('nav.matches')}</span>
+            </Link>
+          )}
+
+          {/* Liked / Interests */}
+          {!isBanned && (() => {
+            const likedActive = pathname === "/liked-interest";
+            const likedDisabled = !isVerified;
+            return likedDisabled ? (
+              <div className="flex flex-col items-center gap-0.5 py-2 px-2 opacity-40 cursor-not-allowed">
                 <div className="relative">
-                  <link.icon className="w-5 h-5 text-charcoal-400" />
+                  <Sparkles className="w-5 h-5 text-charcoal-400" />
                   <Lock className="absolute -top-1 -right-1.5 w-2.5 h-2.5 text-charcoal-400" />
                 </div>
-                <span className="text-[10px] text-charcoal-400 font-medium">{link.label}</span>
+                <span className="text-[10px] text-charcoal-400 font-medium">{t('nav.liked')}</span>
               </div>
             ) : (
-              <Link key={link.href} href={link.href} className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-3 relative rounded-xl",
-                isActive ? "text-accent bg-accent/10" : "text-charcoal-400"
+              <Link href="/liked-interest" className={cn(
+                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
+                likedActive ? "text-accent bg-accent/10" : "text-charcoal-400"
               )}>
-                {isActive && (
+                {likedActive && (
+                  <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent" />
+                )}
+                <Sparkles className={cn("w-5 h-5", likedActive && "text-accent")} />
+                <span className={cn("text-[10px]", likedActive ? "font-bold" : "font-medium")}>{t('nav.liked')}</span>
+              </Link>
+            );
+          })()}
+
+          {/* Messages */}
+          {!isBanned && (() => {
+            const msgActive = pathname === "/messages" || pathname.startsWith("/messages/");
+            const msgDisabled = !isVerified;
+            return msgDisabled ? (
+              <div className="flex flex-col items-center gap-0.5 py-2 px-2 opacity-40 cursor-not-allowed">
+                <div className="relative">
+                  <MessageCircle className="w-5 h-5 text-charcoal-400" />
+                  <Lock className="absolute -top-1 -right-1.5 w-2.5 h-2.5 text-charcoal-400" />
+                </div>
+                <span className="text-[10px] text-charcoal-400 font-medium">{t('nav.messages')}</span>
+              </div>
+            ) : (
+              <Link href="/messages" className={cn(
+                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
+                msgActive ? "text-accent bg-accent/10" : "text-charcoal-400"
+              )}>
+                {msgActive && (
                   <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent" />
                 )}
                 <div className="relative">
-                  <link.icon className={cn("w-5 h-5", isActive && "text-accent")} fill={isActive ? "#D4AF37" : "none"} />
-                  {badgeForHref(link.href) !== null && (
+                  <MessageCircle className={cn("w-5 h-5", msgActive && "text-accent")} />
+                  {badgeForHref("/messages") !== null && (
                     <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold px-0.5 leading-none bg-red-500 text-white shadow-md">
-                      {badgeForHref(link.href)}
+                      {badgeForHref("/messages")}
                     </span>
                   )}
                 </div>
-                <span className={cn("text-[10px]", isActive ? "font-bold" : "font-medium")}>{link.label}</span>
+                <span className={cn("text-[10px]", msgActive ? "font-bold" : "font-medium")}>{t('nav.messages')}</span>
               </Link>
             );
-          })}
-          {isBanned && (
-            <Link href="/complaints" className="flex flex-col items-center gap-0.5 py-2 px-3 relative rounded-xl text-accent">
-              <HelpCircle className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{t('settings.help')}</span>
-            </Link>
-          )}
+          })()}
+
+          {/* Books */}
           {!isBanned && (
             <Link href="/books" className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-3 relative rounded-xl",
+              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
               pathname === "/books" || pathname.startsWith("/books/") ? "text-accent bg-accent/10" : "text-charcoal-400"
             )}>
-              {pathname === "/books" && (
+              {(pathname === "/books" || pathname.startsWith("/books/")) && (
                 <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent" />
               )}
-              <BookOpen className={cn("w-5 h-5", pathname === "/books" && "text-accent")} />
-              <span className={cn("text-[10px]", pathname === "/books" ? "font-bold" : "font-medium")}>Books</span>
+              <BookOpen className={cn("w-5 h-5", (pathname === "/books" || pathname.startsWith("/books/")) && "text-accent")} />
+              <span className={cn("text-[10px]", (pathname === "/books" || pathname.startsWith("/books/")) ? "font-bold" : "font-medium")}>{t('nav.books')}</span>
+            </Link>
+          )}
+
+          {/* Profile */}
+          {!isBanned ? (
+            <Link href="/profile" className={cn(
+              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
+              pathname === "/profile" || pathname.startsWith("/profile/") ? "text-accent bg-accent/10" : "text-charcoal-400"
+            )}>
+              {(pathname === "/profile" || pathname.startsWith("/profile/")) && (
+                <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent" />
+              )}
+              <User className={cn("w-5 h-5", (pathname === "/profile" || pathname.startsWith("/profile/")) && "text-accent")} />
+              <span className={cn("text-[10px]", (pathname === "/profile" || pathname.startsWith("/profile/")) ? "font-bold" : "font-medium")}>{t('nav.profile')}</span>
+            </Link>
+          ) : (
+            <Link href="/complaints" className="flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl text-accent">
+              <HelpCircle className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{t('settings.help')}</span>
             </Link>
           )}
         </div>

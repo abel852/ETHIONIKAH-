@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import api from "@/lib/api";
 import { paymentService } from "@/services/payment";
 import { mediaUrl } from "@/lib/utils";
@@ -152,7 +151,7 @@ export default function UserBooksPage() {
       const { data } = await api.get(`/books/${book.id}/read`);
       const baseUrl = (api.defaults.baseURL || "").replace(/\/api$/, "");
       const fileUrl = `${baseUrl}${data.book.fileUrl}`;
-      const token = typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
       const response = await fetch(fileUrl, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -181,7 +180,6 @@ export default function UserBooksPage() {
   if (step !== "library" && selectedBook) {
     return (
       <>
-        <DashboardSidebar />
         <main className="lg:ml-64 pt-14 lg:pt-0 pb-8 px-4 lg:px-8 max-w-3xl mx-auto">
           <div className="py-6">
             {error && (
@@ -367,7 +365,6 @@ export default function UserBooksPage() {
   // === Library view ===
   return (
     <>
-      <DashboardSidebar />
       <main className="lg:ml-64 pt-14 lg:pt-0 pb-24 lg:pb-8 px-4 lg:px-8 max-w-5xl mx-auto">
         <div className="py-6">
           {/* Header */}

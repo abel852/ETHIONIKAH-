@@ -61,11 +61,20 @@ const sanitizeString = (val) => {
 /**
  * Recursively sanitize an object's string fields.
  */
-const sanitizeObject = (obj, depth = 0) => {
+// Fields that should not be XSS-sanitized (passwords can contain <, >, & etc.)
+const SKIP_XSS_KEYS = new Set(["password", "newPassword", "currentPassword", "confirmPassword", "oldPassword"]);
+
+const sanitizeObject = (obj, depth = 0, parentKey = "") => {
   // Prevent deep nesting attacks
   if (depth > 10) return null;
   if (obj === null || obj === undefined) return obj;
-  if (typeof obj === "string") return sanitizeString(obj);
+  if (typeof obj === "string") {
+    // Skip XSS for password fields — only strip control characters
+    if (SKIP_XSS_KEYS.has(parentKey)) {
+      return obj.replace(CONTROL_CHARS, "").substring(0, MAX_STRING_LENGTH);
+    }
+    return sanitizeString(obj);
+  }
   if (typeof obj === "number") {
     // Prevent NaN/Infinity
     if (!isFinite(obj)) return 0;
@@ -74,7 +83,7 @@ const sanitizeObject = (obj, depth = 0) => {
   if (Array.isArray(obj)) {
     // Limit array size
     if (obj.length > 1000) obj = obj.slice(0, 1000);
-    return obj.map((item) => sanitizeObject(item, depth + 1));
+    return obj.map((item) => sanitizeObject(item, depth + 1, parentKey));
   }
   if (typeof obj === "object") {
     const cleaned = {};
@@ -85,7 +94,7 @@ const sanitizeObject = (obj, depth = 0) => {
       if (key.length > 100) continue;
       // Skip __proto__ and constructor (prototype pollution)
       if (key === "__proto__" || key === "constructor" || key === "prototype") continue;
-      cleaned[key] = sanitizeObject(val, depth + 1);
+      cleaned[key] = sanitizeObject(val, depth + 1, key);
     }
     return cleaned;
   }

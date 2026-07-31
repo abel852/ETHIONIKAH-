@@ -15,7 +15,7 @@ const ALERT_THRESHOLD_80 = 80;
 const ALERT_THRESHOLD_90 = 90;
 
 async function checkStorageUsage() {
-  if (!isR2Enabled) return;
+  if (!isR2Enabled()) return;
 
   try {
     const usage = await getStorageUsage();
@@ -60,7 +60,7 @@ async function notifyAdminsStorageAlert(usage, level) {
 }
 
 async function runRetentionCleanup() {
-  if (!isR2Enabled) return;
+  if (!isR2Enabled()) return;
 
   console.log(`[R2-RETENTION] Starting cleanup — retention: ${VERIFICATION_RETENTION_DAYS} days`);
 
@@ -88,7 +88,7 @@ async function runRetentionCleanup() {
 
 // Initialize cron jobs
 function initStorageCron() {
-  if (!isR2Enabled) {
+  if (!isR2Enabled()) {
     console.log("[R2-CRON] R2 not configured — storage monitoring disabled");
     return;
   }

@@ -16,17 +16,17 @@ const requestPermission = async (req, res) => {
       return res.status(400).json({ error: "You cannot request permission from yourself" });
     }
 
-    // Verify the requester has an existing conversation with the partner
-    const priorMessages = await prisma.message.count({
+    // Verify the requester has an ACTIVE ExclusivePartnership with the partner
+    const partnership = await prisma.exclusivePartnership.findFirst({
       where: {
         OR: [
-          { senderId: requesterId, receiverId: partnerId, deletedForSender: false },
-          { senderId: partnerId, receiverId: requesterId, deletedForReceiver: false },
+          { userAId: requesterId, userBId: partnerId, status: "active" },
+          { userAId: partnerId, userBId: requesterId, status: "active" },
         ],
       },
     });
-    if (priorMessages === 0) {
-      return res.status(403).json({ error: "You can only request permission from users you already have a conversation with." });
+    if (!partnership) {
+      return res.status(403).json({ error: "You can only request permission from your active exclusive partner." });
     }
 
     // Check if a permission request already exists

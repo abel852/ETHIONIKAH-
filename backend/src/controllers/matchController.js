@@ -307,8 +307,8 @@ function scoreHealth(userProfile, matchProfile, userPref, matchPref) {
   let points = 0;
   const reasons = [];
 
-  const userHealth = decryptHealthInfo(userProfile.health_info);
-  const matchHealth = decryptHealthInfo(matchProfile.health_info);
+  const userHealth = decryptHealthInfo(userProfile.healthInfo);
+  const matchHealth = decryptHealthInfo(matchProfile.healthInfo);
 
   if (!userHealth || !matchHealth) {
     // No health info available — give neutral score
@@ -693,7 +693,7 @@ const getRecommendedMatches = async (req, res) => {
         profile: {
           include: {
             spousePreference: true,
-            health_info: true,
+            healthInfo: true,
           },
         },
       },
@@ -716,7 +716,7 @@ const getRecommendedMatches = async (req, res) => {
         profile: {
           include: {
             spousePreference: true,
-            health_info: true,
+            healthInfo: true,
           },
         },
         subscriptions: {
@@ -1188,7 +1188,7 @@ const getSuggestedMatches = async (req, res) => {
         profile: {
           include: {
             spousePreference: true,
-            health_info: true,
+            healthInfo: true,
           },
         },
       },
@@ -1241,7 +1241,7 @@ const getSuggestedMatches = async (req, res) => {
           profile: {
             include: {
               spousePreference: true,
-              health_info: true,
+              healthInfo: true,
             },
           },
           subscriptions: {

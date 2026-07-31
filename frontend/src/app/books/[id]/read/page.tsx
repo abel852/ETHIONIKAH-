@@ -59,7 +59,7 @@ export default function BookReaderPage() {
         const fileUrl = `${baseUrl}${book.fileUrl}`;
 
         // Fetch with auth token since /uploads may require it
-        const token = typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null;
+        const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
         const response = await fetch(fileUrl, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });

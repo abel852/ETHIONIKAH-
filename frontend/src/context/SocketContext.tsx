@@ -72,7 +72,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const token = typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     if (!token) return;
 
     const socket = io(process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000", {
@@ -88,7 +88,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     // Refresh the auth token on every reconnect attempt so we never
     // retry with a stale/expired token (which causes endless "Reconnecting...")
     socket.io.on("reconnect_attempt", () => {
-      const freshToken = typeof window !== "undefined" ? sessionStorage.getItem("accessToken") : null;
+      const freshToken = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
       socket.auth = { token: freshToken };
     });
 

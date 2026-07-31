@@ -187,22 +187,8 @@ const register = async (req, res) => {
     const accessToken = generateAccessToken({ userId: user.id, role: user.role, adminRole: user.adminRole, tokenVersion: user.tokenVersion ?? 0 });
     const refreshToken = generateRefreshToken({ userId: user.id, tokenVersion: user.tokenVersion ?? 0 });
 
-    // Fire-and-forget: don't block the registration response on SMTP.
-    // A slow/unreachable mail server was causing gateway timeouts even
-    // though the account was already created.
-    try {
-      const { sendEmail } = require("../utils/email");
-      sendEmail({
-        to: user.email,
-        subject: "Welcome to Ethio Nikah — Complete Your Profile",
-        text: `Hi ${user.firstName}, welcome to Ethio Nikah! Your account has been created successfully. Please complete your profile to start finding your perfect match.`,
-        html: `<p>Hi ${user.firstName},</p><p>Welcome to <strong>Ethio Nikah</strong>! Your account has been created successfully.</p><p>To get started:</p><ul><li>Complete your profile details</li><li>Set your spouse preferences</li><li>Verify your identity</li><li>Start browsing matches</li></ul><p>May Allah bless your journey to finding a righteous spouse.</p><p>— Ethio Nikah Team</p>`,
-      }).catch((emailErr) => {
-        console.error("[EMAIL] Welcome email failed:", emailErr.message);
-      });
-    } catch (emailErr) {
-      console.error("[EMAIL] Welcome email failed:", emailErr.message);
-    }
+    // Welcome email disabled — SMTP delivery failures were causing bounce-back emails.
+    // Re-enable once email infrastructure (ethionikah.com MX records) is properly configured.
 
     res.status(201).json({
       message: "Registration successful",
@@ -876,6 +862,27 @@ const securityBlock = async (req, res) => {
   }
 };
 
+const verifyPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: "Password is required" });
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { passwordHash: true },
+    });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) return res.status(401).json({ error: "Invalid password", valid: false });
+
+    res.json({ valid: true });
+  } catch (error) {
+    console.error("Verify password error:", error);
+    res.status(500).json({ error: "Failed to verify password" });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -894,4 +901,5 @@ module.exports = {
   lookupByUsername,
   deleteMe,
   securityBlock,
+  verifyPassword,
 };

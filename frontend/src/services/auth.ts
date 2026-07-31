@@ -11,4 +11,5 @@ export const authService = {
   resetPassword: (data: ResetPasswordFormData) => api.post("/auth/reset-password", data),
   verifyEmail: (token: string) => api.post("/auth/verify-email", { token }),
   getProfile: () => api.get("/auth/me"),
+  verifyPassword: (password: string) => api.post("/auth/verify-password", { password }),
 };

@@ -12,7 +12,7 @@ exports.createBook = async (req, res) => {
 
     let fileUrl;
     if (req.file) {
-      if (isR2Enabled) {
+      if (isR2Enabled()) {
         fileUrl = await uploadMulterFile(req.file, "books");
       } else {
         fileUrl = `/uploads/books/${req.file.filename}`;

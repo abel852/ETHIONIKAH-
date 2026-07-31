@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Shield, Upload, CheckCircle, Clock, AlertCircle, Camera, FileText, X, RefreshCw } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button, Badge, IslamicPatternBackground } from "@/components/common";
 import { verificationService } from "@/services/verification";
 import { toast } from "sonner";
@@ -210,8 +209,7 @@ export default function VerificationPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-blur-image">
-        <DashboardSidebar />
-        <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
+          <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
             <div className="bg-charcoal-800 rounded-2xl p-8 animate-pulse">
               <div className="h-6 bg-charcoal-700 rounded-lg w-1/3 mb-4" />
@@ -227,8 +225,7 @@ export default function VerificationPage() {
   if (isApproved) {
     return (
       <div className="min-h-screen bg-blur-image">
-        <DashboardSidebar />
-        <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
+          <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
             <div className="bg-white dark:bg-charcoal-800 rounded-2xl border border-green-200 dark:border-green-500/20 p-8 text-center">
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-500/10 flex items-center justify-center mx-auto mb-4">
@@ -247,7 +244,6 @@ export default function VerificationPage() {
 
   return (
     <IslamicPatternBackground>
-      <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
           <div className="flex items-center gap-3 mb-6">

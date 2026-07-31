@@ -9,14 +9,13 @@ import {
   Download, Heart, Crown, Send, AlertTriangle, ShieldAlert,
   MessageSquare, Trash2, Lock,
 } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button, Badge, Input, Textarea } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n, type Lang } from "@/context/I18nContext";
 import { complaintService } from "@/services/complaint";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { mediaUrl } from "@/lib/utils";
+import { mediaUrl, getInitials } from "@/lib/utils";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -815,12 +814,7 @@ export default function SettingsPage() {
   const allNavItems = navCategories.flatMap((c) => c.items);
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
-  const initials = (fullName || "U")
-    .split(" ")
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = getInitials(user?.firstName, user?.lastName);
 
   const contentMap: Record<string, ReactNode> = {
     languages: <LanguagesContent />,
@@ -836,7 +830,6 @@ export default function SettingsPage() {
     <>
       {/* Mobile layout */}
       <div className="lg:hidden min-h-screen bg-blur-image">
-        <DashboardSidebar />
         <div className="pt-14 pb-20">
           <main className="mx-auto max-w-lg">
             {mobileSection ? (
@@ -919,7 +912,6 @@ export default function SettingsPage() {
 
       {/* Desktop layout */}
       <div className="hidden lg:block min-h-screen bg-blur-image">
-        <DashboardSidebar />
         <div className="lg:pl-64 pt-14 lg:pt-0">
         <div className="max-w-6xl mx-auto px-8 py-8 flex gap-8">
           {/* Settings Sub-nav */}

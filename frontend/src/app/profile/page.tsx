@@ -15,7 +15,6 @@ import {
   DollarSign, TrendingUp, Zap, Coffee, Dumbbell,
   FileText, Check, X, AtSign, Scale, UserCheck, Phone as PhoneIcon,
 } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button, Badge, Card, VerifiedBadge, IslamicPatternBackground } from "@/components/common";
 import { ProfileImageEditor } from "@/components/profile/ProfileImageEditor";
 import { useAuth } from "@/context/AuthContext";
@@ -25,7 +24,7 @@ import { matchService } from "@/services/matches";
 import { paymentService } from "@/services/payment";
 import api from "@/lib/api";
 import { useI18n } from "@/context/I18nContext";
-import { mediaUrl, formatDate, formatRemaining, cn } from "@/lib/utils";
+import { mediaUrl, formatDate, formatRemaining, cn, getInitials } from "@/lib/utils";
 
 const labelize = (s?: string) => s ? s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—";
 
@@ -120,7 +119,7 @@ export default function ProfilePage() {
   const p = profile || {};
   const sp = (p as any).spousePreference;
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
-  const initials = fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const initials = getInitials(user?.firstName, user?.lastName);
   const isAdmin = (user as any)?.role === "admin" || (user as any)?.adminRole;
 
   const pLikes = profile?.likesCount || 0;
@@ -166,14 +165,17 @@ export default function ProfilePage() {
   ] : [];
 
   if (authLoading) return (
-    <div className="min-h-screen bg-blur-image flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-accent" />
+    <div className="min-h-screen bg-blur-image">
+      <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </div>
     </div>
   );
 
   if (loading) return (
     <div className="min-h-screen bg-blur-image">
-      <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-5xl mx-auto">
           <div className="space-y-4">
@@ -190,7 +192,6 @@ export default function ProfilePage() {
 
   return (
     <IslamicPatternBackground>
-      <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-5xl mx-auto">
           <div className="space-y-6">

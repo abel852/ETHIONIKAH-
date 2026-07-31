@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button, IslamicPatternBackground } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
@@ -68,7 +67,6 @@ export default function ComplaintsPage() {
 
   return (
     <IslamicPatternBackground>
-      <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen">
           <div className="border-b border-charcoal-100/50 dark:border-charcoal-700 bg-white/50 dark:bg-charcoal-900/50 backdrop-blur px-4 lg:px-6 py-3">

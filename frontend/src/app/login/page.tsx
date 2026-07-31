@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Shield, Smartphone, Key, Home, Clock, AlertTriangle, LifeBuoy, HelpCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Shield, Smartphone, Key, Home, Clock, AlertTriangle, LifeBuoy, HelpCircle, Headphones } from "lucide-react";
 import { useI18n, type Lang } from "@/context/I18nContext";
 import { Button, Input } from "@/components/common";
 import api from "@/lib/api";
@@ -75,8 +75,8 @@ export default function LoginPage() {
   }, [lockout]);
 
   const handleLoginSuccess = (data: any) => {
-    sessionStorage.setItem("accessToken", data.accessToken);
-    sessionStorage.setItem("refreshToken", data.refreshToken);
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("refreshToken", data.refreshToken);
     localStorage.setItem("user", JSON.stringify(data.user));
 
     document.cookie = `accessToken=${data.accessToken}; path=/; SameSite=Lax`;
@@ -178,49 +178,48 @@ export default function LoginPage() {
 
   if (requires2FA) {
     return (
-      <div className="min-h-screen flex flex-col lg:flex-row dark:bg-charcoal-900 overflow-x-hidden">
+      <div className="min-h-screen login-premium-bg relative overflow-hidden flex flex-col dark:bg-charcoal-900">
+        <div className="absolute top-0 left-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+        <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[400px] h-[200px] bg-accent/10 blur-[80px] rounded-full pointer-events-none" />
 
-      {/* Mobile dark header */}
-      <div className="lg:hidden bg-charcoal-900 px-3 py-3 flex items-center justify-between">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
-          <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
-        </Link>
-        <div className="flex items-center gap-0.5">
-          {LANGS.map((l, i) => (
-            <div key={l.code} className="flex items-center">
-              {i > 0 && <span className="text-white/15">|</span>}
-              <button
-                onClick={() => setLang(l.code)}
-                className={`px-1.5 py-0.5 text-xs font-medium rounded-md transition-all ${
-                  lang === l.code ? "text-accent font-bold" : "text-white/50 hover:text-white/80"
-                }`}
-              >
-                {l.label}
-              </button>
-            </div>
-          ))}
+        {/* Premium black navigation bar */}
+        <div className="relative z-10 bg-charcoal-900 px-4 py-3 flex items-center justify-between shadow-md">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
+            <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
+          </Link>
+          <div className="flex items-center gap-0.5">
+            {LANGS.map((l, i) => (
+              <div key={l.code} className="flex items-center">
+                {i > 0 && <span className="text-white/15">|</span>}
+                <button onClick={() => setLang(l.code)} className={`px-2 py-1 text-xs font-medium rounded-md transition-all ${lang === l.code ? "text-accent font-bold" : "text-white/50 hover:text-white/80"}`}>
+                  {l.label}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="flex-1 flex items-center justify-center px-3 py-3 lg:py-12 bg-charcoal-50 dark:bg-charcoal-900">
-        <div className="w-full max-w-md mx-auto min-w-0">
-          <div className="hidden lg:flex items-center justify-between mb-2">
-              <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-charcoal-800/80 backdrop-blur-sm border border-charcoal-100/50 dark:border-charcoal-700 shadow-xs hover:shadow-md hover:bg-white dark:hover:bg-charcoal-700 transition-all group">
-                <ArrowLeft className="w-4 h-4 text-accent group-hover:-translate-x-0.5 transition-transform" />
-                <span className="text-sm font-medium text-charcoal-600 dark:text-charcoal-300">{t('auth.home')}</span>
-              </Link>
-              <div className="flex items-center gap-2 opacity-60">
-                <Image src="/images/logo.png" alt="" width={28} height={28} className="rounded-lg border border-accent/50" />
-                <span className="font-display font-semibold text-sm text-charcoal-500 dark:text-charcoal-400">Ethio Nikah</span>
+        <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 lg:py-10">
+          <div className="w-full max-w-md mx-auto">
+            <div className="text-center mb-6 animate-hero-fade">
+              <div className="relative inline-block mb-4">
+                <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full" />
+                <Image src="/images/logo.png" alt="Ethio Nikah" width={72} height={72} className="relative rounded-2xl border-2 border-accent ring-2 ring-white/20 shadow-glow mx-auto" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-charcoal-900 dark:text-white mb-1">{t('auth.twoFactor')}</h1>
+              <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">{useBackupCode ? t('auth.enterRecoveryCode') : t('auth.enterAuthCode')}</p>
+              <div className="flex items-center justify-center gap-3 mt-4">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-accent/50" />
+                <div className="w-1.5 h-1.5 rotate-45 bg-accent" />
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-accent/50" />
               </div>
             </div>
-            <div className="text-center mb-8">
-            <h1 className="text-xl sm:text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">{t('auth.twoFactor')}</h1>
-              <p className="text-charcoal-500 dark:text-charcoal-400">{useBackupCode ? t('auth.enterRecoveryCode') : t('auth.enterAuthCode')}</p>
-            </div>
 
-            <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden">
+            <div className="bg-white dark:bg-charcoal-800 rounded-[28px] premium-card-glow p-6 sm:p-8 animate-card-float">
               <form onSubmit={handle2FASubmit} className="space-y-5">
                 <div className="text-center">
                   <div className="w-16 h-16 rounded-2xl bg-accent/10 dark:bg-accent/20 flex items-center justify-center mx-auto mb-4">
@@ -242,7 +241,7 @@ export default function LoginPage() {
                       value={twoFactorCode}
                       onChange={(e) => setTwoFactorCode(e.target.value.toUpperCase().slice(0, 9))}
                       placeholder={t('auth.recoveryCodePlaceholder')}
-                      className="w-full text-center text-xl tracking-wider font-mono px-4 py-3 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-300 dark:placeholder-charcoal-600 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
+                      className="w-full text-center text-xl tracking-wider font-mono px-4 py-3 rounded-[18px] bg-white dark:bg-charcoal-700 border border-[#E9E9E9] dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-[#9CA3AF] premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 transition-all"
                     />
                   ) : (
                     <input
@@ -254,53 +253,55 @@ export default function LoginPage() {
                       value={twoFactorCode}
                       onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       placeholder={t('auth.authenticatorCodePlaceholder')}
-                      className="w-full text-center text-2xl tracking-[0.5em] font-mono px-4 py-3 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-charcoal-300 dark:placeholder-charcoal-600 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
+                      className="w-full text-center text-2xl tracking-[0.5em] font-mono px-4 py-3 rounded-[18px] bg-white dark:bg-charcoal-700 border border-[#E9E9E9] dark:border-charcoal-600 text-charcoal-900 dark:text-white placeholder-[#9CA3AF] premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 transition-all"
                     />
                   )}
                 </div>
 
-                  {captchaRequired && (
-                    <div className="p-3 text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 rounded-xl border border-amber-200 dark:border-amber-700">
-                      {t('auth.tooManyAttempts')}
-                    </div>
+                {captchaRequired && (
+                  <div className="p-3 text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 rounded-xl border border-amber-200 dark:border-amber-700">
+                    {t('auth.tooManyAttempts')}
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-xl">
+                    <Shield className="w-4 h-4 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <label className="flex items-center gap-2 text-sm text-charcoal-600 dark:text-charcoal-400 cursor-pointer">
+                  <input type="checkbox" checked={trustDevice} onChange={(e) => setTrustDevice(e.target.checked)} className="rounded border-charcoal-300 text-accent focus:ring-accent/30" />
+                  {t('auth.rememberDevice')}
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting || (useBackupCode ? twoFactorCode.length < 9 : twoFactorCode.length !== 6)}
+                  className="w-full h-[60px] bg-gradient-to-r from-accent to-accent-dark text-white font-bold text-lg rounded-[18px] shadow-lg shadow-accent/30 hover:shadow-xl hover:shadow-accent/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {isSubmitting ? (
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <>
+                      {t('auth.verify')} <ArrowRight className="w-5 h-5" />
+                    </>
                   )}
+                </button>
 
-                  {error && (
-                    <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-xl">
-                      <Shield className="w-4 h-4 shrink-0" />
-                      <span>{error}</span>
-                    </div>
-                  )}
+                <button type="button" onClick={() => { setUseBackupCode(!useBackupCode); setTwoFactorCode(""); setEmailOtpCode(""); }} className="w-full text-sm text-accent hover:text-accent-dark font-semibold text-center transition-colors">
+                  {useBackupCode ? t('auth.useAuthCode') : t('auth.useRecoveryCode')}
+                </button>
 
-                  <label className="flex items-center gap-2 text-sm text-charcoal-600 dark:text-charcoal-400 cursor-pointer">
-                    <input type="checkbox" checked={trustDevice} onChange={(e) => setTrustDevice(e.target.checked)} className="rounded border-charcoal-300 text-accent focus:ring-accent/30" />
-                    {t('auth.rememberDevice')}
-                  </label>
-
-                  <Button type="submit" variant="primary" className="w-full" size="lg" loading={isSubmitting} disabled={useBackupCode ? twoFactorCode.length < 9 : twoFactorCode.length !== 6}>
-                    {t('auth.verify')}
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-
-                  <button type="button" onClick={() => { setUseBackupCode(!useBackupCode); setTwoFactorCode(""); setEmailOtpCode(""); }} className="w-full text-sm text-accent hover:text-accent-dark font-medium text-center">
-                    {useBackupCode ? t('auth.useAuthCode') : t('auth.useRecoveryCode')}
-                  </button>
-
-                <button type="button" onClick={handleBackToLogin} className="w-full text-sm text-accent hover:text-accent-dark font-medium text-center">
+                <button type="button" onClick={handleBackToLogin} className="w-full text-sm text-accent hover:text-accent-dark font-semibold text-center transition-colors">
                   {t('auth.backToLogin')}
                 </button>
               </form>
             </div>
-          </div>
-        </div>
-
-        <div className="hidden lg:flex flex-1 bg-gradient-to-br from-accent/20 via-accent/10 to-accent/5 dark:from-accent/10 dark:to-charcoal-800 items-center justify-center p-12">
-          <div className="max-w-md text-center">
-            <Image src="/images/logo.png" alt="Ethio Nikah" width={80} height={80} className="mx-auto mb-6 rounded-2xl border-2 border-accent ring-2 ring-charcoal-900 dark:ring-charcoal-700" />
-            <h2 className="text-3xl font-display font-bold text-charcoal-900 dark:text-white mb-4">{t('auth.secureLogin')}</h2>
-            <p className="text-charcoal-500 dark:text-charcoal-400 leading-relaxed">
-              {t('auth.secureLoginDesc')}
-            </p>
           </div>
         </div>
       </div>
@@ -308,10 +309,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row dark:bg-charcoal-900 overflow-x-hidden">
+    <div className="min-h-screen login-premium-bg relative overflow-hidden flex flex-col dark:bg-charcoal-900">
+      {/* Islamic geometric pattern corners */}
+      <div className="absolute top-0 left-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-40 h-40 islamic-pattern opacity-[0.04] pointer-events-none" />
+      {/* Gold glow around hero */}
+      <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[400px] h-[200px] bg-accent/10 blur-[80px] rounded-full pointer-events-none" />
 
-      {/* Mobile dark header */}
-      <div className="lg:hidden bg-charcoal-900 px-3 py-3 flex items-center justify-between">
+      {/* Premium black navigation bar */}
+      <div className="relative z-10 bg-charcoal-900 px-4 py-3 flex items-center justify-between shadow-md">
         <Link href="/" className="inline-flex items-center gap-2">
           <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
           <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
@@ -320,12 +328,7 @@ export default function LoginPage() {
           {LANGS.map((l, i) => (
             <div key={l.code} className="flex items-center">
               {i > 0 && <span className="text-white/15">|</span>}
-              <button
-                onClick={() => setLang(l.code)}
-                className={`px-1.5 py-0.5 text-xs font-medium rounded-md transition-all ${
-                  lang === l.code ? "text-accent font-bold" : "text-white/50 hover:text-white/80"
-                }`}
-              >
+              <button onClick={() => setLang(l.code)} className={`px-2 py-1 text-xs font-medium rounded-md transition-all ${lang === l.code ? "text-accent font-bold" : "text-white/50 hover:text-white/80"}`}>
                 {l.label}
               </button>
             </div>
@@ -333,61 +336,39 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-3 py-3 lg:py-12 bg-charcoal-50 dark:bg-charcoal-900">
-        <div className="w-full max-w-md mx-auto min-w-0">
-          <div className="hidden lg:flex items-center justify-between mb-2">
-            <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-charcoal-800/80 backdrop-blur-sm border border-charcoal-100/50 dark:border-charcoal-700 shadow-xs hover:shadow-md hover:bg-white dark:hover:bg-charcoal-700 transition-all group">
-              <ArrowLeft className="w-4 h-4 text-accent group-hover:-translate-x-0.5 transition-transform" />
-              <span className="text-sm font-medium text-charcoal-600 dark:text-charcoal-300">{t('auth.home')}</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-0.5">
-                {LANGS.map((l, i) => (
-                  <div key={l.code} className="flex items-center">
-                    {i > 0 && <span className="text-charcoal-200 dark:text-charcoal-600">|</span>}
-                    <button
-                      onClick={() => setLang(l.code)}
-                      className={`px-2 py-1 text-sm font-medium rounded-md transition-all ${
-                        lang === l.code ? "text-accent font-bold" : "text-charcoal-500 hover:text-charcoal-900 dark:text-charcoal-400 dark:hover:text-white"
-                      }`}
-                    >
-                      {l.label}
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 opacity-60">
-                <Image src="/images/logo.png" alt="" width={28} height={28} className="rounded-lg border border-accent/50" />
-                <span className="font-display font-semibold text-sm text-charcoal-500 dark:text-charcoal-400">Ethio Nikah</span>
-              </div>
+      {/* Main content */}
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 lg:py-10">
+        <div className="w-full max-w-md mx-auto">
+          {/* Hero section */}
+          <div className="text-center mb-6 animate-hero-fade">
+            <div className="relative inline-block mb-4">
+              <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full" />
+              <Image src="/images/logo.png" alt="Ethio Nikah" width={72} height={72} className="relative rounded-2xl border-2 border-accent ring-2 ring-white/20 shadow-glow mx-auto" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-charcoal-900 dark:text-white mb-1">{t('auth.welcomeBack')}</h1>
+            <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">{t('auth.signInToContinue')}</p>
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-accent/50" />
+              <div className="w-1.5 h-1.5 rotate-45 bg-accent" />
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-accent/50" />
             </div>
           </div>
-          <div className="text-center mb-8">
-            <h1 className="text-xl sm:text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">{t('auth.welcomeBack')}</h1>
-            <p className="text-charcoal-500 dark:text-charcoal-400">{t('auth.signInToContinue')}</p>
-          </div>
 
-          <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden">
-            <div className="flex gap-2 mb-6 p-1 bg-charcoal-100 dark:bg-charcoal-700 rounded-xl">
+          {/* Floating login card */}
+          <div className="bg-white dark:bg-charcoal-800 rounded-[28px] premium-card-glow p-6 sm:p-8 animate-card-float">
+            {/* Premium segmented control */}
+            <div className="flex gap-2 mb-6 p-1 bg-charcoal-100 dark:bg-charcoal-700/50 rounded-2xl">
               <button
                 type="button"
                 onClick={() => setLoginMethod("email")}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                  loginMethod === "email"
-                    ? "bg-white dark:bg-charcoal-600 text-accent shadow-sm"
-                    : "text-charcoal-600 dark:text-charcoal-400 hover:text-charcoal-900 dark:hover:text-charcoal-200"
-                }`}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${loginMethod === "email" ? "bg-gradient-to-r from-accent to-accent-dark text-white shadow-md shadow-accent/30" : "text-charcoal-500 dark:text-charcoal-400 hover:text-charcoal-700 dark:hover:text-charcoal-200"}`}
               >
                 {t('auth.emailMethod')}
               </button>
               <button
                 type="button"
                 onClick={() => setLoginMethod("phone")}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                  loginMethod === "phone"
-                    ? "bg-white dark:bg-charcoal-600 text-accent shadow-sm"
-                    : "text-charcoal-600 dark:text-charcoal-400 hover:text-charcoal-900 dark:hover:text-charcoal-200"
-                }`}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${loginMethod === "phone" ? "bg-gradient-to-r from-accent to-accent-dark text-white shadow-md shadow-accent/30" : "text-charcoal-500 dark:text-charcoal-400 hover:text-charcoal-700 dark:hover:text-charcoal-200"}`}
               >
                 {t('auth.phoneMethod')}
               </button>
@@ -395,49 +376,63 @@ export default function LoginPage() {
 
             <form onSubmit={onSubmit} className="space-y-5">
               {loginMethod === "email" ? (
-                <Input
-                  id="email"
-                  type="email"
-                  label={t('auth.email')}
-                  placeholder={t('auth.emailPlaceholder')}
-                  icon={<Mail className="w-4 h-4" />}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value.replace(/[^a-zA-Z0-9@.]/g, ""))}
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">{t('auth.email')}</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal-400 dark:text-charcoal-500" />
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder={t('auth.emailPlaceholder')}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value.replace(/[^a-zA-Z0-9@.]/g, ""))}
+                      className="w-full h-[60px] pl-12 pr-4 text-base bg-white dark:bg-charcoal-700 border border-[#E9E9E9] dark:border-charcoal-600 rounded-[18px] text-charcoal-900 dark:text-white placeholder-[#9CA3AF] premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 transition-all"
+                    />
+                  </div>
+                </div>
               ) : (
-                <Input
-                  id="phone"
-                  type="tel"
-                  label={t('auth.phone')}
-                  placeholder={t('auth.phonePlaceholder')}
-                  icon={<Phone className="w-4 h-4" />}
-                  value={phone}
-                  onChange={(e) => {
-                    let v = e.target.value.replace(/[^0-9+]/g, "").slice(0, 13);
-                    const plusCount = (v.match(/\+/g) || []).length;
-                    if (plusCount > 1) v = v.replace(/\+/g, "") + "+";
-                    if (v.includes("+") && !v.startsWith("+")) v = v.replace(/\+/g, "") + "+";
-                    setPhone(v);
-                  }}
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">{t('auth.phone')}</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal-400 dark:text-charcoal-500" />
+                    <input
+                      id="phone"
+                      type="tel"
+                      placeholder={t('auth.phonePlaceholder')}
+                      value={phone}
+                      onChange={(e) => {
+                        let v = e.target.value.replace(/[^0-9+]/g, "").slice(0, 13);
+                        const plusCount = (v.match(/\+/g) || []).length;
+                        if (plusCount > 1) v = v.replace(/\+/g, "") + "+";
+                        if (v.includes("+") && !v.startsWith("+")) v = v.replace(/\+/g, "") + "+";
+                        setPhone(v);
+                      }}
+                      className="w-full h-[60px] pl-12 pr-4 text-base bg-white dark:bg-charcoal-700 border border-[#E9E9E9] dark:border-charcoal-600 rounded-[18px] text-charcoal-900 dark:text-white placeholder-[#9CA3AF] premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 transition-all"
+                    />
+                  </div>
+                </div>
               )}
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  label={t('auth.password')}
-                  placeholder={t('auth.passwordPlaceholder')}
-                  icon={<Lock className="w-4 h-4" />}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-[38px] text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+
+              <div>
+                <label className="block text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">{t('auth.password')}</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal-400 dark:text-charcoal-500" />
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder={t('auth.passwordPlaceholder')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full h-[60px] pl-12 pr-12 text-base bg-white dark:bg-charcoal-700 border border-[#E9E9E9] dark:border-charcoal-600 rounded-[18px] text-charcoal-900 dark:text-white placeholder-[#9CA3AF] premium-input focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-600 dark:hover:text-charcoal-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               {error && (
@@ -489,46 +484,80 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Hide forgot password link during active lockout */}
+              {/* Support row */}
               {(!lockout || (!lockout.locked && !lockout.permanent)) && (
                 <div className="flex items-center justify-between text-sm">
-                  <Link href="/contact-support" className="text-charcoal-500 dark:text-charcoal-400 hover:text-accent font-medium flex items-center gap-1">
-                    <LifeBuoy className="w-3.5 h-3.5" /> Contact Support
+                  <Link href="/contact-support" className="text-charcoal-500 dark:text-charcoal-400 hover:text-accent font-medium flex items-center gap-1.5 transition-colors">
+                    <Headphones className="w-4 h-4" /> Contact Support
                   </Link>
-                  <Link href="/forgot-password" className="text-accent hover:text-accent-dark font-medium">
+                  <Link href="/forgot-password" className="text-accent hover:text-accent-dark font-semibold transition-colors">
                     {t('auth.forgotPassword')}
                   </Link>
                 </div>
               )}
 
-              <Button type="submit" variant="primary" className="w-full" size="lg" loading={isSubmitting} disabled={!!lockout && !lockout.permanent && !!countdown}>
-                {t('auth.signIn')}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+              {/* Primary button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || (!!lockout && !lockout.permanent && !!countdown)}
+                className="w-full h-[60px] bg-gradient-to-r from-accent to-accent-dark text-white font-bold text-lg rounded-[18px] shadow-lg shadow-accent/30 hover:shadow-xl hover:shadow-accent/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {isSubmitting ? (
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <>
+                    {t('auth.signIn')} <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">
-                {t('auth.noAccount')}{" "}
-                <Link href="/register" className="text-accent hover:text-accent-dark font-medium">
-                  {t('auth.createOne')}
-                </Link>
-              </p>
+            {/* Social login divider */}
+            <div className="mt-6 mb-4 flex items-center gap-3">
+              <div className="flex-1 h-px bg-charcoal-200 dark:bg-charcoal-700" />
+              <span className="text-xs text-charcoal-400 dark:text-charcoal-500 font-medium">or continue with</span>
+              <div className="flex-1 h-px bg-charcoal-200 dark:bg-charcoal-700" />
+            </div>
+
+            {/* Social login buttons */}
+            <div className="flex gap-3">
+              <button className="flex-1 h-14 bg-white dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md hover:scale-[1.03] active:scale-95 transition-all">
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+              </button>
+              <button className="flex-1 h-14 bg-white dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md hover:scale-[1.03] active:scale-95 transition-all">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+              </button>
+              <button className="flex-1 h-14 bg-white dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md hover:scale-[1.03] active:scale-95 transition-all">
+                <Phone className="w-5 h-5 text-charcoal-600 dark:text-charcoal-300" />
+              </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-accent/20 via-accent/10 to-accent/5 dark:from-accent/10 dark:to-charcoal-800 items-center justify-center p-12">
-        <div className="max-w-md text-center">
-          <Image src="/images/logo.png" alt="Ethio Nikah" width={80} height={80} className="mx-auto mb-6 rounded-2xl border-2 border-accent ring-2 ring-charcoal-900 dark:ring-charcoal-700" />
-          <h2 className="text-3xl font-display font-bold text-charcoal-900 dark:text-white mb-4">
-            {t('auth.sideTitle')}
-          </h2>
-          <p className="text-charcoal-500 dark:text-charcoal-400 leading-relaxed">
-            &ldquo;{t('auth.sideQuote')}&rdquo;
-          </p>
-          <p className="text-charcoal-400 dark:text-charcoal-500 text-sm mt-4 italic">{t('auth.sideQuoteSource')}</p>
+          {/* Footer */}
+          <div className="mt-6 text-center">
+            <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">
+              {t('auth.noAccount')}{" "}
+              <Link href="/register" className="text-accent hover:text-accent-dark font-semibold">
+                {t('auth.createOne')}
+              </Link>
+            </p>
+          </div>
+
+          {/* Security section */}
+          <div className="mt-5 flex items-center justify-center gap-2 text-charcoal-400 dark:text-charcoal-500">
+            <Shield className="w-4 h-4 text-accent/60" />
+            <p className="text-xs">Your data is safe and secure with us.</p>
+          </div>
         </div>
       </div>
     </div>

@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Heart, MessageCircle, Shield, UserPlus, Star, Bell, Check, X } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
 import { Button, Badge, NotificationSkeleton, IslamicPatternBackground } from "@/components/common";
 import { useNotificationStore } from "@/store/notifications";
 import { conversationPermissionService } from "@/services/conversationPermission";
@@ -47,7 +46,6 @@ export default function NotificationsPage() {
 
   return (
     <IslamicPatternBackground>
-      <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-6">

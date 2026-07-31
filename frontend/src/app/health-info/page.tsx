@@ -73,14 +73,19 @@ export default function HealthInfoPage() {
   ];
 
   if (loading) return (
-    <div className="min-h-screen bg-blur-image flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" />
+    <div className="min-h-screen bg-blur-image">
+      <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
+        <div className="max-w-2xl mx-auto px-4 py-8 flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" />
+        </div>
+      </div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-blur-image">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="lg:pl-64 pt-14 lg:pt-0 pb-20 lg:pb-0">
+        <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link href="/settings" className="p-2 rounded-xl hover:bg-charcoal-100 dark:hover:bg-charcoal-800 transition-colors">
@@ -243,6 +248,7 @@ export default function HealthInfoPage() {
             </Button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

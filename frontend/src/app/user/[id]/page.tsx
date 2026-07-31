@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, MessageCircle, MapPin, Briefcase, GraduationCap, Calendar, Heart, Shield, Star, CheckCircle, XCircle, X, ChevronLeft, ChevronRight, Users } from "lucide-react";
-import { DashboardSidebar } from "@/components/layout";
+import { ArrowLeft, MessageCircle, MapPin, Briefcase, GraduationCap, Calendar, Heart, Shield, Star, CheckCircle, XCircle, X, ChevronLeft, ChevronRight, Users, Send, Loader2 } from "lucide-react";
 import { Button, Avatar, Badge, IslamicPatternBackground } from "@/components/common";
 import { mediaUrl } from "@/lib/utils";
 import { profileService } from "@/services/profile";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { conversationRequestService } from "@/services/conversationRequest";
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -21,6 +21,11 @@ export default function UserProfilePage() {
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [chatPartners, setChatPartners] = useState<any[]>([]);
+  const [requestStatus, setRequestStatus] = useState<{ sent: any; received: any } | null>(null);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [requestToast, setRequestToast] = useState<string | null>(null);
 
   const photos = profile?.photos || [];
 
@@ -34,6 +39,10 @@ export default function UserProfilePage() {
         api.get(`/messages/active-partners/${params.id}`, { _noToast: true } as any)
           .then(({ data }) => setChatPartners(data.partners || []))
           .catch(() => setChatPartners([]));
+        // Check conversation request status
+        conversationRequestService.checkStatus(params.id as string)
+          .then(({ data }) => setRequestStatus(data))
+          .catch(() => {});
       })
       .catch(() => setError("User not found"))
       .finally(() => setLoading(false));
@@ -53,8 +62,7 @@ export default function UserProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-blur-image">
-        <DashboardSidebar />
-        <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
+          <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <div className="max-w-2xl mx-auto p-4">
             <div className="animate-pulse space-y-4">
               <div className="h-64 bg-charcoal-700 rounded-2xl" />
@@ -71,8 +79,7 @@ export default function UserProfilePage() {
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-blur-image">
-        <DashboardSidebar />
-        <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
+          <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <div className="max-w-2xl mx-auto p-4 text-center pt-20">
             <XCircle className="w-16 h-16 text-charcoal-300 mx-auto mb-4" />
             <h2 className="text-xl font-display font-bold text-charcoal-900 dark:text-white">User not found</h2>
@@ -109,7 +116,6 @@ export default function UserProfilePage() {
 
   return (
     <IslamicPatternBackground>
-      <DashboardSidebar />
       <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <div className="max-w-2xl mx-auto">
 
@@ -306,17 +312,102 @@ export default function UserProfilePage() {
             </p>
           </div>
 
-          {/* Send Message Button */}
-          <div className="px-4 pb-6">
-            <Button
-              variant="primary"
-              className="w-full"
-              onClick={() => router.push(`/messages?user=${userData.id}`)}
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Send Message
-            </Button>
+          {/* Start Conversation Button */}
+          <div className="px-4 pb-6 space-y-3">
+            {requestStatus?.sent?.status === "accepted" || requestStatus?.received?.status === "accepted" ? (
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={() => router.push(`/messages?user=${userData.id}`)}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Open Conversation
+              </Button>
+            ) : requestStatus?.sent?.status === "pending" ? (
+              <div className="w-full text-center py-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
+                <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">Conversation request pending</p>
+                <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-0.5">Waiting for {userData.firstName} to respond.</p>
+              </div>
+            ) : requestStatus?.sent?.status === "declined" ? (
+              <div className="w-full text-center py-3 px-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">Conversation request declined</p>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={() => setShowRequestDialog(true)}
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Start Conversation
+              </Button>
+            )}
           </div>
+
+          {/* Conversation Request Dialog */}
+          {showRequestDialog && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowRequestDialog(false)}>
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+              <div className="relative w-full max-w-sm bg-white dark:bg-charcoal-800 rounded-2xl shadow-2xl border border-charcoal-200 dark:border-charcoal-700 p-6" onClick={(e) => e.stopPropagation()}>
+                <div className="text-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                    <Send className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="text-lg font-bold text-charcoal-900 dark:text-white mb-2">Start Conversation</h3>
+                  <p className="text-sm text-charcoal-500 dark:text-charcoal-400">
+                    Send a conversation request to <span className="font-semibold text-accent">{fullName}</span>. They can accept or decline.
+                  </p>
+                </div>
+                <textarea
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
+                  placeholder="Add an optional message..."
+                  rows={3}
+                  className="w-full text-sm bg-charcoal-50 dark:bg-charcoal-900 border border-charcoal-200 dark:border-charcoal-700 rounded-lg px-3 py-2 text-charcoal-900 dark:text-white placeholder-charcoal-400 resize-none mb-4 outline-none focus:border-accent/40"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => { setShowRequestDialog(false); setRequestMessage(""); }}
+                    className="px-4 py-2 text-sm font-medium text-charcoal-500 dark:text-charcoal-400 hover:bg-charcoal-100 dark:hover:bg-charcoal-700 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setSendingRequest(true);
+                      try {
+                        await conversationRequestService.create(userData.id, requestMessage || undefined);
+                        setRequestToast("Conversation request sent!");
+                        setShowRequestDialog(false);
+                        setRequestMessage("");
+                        // Refresh status
+                        conversationRequestService.checkStatus(params.id as string)
+                          .then(({ data }) => setRequestStatus(data))
+                          .catch(() => {});
+                      } catch (err: any) {
+                        setRequestToast(err?.response?.data?.error || "Failed to send request");
+                      } finally {
+                        setSendingRequest(false);
+                        setTimeout(() => setRequestToast(null), 4000);
+                      }
+                    }}
+                    disabled={sendingRequest}
+                    className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-accent to-accent/80 text-white rounded-lg hover:from-accent/90 hover:to-accent/70 disabled:opacity-50 transition-all flex items-center gap-2"
+                  >
+                    {sendingRequest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {sendingRequest ? "Sending..." : "Send Request"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Toast */}
+          {requestToast && (
+            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-charcoal-900 dark:bg-charcoal-700 text-white text-sm shadow-lg">
+              {requestToast}
+            </div>
+          )}
 
         </div>
 
