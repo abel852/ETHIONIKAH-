@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IslamicPatternBackground } from "@/components/common";
+import { useI18n } from "@/context/I18nContext";
 
 interface Book {
   id: string;
@@ -32,6 +33,7 @@ interface Book {
 type Step = "library" | "payment" | "confirm" | "done";
 
 export default function UserBooksPage() {
+  const { t } = useI18n();
   const [books, setBooks] = useState<Book[]>([]);
   const [myBooks, setMyBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,16 +79,16 @@ export default function UserBooksPage() {
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
+    toast.success(t('books.copiedToClipboard'));
   };
 
   const handlePurchase = (book: Book) => {
     if (book.price === 0) {
       api.post(`/books/${book.id}/purchase`).then(() => {
         fetchBooks();
-        toast.success("Book unlocked!");
+        toast.success(t('books.bookUnlocked'));
       }).catch((e: any) => {
-        toast.error(e.response?.data?.error || "Failed to unlock book");
+        toast.error(e.response?.data?.error || t('books.failedToUnlock'));
       });
       return;
     }
@@ -105,9 +107,9 @@ export default function UserBooksPage() {
     try {
       const { data } = await paymentService.uploadReceipt(file);
       setReceiptUrl(data.receiptUrl || "");
-      toast.success("Receipt uploaded");
+      toast.success(t('books.receiptUploaded'));
     } catch {
-      toast.error("Failed to upload receipt");
+      toast.error(t('books.receiptUploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -116,7 +118,7 @@ export default function UserBooksPage() {
   const handleSubmitPayment = async () => {
     if (!selectedBook || !selectedMethod) return;
     if (!referenceNumber.trim()) {
-      toast.error("Reference number is required");
+      toast.error(t('books.refNumberRequired'));
       return;
     }
     setSubmitting(true);
@@ -132,7 +134,7 @@ export default function UserBooksPage() {
       setStep("done");
       fetchBooks();
     } catch (e: any) {
-      toast.error(e.response?.data?.error || "Failed to submit payment");
+      toast.error(e.response?.data?.error || t('books.failedToSubmitPayment'));
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +169,7 @@ export default function UserBooksPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (e: any) {
-      toast.error(e.response?.data?.error || "Failed to download book");
+      toast.error(e.response?.data?.error || t('books.failedToDownload'));
     }
   };
 
@@ -194,7 +196,7 @@ export default function UserBooksPage() {
             {step === "payment" && (
               <div>
                 <button onClick={resetFlow} className="flex items-center gap-1 text-sm text-charcoal-500 hover:text-charcoal-900 dark:hover:text-white mb-4">
-                  <ChevronLeft className="w-4 h-4" /> Back to Books
+                  <ChevronLeft className="w-4 h-4" /> {t('books.backToBooks')}
                 </button>
 
                 <div className="bg-white dark:bg-charcoal-800 rounded-2xl border border-charcoal-100 dark:border-charcoal-700 p-6 mb-6">
@@ -205,19 +207,19 @@ export default function UserBooksPage() {
                       </div>
                       <div>
                         <p className="font-display font-bold text-charcoal-900 dark:text-white">{selectedBook.title}</p>
-                        <p className="text-xs text-charcoal-400">by {selectedBook.author}</p>
+                        <p className="text-xs text-charcoal-400">{t('books.by', { author: selectedBook.author })}</p>
                       </div>
                     </div>
                     <p className="text-2xl font-bold text-charcoal-900 dark:text-white">{selectedBook.currency} {selectedBook.price.toLocaleString()}</p>
                   </div>
                 </div>
 
-                <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white mb-1">Choose Payment Method</h2>
-                <p className="text-sm text-charcoal-500 dark:text-charcoal-400 mb-4">Send <span className="font-semibold">{selectedBook.currency} {selectedBook.price.toLocaleString()}</span> to one of the accounts below, then continue.</p>
+                <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white mb-1">{t('books.choosePayment')}</h2>
+                <p className="text-sm text-charcoal-500 dark:text-charcoal-400 mb-4">{t('books.sendAmount', { amount: `${selectedBook.currency} ${selectedBook.price.toLocaleString()}` })}</p>
 
                 <div className="space-y-3">
                   {paymentMethods.length === 0 ? (
-                    <p className="text-sm text-charcoal-400 text-center py-4">No payment methods available. Please contact support.</p>
+                    <p className="text-sm text-charcoal-400 text-center py-4">{t('books.noPaymentMethods')}</p>
                   ) : paymentMethods.map((method) => (
                     <div
                       key={method.id}
@@ -257,7 +259,7 @@ export default function UserBooksPage() {
                   onClick={() => setStep("confirm")}
                   className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent text-white text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
                 >
-                  I've Made the Payment
+                  {t('books.madePayment')}
                 </button>
               </div>
             )}
@@ -266,43 +268,43 @@ export default function UserBooksPage() {
             {step === "confirm" && selectedMethod && (
               <div>
                 <button onClick={() => setStep("payment")} className="flex items-center gap-1 text-sm text-charcoal-500 hover:text-charcoal-900 dark:hover:text-white mb-4">
-                  <ChevronLeft className="w-4 h-4" /> Back
+                  <ChevronLeft className="w-4 h-4" /> {t('books.back')}
                 </button>
 
                 <div className="bg-white dark:bg-charcoal-800 rounded-2xl border border-charcoal-100 dark:border-charcoal-700 p-6">
-                  <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white mb-1">Confirm Your Payment</h2>
+                  <h2 className="text-lg font-display font-bold text-charcoal-900 dark:text-white mb-1">{t('books.confirmPayment')}</h2>
                   <p className="text-sm text-charcoal-500 dark:text-charcoal-400 mb-5">
-                    Paid <span className="font-semibold">{selectedBook.currency} {selectedBook.price.toLocaleString()}</span> for <span className="font-semibold">{selectedBook.title}</span> via {selectedMethod.name}. Enter your transaction details for verification.
+                    {t('books.confirmDesc', { amount: `${selectedBook.currency} ${selectedBook.price.toLocaleString()}`, title: selectedBook.title, method: selectedMethod.name })}
                   </p>
 
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">
-                        Transaction / Reference Number <span className="text-red-500">*</span>
+                        {t('books.refNumber')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         value={referenceNumber}
                         onChange={(e) => setReferenceNumber(e.target.value)}
-                        placeholder="e.g. TB1234567890"
+                        placeholder={t('books.refNumberPlaceholder')}
                         className="w-full px-4 py-2.5 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-sm text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">
-                        Transaction ID <span className="text-charcoal-400 font-normal">(optional)</span>
+                        {t('books.transactionId')} <span className="text-charcoal-400 font-normal">({t('common.optional')})</span>
                       </label>
                       <input
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
-                        placeholder="Additional transaction ID if any"
+                        placeholder={t('books.transactionIdOptional')}
                         className="w-full px-4 py-2.5 rounded-xl bg-charcoal-50 dark:bg-charcoal-700 border border-charcoal-200 dark:border-charcoal-600 text-sm text-charcoal-900 dark:text-white placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-accent/50"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-charcoal-700 dark:text-charcoal-300 mb-1.5">
-                        Upload Receipt <span className="text-charcoal-400 font-normal">(recommended)</span>
+                        {t('books.uploadReceipt')} <span className="text-charcoal-400 font-normal">({t('books.recommended')})</span>
                       </label>
                       {receiptUrl ? (
                         <div className="relative rounded-xl overflow-hidden border border-charcoal-200 dark:border-charcoal-600">
@@ -321,7 +323,7 @@ export default function UserBooksPage() {
                           ) : (
                             <>
                               <Upload className="w-6 h-6 text-charcoal-400" />
-                              <span className="text-sm text-charcoal-500 dark:text-charcoal-400">Tap to upload receipt screenshot</span>
+                              <span className="text-sm text-charcoal-500 dark:text-charcoal-400">{t('books.uploadReceiptHint')}</span>
                             </>
                           )}
                           <input type="file" accept="image/*" className="hidden" onChange={handleReceiptUpload} disabled={uploading} />
@@ -336,7 +338,7 @@ export default function UserBooksPage() {
                     className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent text-white text-sm font-semibold disabled:opacity-50 hover:opacity-90 transition-opacity"
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    Submit for Verification
+                    {t('books.submitForVerification')}
                   </button>
                 </div>
               </div>
@@ -348,12 +350,12 @@ export default function UserBooksPage() {
                 <div className="w-20 h-20 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mx-auto mb-6">
                   <Clock className="w-10 h-10 text-amber-500" />
                 </div>
-                <h2 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">Payment Submitted!</h2>
+                <h2 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white mb-2">{t('books.paymentSubmitted')}</h2>
                 <p className="text-charcoal-500 dark:text-charcoal-400 mb-6">
-                  Your payment for <span className="font-semibold">{selectedBook.title}</span> is now <span className="font-semibold text-amber-500">pending review</span>. Our admins will verify your transaction and unlock the book shortly. You'll be notified once approved.
+                  {t('books.paymentSubmittedDesc', { title: selectedBook.title })}
                 </p>
                 <button onClick={resetFlow} className="px-6 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                  Back to Books
+                  {t('books.backToBooks')}
                 </button>
               </div>
             )}
@@ -372,9 +374,9 @@ export default function UserBooksPage() {
           <div className="mb-6">
             <h1 className="text-3xl font-display font-bold text-charcoal-900 dark:text-white flex items-center gap-2">
               <BookOpen className="w-7 h-7 text-accent" />
-              Books Library
+              {t('books.title')}
             </h1>
-            <p className="text-charcoal-500 dark:text-charcoal-400 mt-1">Read Islamic books on marriage, relationships, and spirituality</p>
+            <p className="text-charcoal-500 dark:text-charcoal-400 mt-1">{t('books.subtitle')}</p>
           </div>
 
           {error && (
@@ -391,21 +393,21 @@ export default function UserBooksPage() {
                 tab === "library" ? "bg-accent text-white shadow-md" : "bg-charcoal-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-charcoal-300 hover:bg-charcoal-200 dark:hover:bg-charcoal-700"
               )}
             >
-              <Library className="w-4 h-4" /> Library ({books.length})
+              <Library className="w-4 h-4" /> {t('books.tabLibrary')} ({books.length})
             </button>
             <button onClick={() => setTab("my-books")}
               className={cn("flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                 tab === "my-books" ? "bg-accent text-white shadow-md" : "bg-charcoal-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-charcoal-300 hover:bg-charcoal-200 dark:hover:bg-charcoal-700"
               )}
             >
-              <BookOpen className="w-4 h-4" /> My Books ({myBooks.length})
+              <BookOpen className="w-4 h-4" /> {t('books.tabMyBooks')} ({myBooks.length})
             </button>
           </div>
 
           {/* Search */}
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by title, author, or category..."
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('books.searchPlaceholder')}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-charcoal-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-900 text-charcoal-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent/30" />
           </div>
 
@@ -418,7 +420,7 @@ export default function UserBooksPage() {
             <div className="text-center py-16">
               <BookOpen className="w-12 h-12 text-charcoal-300 dark:text-charcoal-600 mx-auto mb-3" />
               <p className="text-charcoal-400 dark:text-charcoal-500">
-                {tab === "library" ? "No books available yet" : "You haven't unlocked any books yet"}
+                {tab === "library" ? t('books.noBooks') : t('books.noMyBooks')}
               </p>
             </div>
           ) : (
@@ -442,14 +444,14 @@ export default function UserBooksPage() {
                   {/* Content */}
                   <div className="p-4">
                     <h3 className="font-semibold text-charcoal-900 dark:text-white text-sm leading-tight mb-1 line-clamp-2">{book.title}</h3>
-                    <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-2">by {book.author}</p>
+                    <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mb-2">{t('books.by', { author: book.author })}</p>
                     {book.description && <p className="text-xs text-charcoal-400 dark:text-charcoal-500 line-clamp-2 mb-3">{book.description}</p>}
 
                     <div className="flex items-center gap-2 mb-3">
                       <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium",
                         book.price === 0 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                       )}>
-                        {book.price === 0 ? "Free" : `${book.price} ${book.currency}`}
+                        {book.price === 0 ? t('books.free') : `${book.price} ${book.currency}`}
                       </span>
                       {book.category && <span className="text-xs text-charcoal-400 dark:text-charcoal-500">{book.category}</span>}
                       <span className="text-xs text-charcoal-400 dark:text-charcoal-500 uppercase ml-auto">{book.fileType}</span>
@@ -461,32 +463,32 @@ export default function UserBooksPage() {
                         <button onClick={() => handleDownload(book)}
                           className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
                         >
-                          <Download className="w-4 h-4" /> Download
+                          <Download className="w-4 h-4" /> {t('books.download')}
                         </button>
                       ) : book.isPending ? (
                         <button disabled
                           className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-sm font-medium cursor-not-allowed"
                         >
-                          <Clock className="w-4 h-4" /> Pending Review
+                          <Clock className="w-4 h-4" /> {t('books.pendingReview')}
                         </button>
                       ) : book.price === 0 ? (
                         <button onClick={() => handlePurchase(book)}
                           className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
                         >
-                          <CheckCircle className="w-4 h-4" /> Unlock Free
+                          <CheckCircle className="w-4 h-4" /> {t('books.unlockFree')}
                         </button>
                       ) : (
                         <button onClick={() => handlePurchase(book)}
                           className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
                         >
-                          <Lock className="w-4 h-4" /> Unlock for {book.price} {book.currency}
+                          <Lock className="w-4 h-4" /> {t('books.unlockFor', { price: book.price, currency: book.currency })}
                         </button>
                       )
                     ) : (
                       <button onClick={() => handleDownload(book)}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
                       >
-                        <Download className="w-4 h-4" /> Download
+                        <Download className="w-4 h-4" /> {t('books.download')}
                       </button>
                     )}
                   </div>

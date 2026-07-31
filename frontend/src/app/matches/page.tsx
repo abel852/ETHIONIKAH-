@@ -203,7 +203,7 @@ function SwipeCard({ profile, onSwipe, isTop, zIndex, chatCount }: {
           {chatCount != null && chatCount > 0 && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-white text-[10px] font-medium shadow-md">
               <MessageSquare className="w-2.5 h-2.5" />
-              <span>{chatCount} active {chatCount === 1 ? "chat" : "chats"}</span>
+              <span>{chatCount} {t('matches.activeChats', { count: chatCount })}</span>
             </div>
           )}
 
@@ -419,11 +419,11 @@ export default function MatchesPage() {
     try {
       await conversationRequestService.create(requestTarget.id, requestMessage || undefined);
       setRequestStatusMap((prev) => ({ ...prev, [requestTarget.id]: "pending" }));
-      setRequestToast("Conversation request sent!");
+      setRequestToast(t('matches.requestSent'));
       setShowRequestDialog(false);
       setRequestMessage("");
     } catch (err: any) {
-      setRequestToast(err?.response?.data?.error || "Failed to send request");
+      setRequestToast(err?.response?.data?.error || t('matches.requestFailed'));
     } finally {
       setSendingRequest(false);
       setTimeout(() => setRequestToast(null), 4000);
@@ -613,15 +613,15 @@ export default function MatchesPage() {
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
                 <Send className="w-6 h-6 text-accent" />
               </div>
-              <h3 className="text-lg font-bold text-charcoal-900 dark:text-white mb-2">Start Conversation</h3>
+              <h3 className="text-lg font-bold text-charcoal-900 dark:text-white mb-2">{t('matches.startConversation')}</h3>
               <p className="text-sm text-charcoal-500 dark:text-charcoal-400">
-                Send a conversation request to <span className="font-semibold text-accent">{[requestTarget.firstName, requestTarget.lastName].filter(Boolean).join(" ")}</span>.
+                {t('matches.sendRequestTo')} <span className="font-semibold text-accent">{[requestTarget.firstName, requestTarget.lastName].filter(Boolean).join(" ")}</span>.
               </p>
             </div>
             <textarea
               value={requestMessage}
               onChange={(e) => setRequestMessage(e.target.value)}
-              placeholder="Add an optional message..."
+              placeholder={t('matches.addOptionalMessage')}
               rows={3}
               className="w-full text-sm bg-charcoal-50 dark:bg-charcoal-900 border border-charcoal-200 dark:border-charcoal-700 rounded-lg px-3 py-2 text-charcoal-900 dark:text-white placeholder-charcoal-400 resize-none mb-4 outline-none focus:border-accent/40"
             />
@@ -630,7 +630,7 @@ export default function MatchesPage() {
                 onClick={() => { setShowRequestDialog(false); setRequestMessage(""); }}
                 className="px-4 py-2 text-sm font-medium text-charcoal-500 dark:text-charcoal-400 hover:bg-charcoal-100 dark:hover:bg-charcoal-700 rounded-lg transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={sendConversationRequest}
@@ -638,7 +638,7 @@ export default function MatchesPage() {
                 className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-accent to-accent/80 text-white rounded-lg hover:from-accent/90 hover:to-accent/70 disabled:opacity-50 transition-all flex items-center gap-2"
               >
                 {sendingRequest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {sendingRequest ? "Sending..." : "Send Request"}
+                {sendingRequest ? t('matches.sending') : t('matches.sendRequest')}
               </button>
             </div>
           </div>

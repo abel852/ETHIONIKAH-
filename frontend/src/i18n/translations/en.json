@@ -3,7 +3,6 @@
   "app.tagline": "Find your righteous spouse in a safe, Sharia-compliant environment.",
   "app.slogan": "Find Your Naseeb",
   "app.quran": "\"And among His signs is this, that He created for you mates from among yourselves, that you may dwell in tranquility with them.\" — Quran, Surah Ar-Rum (30:21)",
-
   "common.back": "Back",
   "common.continue": "Continue",
   "common.save": "Save",
@@ -24,14 +23,12 @@
   "common.noPreference": "No preference",
   "common.preferNotToSay": "Prefer not to say",
   "common.preferNotToAnswer": "Prefer not to answer.",
-
   "lang.select": "Choose Your Language",
   "lang.selectDesc": "Select your preferred language to continue",
   "lang.english": "English",
   "lang.amharic": "አማርኛ",
   "lang.arabic": "العربية",
   "lang.oromo": "Afaan Oromoo",
-
   "nav.home": "Home",
   "nav.matches": "Matches",
   "nav.profile": "Profile",
@@ -45,7 +42,30 @@
   "nav.openMenu": "Open menu",
   "nav.closeMenu": "Close menu",
   "nav.books": "Books",
-
+  "nav.features": "Features",
+  "nav.journey": "Your Journey",
+  "nav.whyJoin": "Why Join EthioNikah",
+  "nav.downloadApp": "Download App",
+  "nav.downloadAppMobile": "Better experience on mobile",
+  "nav.downloadAppMobileShare": "Better experience on mobile · Share → Add to Home Screen",
+  "nav.trustVerified": "Verified",
+  "nav.trustMembers": "Members",
+  "nav.trustSecure": "Secure",
+  "nav.trustMessaging": "Messaging",
+  "nav.trustSharia": "Sharia",
+  "nav.trustCompliant": "Compliant",
+  "nav.or": "OR",
+  "nav.locked": "Locked",
+  "nav.membership": "Membership",
+  "nav.upgrade": "Upgrade",
+  "nav.pro": "PRO",
+  "nav.banned": "Your account has been suspended",
+  "nav.bannedPermanently": "permanently",
+  "nav.submitComplaint": "Submit a complaint",
+  "nav.toContactAdmins": "to contact admins",
+  "nav.premiumMember": "Premium Member",
+  "nav.verified": "Verified",
+  "nav.unverified": "Unverified",
   "auth.home": "Home",
   "auth.welcomeBack": "Welcome Back",
   "auth.signInToContinue": "Sign in to continue your journey",
@@ -83,7 +103,6 @@
   "auth.backToLogin": "Back to login",
   "auth.tooManyAttempts": "Too many failed attempts. CAPTCHA verification required.",
   "auth.attemptsRemaining": "{error} ({n} attempt(s) remaining)",
-
   "auth.resetPassword": "Reset Password",
   "auth.resetPasswordDesc": "Enter your email and we'll send you a reset link",
   "auth.sendResetLink": "Send Reset Link",
@@ -107,7 +126,6 @@
   "auth.twoFactorRequired": "This account has 2FA enabled. Enter your authenticator code.",
   "auth.twoFactorCodeRequired": "2FA code is required",
   "auth.failedToReset": "Failed to reset password",
-
   "register.title": "Create Account",
   "register.alreadyHaveAccount": "Already have an account?",
   "register.signIn": "Sign in",
@@ -127,7 +145,6 @@
   "register.successMessage": "Your account has been opened successfully. Welcome to Ethio Nikah!",
   "register.signInNow": "Sign In",
   "register.failed": "Registration failed. Please try again.",
-
   "register.step1.title": "Step 1: Account Creation",
   "register.step1.firstName": "First Name",
   "register.step1.firstNamePlaceholder": "First Name",
@@ -150,7 +167,6 @@
   "register.step1.errPassword": "Password is required",
   "register.step1.errPasswordLength": "Password must be at least 8 characters",
   "register.step1.errTerms": "Please accept the Terms & Conditions",
-
   "register.step2.title": "Step 2: Basic Profile Information",
   "register.step2.gender": "Gender",
   "register.step2.male": "Male",
@@ -230,7 +246,6 @@
   "register.step2.errCity": "City is required",
   "register.step2.errCitySpecify": "Please specify your city",
   "register.step2.errMaritalStatus": "Marital status is required",
-
   "register.step3.title": "Step 3: Religious Information",
   "register.step3.religiousCommitment": "Religious Commitment",
   "register.step3.practicing": "Practicing",
@@ -266,7 +281,6 @@
   "register.step3.errReligiousCommitment": "Religious commitment is required",
   "register.step3.errPrayerHabits": "Prayer habits are required",
   "register.step3.errQuranFrequency": "Quran reading frequency is required",
-
   "register.step4.title": "Step 4: Education & Career",
   "register.step4.educationLevel": "Highest Education Level",
   "register.step4.highSchool": "High School",
@@ -292,7 +306,6 @@
   "register.step4.errEducation": "Education level is required",
   "register.step4.errOccupation": "Occupation is required",
   "register.step4.errEmployment": "Employment status is required",
-
   "register.step5.title": "Step 5: Marriage Intentions",
   "register.step5.reason": "Reason for Joining",
   "register.step5.seekingMarriage": "Seeking Marriage",
@@ -314,7 +327,6 @@
   "register.step5.errReason": "Reason for joining is required",
   "register.step5.errTimeline": "Desired marriage timeline is required",
   "register.step5.errChildren": "Children preference is required",
-
   "register.step6.title": "Step 6: Family Background",
   "register.step6.ethnicBackground": "Ethnic Background (Optional)",
   "register.step6.ethnicPlaceholder": "Oromo, Amhara, etc.",
@@ -326,7 +338,6 @@
   "register.step6.minimal": "Minimal",
   "register.step6.errMotherTongue": "Mother tongue is required",
   "register.step6.errFamilyInvolvement": "Family involvement preference is required",
-
   "register.step7.title": "Step 7: Lifestyle",
   "register.step7.smoking": "Smoking Habits",
   "register.step7.never": "Never",
@@ -343,7 +354,6 @@
   "register.step7.errKhat": "Khat usage is required",
   "register.step7.errExercise": "Exercise habits are required",
   "register.step7.errLiving": "Living preference is required",
-
   "register.step8.title": "Step 8: Personality & Interests",
   "register.step8.selfDescription": "Self Description",
   "register.step8.selfDescriptionPlaceholder": "Tell us about yourself...",
@@ -360,7 +370,6 @@
   "register.step8.interestsPlaceholder": "Reading, Sports, Travel, Islamic Studies, etc.",
   "register.step8.errSelfDescription": "Self description is required",
   "register.step8.errInterests": "Interests and hobbies are required",
-
   "register.step9.title": "Step 9: Spouse Preferences",
   "register.step9.ageRange": "Preferred Age Range",
   "register.step9.min": "Min",
@@ -394,7 +403,6 @@
   "register.step9.errWali": "Wali/guardian involvement is required",
   "register.step9.errPolygamy": "Polygamy preference is required",
   "register.step9.errGenderInteraction": "Gender interaction preference is required",
-
   "register.step10.title": "Step 10: Health Information",
   "register.step10.disclaimer": "This information is optional, confidential, and encrypted. It will never be shared without your consent.",
   "register.step10.importantDisclaimer": "Important Disclaimer",
@@ -431,7 +439,6 @@
   "register.step10.creatingAccount": "Creating Account...",
   "register.step10.createAccount": "Create Account",
   "register.step10.errDwarfismDetails": "Please specify your dwarfism details",
-
   "months.january": "January",
   "months.february": "February",
   "months.march": "March",
@@ -444,7 +451,6 @@
   "months.october": "October",
   "months.november": "November",
   "months.december": "December",
-
   "profile.title": "Profile",
   "profile.edit": "Edit Profile",
   "profile.changePhoto": "Change Photo",
@@ -545,7 +551,6 @@
   "profile.personalPreference": "Personal Preference",
   "profile.yes": "Yes",
   "profile.no": "No",
-
   "preferences.title": "Spouse Preferences",
   "preferences.subtitle": "Define what you're looking for in a partner",
   "preferences.partnerCriteria": "Partner Criteria",
@@ -577,7 +582,6 @@
   "preferences.errAgeMin": "Minimum age must be between 18 and 120",
   "preferences.errAgeMax": "Maximum age must be between 18 and 120",
   "preferences.errAgeRange": "Maximum age cannot be less than minimum age",
-
   "settings.title": "Settings",
   "settings.general": "General",
   "settings.appearance": "Appearance",
@@ -740,7 +744,6 @@
   "settings.chooseNotifications": "Choose which notifications you receive",
   "settings.recoveryRegenerated": "Recovery codes regenerated",
   "settings.genericFailed": "Failed",
-
   "messages.title": "Messages",
   "messages.search": "Search conversations...",
   "messages.noConversations": "No conversations yet",
@@ -782,7 +785,6 @@
   "messages.submitReportError": "Failed to submit report",
   "messages.userFallback": "User",
   "messages.thisUser": "this user",
-
   "verification.title": "Verification",
   "verification.subtitlePending": "Your verification status",
   "verification.subtitleUpload": "Upload your ID and selfie for admin review",
@@ -816,7 +818,6 @@
   "verification.refreshStatus": "Refresh status",
   "verification.cancel": "Cancel",
   "verification.tapToCapture": "Tap the circle to capture",
-
   "matches.empty": "No more profiles",
   "matches.allCaughtUp": "All Caught Up!",
   "matches.allCaughtUpDesc": "You've viewed everyone available right now. Check back later for new members.",
@@ -841,7 +842,6 @@
   "matches.noLikesYet": "No Likes Yet",
   "matches.noLikesDesc": "When someone likes your profile, they will appear here.",
   "matches.message": "Message",
-
   "health.title": "Health Information",
   "health.hivStatus": "HIV Status",
   "health.yourHivStatus": "Your HIV Status",
@@ -867,7 +867,6 @@
   "health.otherConditionsLabel": "Any other health conditions you'd like to share? (optional)",
   "health.otherConditionsPlaceholder": "Share any other health information you think is relevant...",
   "health.disclaimerText": "This platform relies on self-reported health information. We cannot verify medical status. All information is encrypted and only shared with matches if you choose to disclose it. We strongly recommend discussing health matters directly with potential partners and consulting with medical professionals before marriage.",
-
   "footer.tagline": "Find your righteous spouse in a safe, Sharia-compliant environment. Premium matchmaking for the Muslim community.",
   "footer.rights": "All rights reserved.",
   "footer.platform": "Platform",
@@ -885,7 +884,6 @@
   "footer.privacyPolicy": "Privacy Policy",
   "footer.communityGuidelines": "Community Guidelines",
   "footer.shariaCompliance": "Sharia Compliance",
-
   "home.heroEyebrow": "Ethiopia's #1 Islamic Matrimonial Platform",
   "home.heroTitle": "Where Faith, Trust",
   "home.heroTitleLine2": "and {highlight} Meet",
@@ -903,7 +901,6 @@
   "home.ctaPrimary": "Create Free Account",
   "home.ctaSecondary": "Sign In",
   "home.ctaTrust": "Trusted by thousands of Muslim families across Ethiopia",
-
   "home.featuresEyebrow": "Platform Features",
   "home.featuresTitle": "Everything You Need to Find Your Spouse",
   "home.featuresSubtitle": "Powerful tools designed around Islamic values to help you find your righteous partner with confidence.",
@@ -943,7 +940,6 @@
   "home.premiumFeature6": "Dedicated Support",
   "home.premiumFeature6Desc": "Priority customer service",
   "home.premiumFooter": "Sign up free — upgrade anytime. No hidden fees.",
-
   "home.trustEyebrow": "Why Families Trust Us",
   "home.trustTitle": "Built on Integrity & Faith",
   "home.trustSubtitle": "Every feature, every decision — rooted in sincerity, transparency, and Islamic ethics.",
@@ -955,7 +951,6 @@
   "home.trust3Desc": "Designed around Islamic values. Guardian involvement, respectful communication, and marriage-first approach.",
   "home.trust4Title": "Family Inclusive",
   "home.trust4Desc": "Optional wali access allows family to participate in the process with dignity and transparency.",
-
   "home.journeyEyebrow": "Your Journey",
   "home.journeyTitle": "The Path to a Blessed Union",
   "home.journeySubtitle": "Every great marriage begins with intention. Here is how we walk with you.",
@@ -971,7 +966,6 @@
   "home.journeyStep5Desc": "Invite your wali or family to review profiles and participate in the process when you're ready.",
   "home.journeyStep6Title": "Blessed Marriage",
   "home.journeyStep6Desc": "When hearts align, we support your journey toward a blessed union grounded in faith and mutual respect.",
-
   "home.benefitsEyebrow": "Why Join Ethio Nikah",
   "home.benefitsTitle": "Everything You Need for a Blessed Marriage",
   "home.benefitsSubtitle": "A platform built on Islamic values, designed to help you find your righteous spouse with confidence and peace of mind.",
@@ -993,7 +987,6 @@
   "home.benefit8Desc": "Built specifically for the Ethiopian Muslim community. Connect with singles from Addis Ababa, Dire Dawa, Adama, and across the country.",
   "home.benefitsCta": "Create Your Free Profile",
   "home.benefitsCtaDesc": "Join today — it takes only 5 minutes",
-
   "admin.language": "Language",
   "admin.darkMode": "Dark Mode",
   "admin.logout": "Logout",
@@ -1039,7 +1032,6 @@
   "admin.results": "results",
   "admin.filterBy": "Filter by",
   "admin.searchPlaceholder": "Search...",
-
   "admin.nav.overview": "Overview",
   "admin.nav.management": "Management",
   "admin.nav.moderation": "Moderation",
@@ -1066,7 +1058,6 @@
   "admin.nav.backup": "Backup & Restore",
   "admin.nav.books": "Books",
   "admin.nav.community": "Community",
-
   "admin.dashboard.title": "Dashboard",
   "admin.dashboard.subtitle": "Platform overview and key metrics",
   "admin.dashboard.totalUsers": "Total Users",
@@ -1106,7 +1097,6 @@
   "admin.dashboard.viewAll": "View All",
   "admin.dashboard.noUsers": "No users yet",
   "admin.dashboard.noActivity": "No recent activity",
-
   "admin.analytics.title": "Analytics",
   "admin.analytics.subtitle": "Comprehensive platform analytics and insights",
   "admin.analytics.platformStats": "Platform Statistics",
@@ -1146,7 +1136,6 @@
   "admin.analytics.currentlySuspended": "currently suspended",
   "admin.analytics.permanentlyBanned": "permanently banned",
   "admin.analytics.unread": "unread",
-
   "admin.users.title": "User Management",
   "admin.users.subtitle": "Manage all platform users",
   "admin.users.searchPlaceholder": "Search by name, email, or username...",
@@ -1173,7 +1162,6 @@
   "admin.users.email": "Email",
   "admin.users.status": "Status",
   "admin.users.date": "Date",
-
   "admin.verifications.title": "Verifications",
   "admin.verifications.subtitle": "Review and process ID verifications",
   "admin.verifications.pending": "Pending",
@@ -1186,7 +1174,6 @@
   "admin.verifications.adminNote": "Admin Note",
   "admin.verifications.idDocument": "ID Document",
   "admin.verifications.selfie": "Selfie",
-
   "admin.reports.title": "Reports",
   "admin.reports.subtitle": "Handle user reports and violations",
   "admin.reports.reportedUser": "Reported User",
@@ -1195,7 +1182,6 @@
   "admin.reports.markResolved": "Mark Resolved",
   "admin.reports.markDismissed": "Mark Dismissed",
   "admin.reports.viewDetails": "View Details",
-
   "admin.complaints.title": "Complaints",
   "admin.complaints.subtitle": "Manage user complaints",
   "admin.complaints.subject": "Subject",
@@ -1204,7 +1190,6 @@
   "admin.complaints.respond": "Respond",
   "admin.complaints.resolve": "Resolve",
   "admin.complaints.adminResponse": "Admin Response",
-
   "admin.payments.title": "Payments",
   "admin.payments.subtitle": "Review and process payment verifications",
   "admin.payments.noPayments": "No payments found",
@@ -1218,7 +1203,6 @@
   "admin.payments.user": "User",
   "admin.payments.plan": "Plan",
   "admin.payments.date": "Date",
-
   "admin.auditLogs.title": "Audit Logs",
   "admin.auditLogs.subtitle": "Track all admin actions",
   "admin.auditLogs.noLogs": "No audit logs found",
@@ -1228,7 +1212,6 @@
   "admin.auditLogs.details": "Details",
   "admin.auditLogs.ipAddress": "IP Address",
   "admin.auditLogs.filterByAction": "Filter by action",
-
   "admin.settings.title": "Settings",
   "admin.settings.subtitle": "System configuration and preferences",
   "admin.settings.general": "General",
@@ -1239,7 +1222,6 @@
   "admin.settings.save": "Save Settings",
   "admin.settings.saved": "Settings saved successfully",
   "admin.settings.saveFailed": "Failed to save settings",
-
   "admin.recycleBin.title": "Recycle Bin",
   "admin.recycleBin.subtitle": "Deleted users and content",
   "admin.recycleBin.noItems": "No items in recycle bin",
@@ -1247,7 +1229,6 @@
   "admin.recycleBin.permanentDelete": "Delete Permanently",
   "admin.recycleBin.confirmRestore": "Restore this item?",
   "admin.recycleBin.confirmPermanentDelete": "Permanently delete this item? This cannot be undone.",
-
   "admin.admins.title": "Admin Management",
   "admin.admins.subtitle": "Manage admin accounts and permissions",
   "admin.admins.addAdmin": "Add Admin",
@@ -1255,7 +1236,6 @@
   "admin.admins.permissions": "Permissions",
   "admin.admins.superAdmin": "Super Admin",
   "admin.admins.adminRole": "Admin Role",
-
   "admin.plans.title": "Plans & Credits",
   "admin.plans.subtitle": "Manage membership plans and credit packages",
   "admin.plans.addPlan": "Add Plan",
@@ -1264,36 +1244,28 @@
   "admin.plans.price": "Price",
   "admin.plans.features": "Features",
   "admin.plans.credits": "Credits",
-
   "admin.paymentMethods.title": "Payment Methods",
   "admin.paymentMethods.subtitle": "Manage accepted payment methods",
   "admin.paymentMethods.addMethod": "Add Payment Method",
   "admin.paymentMethods.noMethods": "No payment methods found",
   "admin.paymentMethods.instructions": "Instructions",
   "admin.paymentMethods.accountInfo": "Account Info",
-
   "admin.activity.title": "Activity Log",
   "admin.activity.subtitle": "Recent platform activity",
   "admin.activity.noActivity": "No recent activity",
-
   "admin.featureToggles.title": "Feature Toggles",
   "admin.featureToggles.subtitle": "Enable or disable platform features",
   "admin.featureToggles.noToggles": "No feature toggles found",
   "admin.featureToggles.enabled": "Enabled",
   "admin.featureToggles.disabled": "Disabled",
-
   "admin.matchmaking.title": "Matchmaking",
   "admin.matchmaking.subtitle": "Configure matching algorithm settings",
-
   "admin.aiAutomation.title": "AI Automation",
   "admin.aiAutomation.subtitle": "AI-powered moderation and assistance",
-
   "admin.security.title": "Security",
   "admin.security.subtitle": "Security settings and monitoring",
-
   "admin.community.title": "Community",
   "admin.community.subtitle": "Community management and moderation",
-
   "matches.strongMatch": "Strong Match",
   "matches.goodMatch": "Good Match",
   "matches.potentialMatch": "Potential Match",
@@ -1312,7 +1284,6 @@
   "matches.profilesRemaining": "{n} profile remaining|{n} profiles remaining",
   "matches.swipeHintFull": "Swipe right to like · Swipe left to pass",
   "matches.refreshBtn": "Refresh",
-
   "liked.title": "Liked & Interest",
   "liked.subtitle": "Profiles you've liked — waiting for a response",
   "liked.noLikesYet": "No likes yet",
@@ -1332,5 +1303,52 @@
   "liked.serverUnavailable": "Server Unavailable",
   "liked.serverDown": "The server is currently down. Please wait a moment and try again.",
   "liked.retry": "Retry",
-  "liked.notAvailable": "N/A"
+  "liked.notAvailable": "N/A",
+  "matches.activeChats": "{count} active chat|{count} active chats",
+  "matches.startConversation": "Start Conversation",
+  "matches.sendRequestTo": "Send a conversation request to",
+  "matches.addOptionalMessage": "Add an optional message...",
+  "matches.sendRequest": "Send Request",
+  "matches.sending": "Sending...",
+  "matches.requestSent": "Conversation request sent!",
+  "matches.requestFailed": "Failed to send request",
+  "books.title": "Books Library",
+  "books.subtitle": "Read Islamic books on marriage, relationships, and spirituality",
+  "books.tabLibrary": "Library",
+  "books.tabMyBooks": "My Books",
+  "books.searchPlaceholder": "Search by title, author, or category...",
+  "books.noBooks": "No books available yet",
+  "books.noMyBooks": "You haven't unlocked any books yet",
+  "books.by": "by {author}",
+  "books.free": "Free",
+  "books.download": "Download",
+  "books.pendingReview": "Pending Review",
+  "books.unlockFree": "Unlock Free",
+  "books.unlockFor": "Unlock for {price} {currency}",
+  "books.backToBooks": "Back to Books",
+  "books.back": "Back",
+  "books.choosePayment": "Choose Payment Method",
+  "books.sendAmount": "Send {amount} to one of the accounts below, then continue.",
+  "books.noPaymentMethods": "No payment methods available. Please contact support.",
+  "books.madePayment": "I've Made the Payment",
+  "books.confirmPayment": "Confirm Your Payment",
+  "books.confirmDesc": "Paid {amount} for {title} via {method}. Enter your transaction details for verification.",
+  "books.refNumber": "Transaction / Reference Number",
+  "books.refNumberPlaceholder": "e.g. TB1234567890",
+  "books.transactionId": "Transaction ID",
+  "books.transactionIdOptional": "Additional transaction ID if any",
+  "books.uploadReceipt": "Upload Receipt",
+  "books.uploadReceiptHint": "Tap to upload receipt screenshot",
+  "books.submitForVerification": "Submit for Verification",
+  "books.paymentSubmitted": "Payment Submitted!",
+  "books.paymentSubmittedDesc": "Your payment for {title} is now pending review. Our admins will verify your transaction and unlock the book shortly. You'll be notified once approved.",
+  "books.copiedToClipboard": "Copied to clipboard",
+  "books.bookUnlocked": "Book unlocked!",
+  "books.failedToUnlock": "Failed to unlock book",
+  "books.receiptUploaded": "Receipt uploaded",
+  "books.receiptUploadFailed": "Failed to upload receipt",
+  "books.refNumberRequired": "Reference number is required",
+  "books.failedToSubmitPayment": "Failed to submit payment",
+  "books.failedToDownload": "Failed to download book",
+  "books.recommended": "recommended"
 }

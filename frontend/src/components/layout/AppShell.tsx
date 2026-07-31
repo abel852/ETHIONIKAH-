@@ -6,8 +6,14 @@ import Navbar from "./Navbar";
 
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone", "/contact-support", "/wali"];
 
+const NAVBAR_EXCLUDED_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone"];
+
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
+}
+
+function shouldShowNavbar(pathname: string): boolean {
+  return !NAVBAR_EXCLUDED_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
 }
 
 function isAdminRoute(pathname: string): boolean {
@@ -20,7 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isPublicRoute(pathname) || isAdminRoute(pathname)) {
     return (
       <>
-        <Navbar />
+        {shouldShowNavbar(pathname) && <Navbar />}
         {children}
       </>
     );

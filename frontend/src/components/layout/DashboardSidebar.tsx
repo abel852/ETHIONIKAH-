@@ -97,8 +97,8 @@ export default function DashboardSidebar() {
       {/* Banned Banner */}
       {isBanned && (
         <div className="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white text-center text-sm font-medium py-2.5 px-4 shadow-lg">
-          Your account has been suspended{banInfo?.remainingLabel ? ` for ${banInfo.remainingLabel}` : " permanently"}.
-          <Link href="/complaints" className="underline font-semibold mx-1 hover:text-red-100">Submit a complaint</Link> to contact admins.
+          {t('nav.banned')}{banInfo?.remainingLabel ? ` for ${banInfo.remainingLabel}` : ` ${t('nav.bannedPermanently')}`}.
+          <Link href="/complaints" className="underline font-semibold mx-1 hover:text-red-100">{t('nav.submitComplaint')}</Link> {t('nav.toContactAdmins')}.
         </div>
       )}
 
@@ -290,7 +290,7 @@ export default function DashboardSidebar() {
                   </span>
                 )}
                 {disabled && (
-                  <span className="ml-1 text-[10px] text-charcoal-400 dark:text-charcoal-500 bg-charcoal-100 dark:bg-charcoal-700 px-1.5 py-0.5 rounded">Locked</span>
+                  <span className="ml-1 text-[10px] text-charcoal-400 dark:text-charcoal-500 bg-charcoal-100 dark:bg-charcoal-700 px-1.5 py-0.5 rounded">{t('nav.locked')}</span>
                 )}
               </Link>
             );
@@ -315,9 +315,9 @@ export default function DashboardSidebar() {
               )}
             >
               <Crown className="w-5 h-5 shrink-0" />
-              <span className="flex-1">{user?.isPremium ? "Membership" : "Upgrade"}</span>
+              <span className="flex-1">{user?.isPremium ? t('nav.membership') : t('nav.upgrade')}</span>
               {!user?.isPremium && (
-                <span className="text-[10px] font-bold bg-accent text-white px-1.5 py-0.5 rounded">PRO</span>
+                <span className="text-[10px] font-bold bg-accent text-white px-1.5 py-0.5 rounded">{t('nav.pro')}</span>
               )}
             </Link>
           )}
@@ -332,7 +332,7 @@ export default function DashboardSidebar() {
               )}
             >
               <BookOpen className="w-5 h-5 shrink-0" />
-              <span className="flex-1">Books</span>
+              <span className="flex-1">{t('nav.books')}</span>
             </Link>
           )}
         </nav>
@@ -361,7 +361,7 @@ export default function DashboardSidebar() {
                 <p className="text-sm font-medium text-charcoal-900 dark:text-white truncate">{[user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User"}</p>
                 {user?.verificationStatus === "verified" && <VerifiedBadge />}
               </div>
-              <p className="text-xs text-charcoal-500">{user?.isPremium ? "Premium Member" : user?.verificationStatus === "verified" ? "Verified" : "Unverified"}</p>
+              <p className="text-xs text-charcoal-500">{user?.isPremium ? t('nav.premiumMember') : user?.verificationStatus === "verified" ? t('nav.verified') : t('nav.unverified')}</p>
             </div>
           </div>
           <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 rounded-xl text-sm font-medium text-charcoal-500 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-all">

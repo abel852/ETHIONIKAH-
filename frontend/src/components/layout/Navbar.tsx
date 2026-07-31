@@ -57,11 +57,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const navLinks = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/matches", label: "Matches", icon: Users },
-    { href: "/#features", label: "Features", icon: Sparkles },
-    { href: "/#journey", label: "Your Journey", icon: Compass },
-    { href: "/#why-join", label: "Why Join EthioNikah", icon: Heart },
+    { href: "/", label: t("nav.home"), icon: Home },
+    { href: "/matches", label: t("nav.matches"), icon: Users },
+    { href: "/#features", label: t("nav.features"), icon: Sparkles },
+    { href: "/#journey", label: t("nav.journey"), icon: Compass },
+    { href: "/#why-join", label: t("nav.whyJoin"), icon: Heart },
   ];
   const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -137,21 +137,23 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "relative font-bold text-xl font-cursive transition-colors after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full text-white [-webkit-text-stroke:0.6px_#D4AF37] hover:text-accent"
-                )}
-              >
-                {link.label}
-              </Link>
+          <div className="hidden xl:flex items-center gap-5">
+            {navLinks.map((link, i) => (
+              <div key={link.href} className="flex items-center gap-5">
+                {i > 0 && <span className="text-accent/20 text-xs">|</span>}
+                <Link
+                  href={link.href}
+                  className={cn(
+                    "relative font-medium text-sm font-cursive transition-colors after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full text-white [-webkit-text-stroke:0.4px_#D4AF37] hover:text-accent"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              </div>
             ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden xl:flex items-center gap-3">
             <LanguageSwitcher scrolled={scrolled} />
             {isAuthenticated && <NotificationBell />}
             {isAuthenticated ? (
@@ -173,7 +175,7 @@ export default function Navbar() {
                   <Button
                     variant="ghost"
                     size="md"
-                    className={cn("font-cursive font-bold text-lg px-6 py-2.5 transition-all duration-300 text-white [-webkit-text-stroke:0.4px_#D4AF37] hover:text-accent")}
+                    className={cn("font-cursive font-semibold text-sm px-5 py-2 transition-all duration-300 text-white [-webkit-text-stroke:0.3px_#D4AF37] hover:text-accent")}
                   >
                     {t('nav.signIn')}
                   </Button>
@@ -181,20 +183,20 @@ export default function Navbar() {
                 {installPrompt && !appInstalled && (
                   <button
                     onClick={handleInstallApp}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#D4AF37] to-[#B8860B] shadow-md shadow-[#D4AF37]/20 hover:shadow-lg hover:shadow-[#D4AF37]/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                    className="xl:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#D4AF37] to-[#B8860B] shadow-md shadow-[#D4AF37]/20 hover:shadow-lg hover:shadow-[#D4AF37]/30 hover:scale-105 active:scale-95 transition-all duration-200"
                   >
                     <Download className="w-4 h-4" />
-                    <span className="hidden lg:inline">Download App</span>
+                    <span className="hidden lg:inline">{t("nav.downloadApp")}</span>
                   </button>
                 )}
                 <Link href="/register">
-                  <Button variant="primary" size="md" className={cn("font-cursive font-bold text-lg px-6 py-2.5 shadow-glow hover:shadow-glow-lg transition-shadow duration-300", scrolled && "[-webkit-text-stroke:0.4px_#fff]")}>{t('nav.getStarted')}</Button>
+                  <Button variant="primary" size="md" className={cn("font-cursive font-semibold text-sm px-5 py-2 shadow-glow hover:shadow-glow-lg transition-shadow duration-300", scrolled && "[-webkit-text-stroke:0.3px_#fff]")}>{t('nav.getStarted')}</Button>
                 </Link>
               </>
             )}
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 xl:hidden">
             <LanguageSwitcher scrolled={scrolled} />
             <button
               aria-label={isOpen ? t("nav.closeMenu") : t("nav.openMenu")}
@@ -213,7 +215,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {createPortal(
+      {typeof document !== "undefined" && createPortal(
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -222,7 +224,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="md:hidden fixed inset-0 top-0 z-[100] bg-black/80 backdrop-blur-lg flex items-start justify-center pt-20 overflow-y-auto"
+            className="xl:hidden fixed inset-0 top-0 z-[100] bg-black/80 backdrop-blur-lg flex items-start justify-center pt-20 overflow-y-auto"
             onClick={(e) => { if (e.target === e.currentTarget) setIsOpen(false); }}
           >
             <motion.div
@@ -247,7 +249,7 @@ export default function Navbar() {
                   Ethio<span className="text-[#D4AF37]">Nikah</span>
                 </h2>
                 <p className="text-[11px] text-white/40 mt-1.5 leading-relaxed px-4">
-                  Find your righteous spouse in a safe, Sharia-compliant environment.
+                  {t("app.tagline")}
                 </p>
               </div>
 
@@ -317,9 +319,9 @@ export default function Navbar() {
                 <div className="bg-white/[0.02] border border-[#D4AF37]/10 rounded-2xl p-3.5 backdrop-blur-sm">
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { icon: BadgeCheck, title: "Verified", desc: "Members" },
-                      { icon: ShieldCheck, title: "Secure", desc: "Messaging" },
-                      { icon: Gem, title: "Sharia", desc: "Compliant" },
+                      { icon: BadgeCheck, title: t("nav.trustVerified"), desc: t("nav.trustMembers") },
+                      { icon: ShieldCheck, title: t("nav.trustSecure"), desc: t("nav.trustMessaging") },
+                      { icon: Gem, title: t("nav.trustSharia"), desc: t("nav.trustCompliant") },
                     ].map((item, i) => {
                       const Icon = item.icon;
                       return (
@@ -340,19 +342,19 @@ export default function Navbar() {
               <div className="relative px-5 pb-6 pt-1">
                 <Link href="/register" className="block" onClick={() => setIsOpen(false)}>
                   <button className="w-full py-3.5 rounded-2xl text-base font-bold text-[#0F0F12] bg-gradient-to-r from-[#D4AF37] via-[#E5C24A] to-[#B8860B] shadow-[0_8px_24px_rgba(212,175,55,0.25)] hover:shadow-[0_12px_32px_rgba(212,175,55,0.35)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
-                    Get Started
+                    {t('nav.getStarted')}
                   </button>
                 </Link>
                 <Link href="/login" className="block mt-2.5" onClick={() => setIsOpen(false)}>
                   <button className="w-full py-3.5 rounded-2xl text-base font-semibold text-[#D4AF37] border border-[#D4AF37]/25 hover:bg-[#D4AF37]/8 hover:border-[#D4AF37]/40 transition-all duration-300">
-                    Sign In
+                    {t('nav.signIn')}
                   </button>
                 </Link>
 
                 {/* OR divider */}
                 <div className="flex items-center gap-3 my-4">
                   <span className="flex-1 h-px bg-white/8" />
-                  <span className="text-[10px] font-medium text-white/25 tracking-widest uppercase">OR</span>
+                  <span className="text-[10px] font-medium text-white/25 tracking-widest uppercase">{t("nav.or")}</span>
                   <span className="flex-1 h-px bg-white/8" />
                 </div>
 
@@ -363,17 +365,17 @@ export default function Navbar() {
                     className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.03] transition-all duration-200"
                   >
                     <Download className="w-4 h-4 text-[#D4AF37]" />
-                    <span>Download App</span>
+                    <span>{t("nav.downloadApp")}</span>
                     <span className="text-white/20">·</span>
-                    <span className="text-xs text-white/30">Better experience on mobile</span>
+                    <span className="text-xs text-white/30">{t("nav.downloadAppMobile")}</span>
                   </button>
                 ) : !appInstalled ? (
                   <div className="flex flex-col items-center gap-1 py-2">
                     <div className="flex items-center gap-2 text-white/40">
                       <Download className="w-3.5 h-3.5 text-[#D4AF37]/60" />
-                      <span className="text-xs font-medium">Download App</span>
+                      <span className="text-xs font-medium">{t("nav.downloadApp")}</span>
                     </div>
-                    <p className="text-[10px] text-white/25">Better experience on mobile · Share → Add to Home Screen</p>
+                    <p className="text-[10px] text-white/25">{t("nav.downloadAppMobileShare")}</p>
                   </div>
                 ) : null}
               </div>

@@ -3,7 +3,6 @@
   "app.tagline": "Haala nagaa fi Shari'aatiin kan guutame ta'ee, haadha manaa ykn abbaa manaa qulqulluu barbaadi.",
   "app.slogan": "Naseeb Kee Barbaadi",
   "app.quran": "\"Mallattoolee Isaa keessaa inni tokko, lubbuu keessanii keessaa cimdii isiniif uumuu dha, akka isheetti boqattaniif.\" — Qur'aana, Suuraa Ar-Rum (30:21)",
-
   "common.back": "Duubatti",
   "common.continue": "Itti Fufi",
   "common.save": "Qusadhu",
@@ -24,14 +23,12 @@
   "common.noPreference": "Filannoo hin qabu",
   "common.preferNotToSay": "Hin jedhuu filadha",
   "common.preferNotToAnswer": "Deebisuu hin barbaadu.",
-
   "lang.select": "Afaan Keessan Filadhu",
   "lang.selectDesc": "Afaan isin filattan itti fufuuf filadhaa",
   "lang.english": "English",
   "lang.amharic": "አማርኛ",
   "lang.arabic": "العربية",
   "lang.oromo": "Afaan Oromoo",
-
   "nav.home": "Gamoo",
   "nav.matches": "Walsimoo",
   "nav.profile": "Piroofaylii",
@@ -44,7 +41,6 @@
   "nav.theme": "Bifa",
   "nav.openMenu": "Open menu",
   "nav.closeMenu": "Close menu",
-
   "auth.home": "Home",
   "auth.welcomeBack": "Ammas Bagaggaltuu",
   "auth.signInToContinue": "Ittifufuu keessaniif seenaa",
@@ -82,7 +78,6 @@
   "auth.backToLogin": "Seenqaatti deebi'i",
   "auth.tooManyAttempts": "Yaaliwwan dadhabaa baay'ee. Mirkaneessa CAPTCHA barbaachisa.",
   "auth.attemptsRemaining": "{error} ({n} yaalii(s) hafe)",
-
   "auth.resetPassword": "Jecha Icciitii Haaromsi",
   "auth.resetPasswordDesc": "Imeelii keessan galchi, liinkii haaromsaa isinitti ergina",
   "auth.sendResetLink": "Liinkii Haaromsaa Ergi",
@@ -106,7 +101,6 @@
   "auth.twoFactorRequired": "Akkaawuntiin kun 2FA qindeessamee jira. Koodii mirkaneessaa keessan galchi.",
   "auth.twoFactorCodeRequired": "Koodiin 2FA barbaachisa",
   "auth.failedToReset": "Jecha icciitii haaromsuu hin dandeessine",
-
   "register.title": "Akkaawuntii Uumi",
   "register.alreadyHaveAccount": "Akkaawuntii qabduu?",
   "register.signIn": "Seeni",
@@ -126,7 +120,6 @@
   "register.successMessage": "Akkaawunti keessan milkaa'inaan banameera. Ethio Nikah bagaggaltuu!",
   "register.signInNow": "Seeni",
   "register.failed": "Galmeessuu hin milkoofne. Mee ammallee yaali.",
-
   "register.step1.title": "Tarkaanfii 1: Akkaawuntii Uumuu",
   "register.step1.firstName": "Maqaa",
   "register.step1.firstNamePlaceholder": "Maqaa",
@@ -149,7 +142,6 @@
   "register.step1.errPassword": "Jecha icciitiin barbaachisa",
   "register.step1.errPasswordLength": "Jecha icciitii yoo xiqqaate 8 qubee ta'uu qaba",
   "register.step1.errTerms": "Maaloo Waliigaltee fi Haalota fudhadhaa",
-
   "register.step2.title": "Tarkaanfii 2: Odeeffannoo Piroofaylii Bu'uuraa",
   "register.step2.gender": "Saala",
   "register.step2.male": "Dhiira",
@@ -230,7 +222,6 @@
   "register.step2.errCity": "Magaalaan barbaachisa",
   "register.step2.errCitySpecify": "Maaloo magaalaa keessan ibsi",
   "register.step2.errMaritalStatus": "Haalli fuudhaa barbaachisa",
-
   "register.step3.title": "Tarkaanfii 3: Odeeffannoo Amantaa",
   "register.step3.religiousCommitment": "Gamtaa Amantaa",
   "register.step3.practicing": "Hojiiraa (Amantaa hojjechaa)",
@@ -266,7 +257,6 @@
   "register.step3.errReligiousCommitment": "Gamtaan amantaa barbaachisa",
   "register.step3.errPrayerHabits": "Amalli salaataa barbaachisa",
   "register.step3.errQuranFrequency": "Deddeebiin Qur'aana dubbisuu barbaachisa",
-
   "register.step4.title": "Tarkaanfii 4: Barnoota fi Hojii",
   "register.step4.educationLevel": "Sadarkaa Barnootaa Olaanaa",
   "register.step4.highSchool": "Lakkiif Barbaachi",
@@ -292,7 +282,6 @@
   "register.step4.errEducation": "Sadarkaan barnootaa barbaachisa",
   "register.step4.errOccupation": "Hojituu barbaachisa",
   "register.step4.errEmployment": "Haalli hojii barbaachisa",
-
   "register.step5.title": "Tarkaanfii 5: Kaayyoo Fuudhaa",
   "register.step5.reason": "Sababa Walitti Dhufuu",
   "register.step5.seekingMarriage": "Fuudhaa Barbaacha",
@@ -314,7 +303,6 @@
   "register.step5.errReason": "Sababni walitti dhufuu barbaachisa",
   "register.step5.errTimeline": "Yeroon fuudhaa barbaaddu barbaachisa",
   "register.step5.errChildren": "Filannoon ijoollee barbaachisa",
-
   "register.step6.title": "Tarkaanfii 6: Ibsa Maatii",
   "register.step6.ethnicBackground": "Gosa Saba (Filannoo)",
   "register.step6.ethnicPlaceholder": "Oromoo, Amhara, etc.",
@@ -326,7 +314,6 @@
   "register.step6.minimal": "Xiqqoo",
   "register.step6.errMotherTongue": "Afaan dhalootaan barbaachisa",
   "register.step6.errFamilyInvolvement": "Filannoon hirmaatna maatii barbaachisa",
-
   "register.step7.title": "Tarkaanfii 7: Hojii Jireenyaa",
   "register.step7.smoking": "Amala Sigaaraa",
   "register.step7.never": "Yoomuu hin taane",
@@ -343,7 +330,6 @@
   "register.step7.errKhat": "Fayyadami Jimaa barbaachisa",
   "register.step7.errExercise": "Amalli shaakala dhiiraa barbaachisa",
   "register.step7.errLiving": "Filannoon jireenyaa barbaachisa",
-
   "register.step8.title": "Tarkaanfii 8: Amalummaa fi Fedhii",
   "register.step8.selfDescription": "Ibsa Matii",
   "register.step8.selfDescriptionPlaceholder": "Waa'ee matii keessuu nuuf himi...",
@@ -360,7 +346,6 @@
   "register.step8.interestsPlaceholder": "Dubbisuu, Isportii, Imala, Qorannoo Islaamaa, etc.",
   "register.step8.errSelfDescription": "Ibsi matii barbaachisa",
   "register.step8.errInterests": "Fedhii fi hobbywwan barbaachisu",
-
   "register.step9.title": "Tarkaanfii 9: Filannoo Faaruu",
   "register.step9.ageRange": "Hanga Umurii Barbaaddu",
   "register.step9.min": "Xiqqaa",
@@ -394,7 +379,6 @@
   "register.step9.errWali": "Hirmaatni walii/hirmaataa barbaachisa",
   "register.step9.errPolygamy": "Filannoon heerumaa baay'ee barbaachisa",
   "register.step9.errGenderInteraction": "Filannoon walqunnamtii saalaa barbaachisa",
-
   "register.step10.title": "Tarkaanfii 10: Odeeffannoo Fayyaa",
   "register.step10.disclaimer": "Odeeffannoon kun filannoo, dhoksaa, fi icciitiiti. Hayyama keessan ala nama biraa hin qoodamu.",
   "register.step10.importantDisclaimer": "Dhiisuu (Disclaimer) Barbaachisaa",
@@ -431,7 +415,6 @@
   "register.step10.creatingAccount": "Akkaawuntii Uumaa...",
   "register.step10.createAccount": "Akkaawuntii Uumi",
   "register.step10.errDwarfismDetails": "Maaloo ibsawwan dwarfism ibsi",
-
   "months.january": "Amajjii",
   "months.february": "Guraandhala",
   "months.march": "Bitooteessa",
@@ -444,7 +427,6 @@
   "months.october": "Onkoloolessa",
   "months.november": "Sadaasa",
   "months.december": "Muddee",
-
   "profile.title": "Piroofaylii",
   "profile.edit": "Piroofaylii Gulaali",
   "profile.changePhoto": "Suuraa Jijjiiri",
@@ -545,7 +527,6 @@
   "profile.personalPreference": "Filannoo Dhuunfaa",
   "profile.yes": "Eeyyee",
   "profile.no": "Lakki",
-
   "preferences.title": "Filannoo Faaruu",
   "preferences.subtitle": "Waan faaruu keessanitti barbaaddan ibsi",
   "preferences.partnerCriteria": "Ibsa Faaruu",
@@ -577,7 +558,6 @@
   "preferences.errAgeMin": "Umuriin xiqqaan 18 fi 120 gidduu ta'uu qaba",
   "preferences.errAgeMax": "Umuriin olaanaan 18 fi 120 gidduu ta'uu qaba",
   "preferences.errAgeRange": "Umuriin olaanaa umurii xiqqaa caalaa xiqqaa ta'uu hin danda'u",
-
   "settings.title": "Sajoo",
   "settings.general": "Waliigala",
   "settings.appearance": "Bifa",
@@ -632,7 +612,6 @@
   "settings.rulesMobileDesc": "Qajeelfama fi seera hawaasa",
   "settings.termsMobile": "Haalota fi Icciitii",
   "settings.termsMobileDesc": "Haalota tajaajilaa fi imaammata icciitii",
-
   "messages.title": "Ergaa",
   "messages.search": "Waltaasii barbaadi...",
   "messages.noConversations": "Waltaasii amma hin jiru",
@@ -674,7 +653,6 @@
   "messages.submitReportError": "Failed to submit report",
   "messages.userFallback": "User",
   "messages.thisUser": "this user",
-
   "verification.title": "Verification",
   "verification.subtitlePending": "Your verification status",
   "verification.subtitleUpload": "Upload your ID and selfie for admin review",
@@ -708,7 +686,6 @@
   "verification.refreshStatus": "Refresh status",
   "verification.cancel": "Cancel",
   "verification.tapToCapture": "Tap the circle to capture",
-
   "matches.empty": "Piroofayliiin biraa hin jiru",
   "matches.allCaughtUp": "Hundaa Argite!",
   "matches.allCaughtUpDesc": "Amma jiran hunda ilaalteetta. Misooma haaraaf booda deebi'i.",
@@ -733,7 +710,6 @@
   "matches.noLikesYet": "No Likes Yet",
   "matches.noLikesDesc": "When someone likes your profile, they will appear here.",
   "matches.message": "Message",
-
   "health.title": "Odeeffannoo Fayyaa",
   "health.hivStatus": "Haala HIV",
   "health.yourHivStatus": "Haala HIV Keessan",
@@ -759,7 +735,6 @@
   "health.otherConditionsLabel": "Dhibaawwan fayyaa kan biroo qooduu barbaaddaa? (filannoo)",
   "health.otherConditionsPlaceholder": "Odeeffannoo fayyaa kan biroo kan barbaachisaa ta'u qoodaa...",
   "health.disclaimerText": "Buufanni kun odeeffannoo fayyaa ofuma isaatiin gabaafame irratti hundaa'a. Haala fayyaa mirkaneessuu hin dandeenyu. Odeeffannoon hunduu icciitiidhaan kan qusamu yoo ta'u, isin yoo ibsitan qofa wal-simoota waliin qoodama. Nama waliin wal-mari'atan dura waa'ee fayyaa sirriitti mari'achuu fi ogeessa fayyaa mariisisuu ni gorsina.",
-
   "settings.turnOff": "Turn off",
   "settings.turnOn": "Turn on",
   "settings.backToSettings": "Back to Settings",
@@ -868,7 +843,6 @@
   "settings.chooseNotifications": "Choose which notifications you receive",
   "settings.recoveryRegenerated": "Recovery codes regenerated",
   "settings.genericFailed": "Failed",
-
   "footer.tagline": "Find your righteous spouse in a safe, Sharia-compliant environment. Premium matchmaking for the Muslim community.",
   "footer.rights": "All rights reserved.",
   "footer.platform": "Platform",
@@ -886,7 +860,6 @@
   "footer.privacyPolicy": "Privacy Policy",
   "footer.communityGuidelines": "Community Guidelines",
   "footer.shariaCompliance": "Sharia Compliance",
-
   "home.heroEyebrow": "Premium Islamic Matchmaking",
   "home.heroTitle": "Where Faith, Trust",
   "home.heroTitleLine2": "and {highlight} Meet",
@@ -904,7 +877,6 @@
   "home.ctaPrimary": "Create Free Account",
   "home.ctaSecondary": "Sign In",
   "home.ctaTrust": "Trusted by thousands across Ethiopia",
-
   "home.premiumEyebrow": "Premium Membership",
   "home.premiumTitle": "Unlock the Full Experience",
   "home.premiumSubtitle": "Go beyond basic matching — get priority access, unlimited communication, and the best chance at finding your naseeb.",
@@ -932,7 +904,6 @@
   "home.premiumFeature6": "Dedicated Support",
   "home.premiumFeature6Desc": "Priority customer service",
   "home.premiumFooter": "Sign up free — upgrade anytime. No hidden fees.",
-
   "home.trustEyebrow": "Why Trust Us",
   "home.trustTitle": "Built on Integrity",
   "home.trustSubtitle": "Every feature, every decision — rooted in sincerity and Islamic ethics.",
@@ -944,7 +915,6 @@
   "home.trust3Desc": "Designed around Islamic values. Guardian involvement, respectful communication, and marriage-first approach.",
   "home.trust4Title": "Family Inclusive",
   "home.trust4Desc": "Optional wali access allows family to participate in the process with dignity and transparency.",
-
   "home.journeyEyebrow": "Your Journey",
   "home.journeyTitle": "The Path to a Blessed Union",
   "home.journeySubtitle": "Every great marriage begins with intention. Here is how we walk with you.",
@@ -960,7 +930,6 @@
   "home.journeyStep5Desc": "Invite your wali or family to review profiles and participate in the process when you're ready.",
   "home.journeyStep6Title": "Blessed Marriage",
   "home.journeyStep6Desc": "When hearts align, we support your journey toward a blessed union grounded in faith and mutual respect.",
-
   "home.storiesEyebrow": "Success Stories",
   "home.storiesTitle": "Blessed Unions",
   "home.storiesSubtitle": "Real couples who found each other through Ethio Nikah.",
@@ -976,7 +945,6 @@
   "home.story3Location": "Adama",
   "home.story3Quote": "The family involvement feature made all the difference. My father could participate while maintaining Islamic guidelines. A truly blessed experience.",
   "home.story3Role": "Married February 2026",
-
   "admin.language": "Afaan",
   "admin.darkMode": "Haala Bishaanii",
   "admin.logout": "Ba'i",
@@ -1022,7 +990,6 @@
   "admin.results": "bu'aa",
   "admin.filterBy": "Suuraa",
   "admin.searchPlaceholder": "Barbaadi...",
-
   "admin.nav.overview": "Ilaalcha",
   "admin.nav.management": "Bulchinsa",
   "admin.nav.moderation": "To'annaa",
@@ -1049,7 +1016,6 @@
   "admin.nav.backup": "Bakii fi Haara",
   "admin.nav.books": "Kitaabota",
   "admin.nav.community": "Hawaummaa",
-
   "admin.dashboard.title": "Daashboordii",
   "admin.dashboard.subtitle": "Ilaalcha pilaatfoormii fi safartuu ijoo",
   "admin.dashboard.totalUsers": "Fayyadamtoota Walumaagalatti",
@@ -1089,7 +1055,6 @@
   "admin.dashboard.viewAll": "Hunda Ilaali",
   "admin.dashboard.noUsers": "Fayyadamtoota hin jiru",
   "admin.dashboard.noActivity": "Sochii dhiyoo hin jiru",
-
   "admin.analytics.title": "Qorannaa",
   "admin.analytics.subtitle": "Qorannaa pilaatfoormii guutuu fi gabaasa",
   "admin.analytics.platformStats": "Safartuu Pilaatfoormii",
@@ -1129,7 +1094,6 @@
   "admin.analytics.currentlySuspended": "amma dhabamsiisame",
   "admin.analytics.permanentlyBanned": "dhaabbataan waamtesame",
   "admin.analytics.unread": "hin qabamne",
-
   "admin.users.title": "Bulchinsa Fayyadamtootaa",
   "admin.users.subtitle": "Fayyadamtoota pilaatfoormii hunda bulchi",
   "admin.users.searchPlaceholder": "Maqaa, imeel, ykn maqaa fayyadamaatiin barbaadi...",
@@ -1156,7 +1120,6 @@
   "admin.users.email": "Imeelii",
   "admin.users.status": "Haala",
   "admin.users.date": "Guyyaa",
-
   "admin.verifications.title": "Mirkaneessitoota",
   "admin.verifications.subtitle": "Mirkaneessitoota ID qormuu fi bulchi",
   "admin.verifications.pending": "Eeguu",
@@ -1169,7 +1132,6 @@
   "admin.verifications.adminNote": "Yaada Bulchaa",
   "admin.verifications.idDocument": "Galmeewwan ID",
   "admin.verifications.selfie": "Selfie",
-
   "admin.reports.title": "Gabaasaa",
   "admin.reports.subtitle": "Gabaasota fayyadamtootaa fi dhabamoota qormi",
   "admin.reports.reportedUser": "Fayyadamaa Gabaafame",
@@ -1178,7 +1140,6 @@
   "admin.reports.markResolved": "Furame Mallabisi",
   "admin.reports.markDismissed": "Difame Mallabisi",
   "admin.reports.viewDetails": "Bal'ina Ilaali",
-
   "admin.complaints.title": "Dhiphisaa",
   "admin.complaints.subtitle": "Dhiphisota fayyadamtootaa bulchi",
   "admin.complaints.subject": "Mata Duree",
@@ -1187,7 +1148,6 @@
   "admin.complaints.respond": "Deebisi",
   "admin.complaints.resolve": "Furi",
   "admin.complaints.adminResponse": "Deebii Bulchaa",
-
   "admin.payments.title": "Kaffaltii",
   "admin.payments.subtitle": "Mirkaneessitoota kaffaltii qormuu fi bulchi",
   "admin.payments.noPayments": "Kaffaltii hin argamne",
@@ -1201,7 +1161,6 @@
   "admin.payments.user": "Fayyadamaa",
   "admin.payments.plan": "Pilaan",
   "admin.payments.date": "Guyyaa",
-
   "admin.auditLogs.title": "Galmeewwan Auditii",
   "admin.auditLogs.subtitle": "Hojii bulchtoota hunda hordofi",
   "admin.auditLogs.noLogs": "Galmeewwan auditii hin argamne",
@@ -1211,7 +1170,6 @@
   "admin.auditLogs.details": "Bal'ina",
   "admin.auditLogs.ipAddress": "Teessoo IP",
   "admin.auditLogs.filterByAction": "Hojii suuroo",
-
   "admin.settings.title": "Qindaa'ina",
   "admin.settings.subtitle": "Qindaa'ina sirisimii fi filannoo",
   "admin.settings.general": "Waliigalaa",
@@ -1222,7 +1180,6 @@
   "admin.settings.save": "Qindaa'ina Olkaa'i",
   "admin.settings.saved": "Qindaa'ina milkaa'uun olkaa'ame",
   "admin.settings.saveFailed": "Qindaa'ina olkaa'uu hin milkoone",
-
   "admin.recycleBin.title": "Waan Haqame",
   "admin.recycleBin.subtitle": "Fayyadamtoota fi qabiyyee haqame",
   "admin.recycleBin.noItems": "Waan haqame keessatti hin jiru",
@@ -1230,7 +1187,6 @@
   "admin.recycleBin.permanentDelete": "Dhaabbataan Haqi",
   "admin.recycleBin.confirmRestore": "Waan kana deebisita?",
   "admin.recycleBin.confirmPermanentDelete": "Waan kana dhaabbataan haquu mirkaneessita? Kun hin deebi'u.",
-
   "admin.admins.title": "Bulchinsa Bulchtootaa",
   "admin.admins.subtitle": "Herrega bulchtootaa fi hayyama bulchi",
   "admin.admins.addAdmin": "Bulcha Dabali",
@@ -1238,7 +1194,6 @@
   "admin.admins.permissions": "Hayyamni",
   "admin.admins.superAdmin": "Bulcha Guddaa",
   "admin.admins.adminRole": "Gahee Bulchaa",
-
   "admin.plans.title": "Pilaanota fi Kireeditii",
   "admin.plans.subtitle": "Pilaanota paartii fi kireeditii bulchi",
   "admin.plans.addPlan": "Pilaan Dabali",
@@ -1247,36 +1202,28 @@
   "admin.plans.price": "Gatii",
   "admin.plans.features": "Amaloota",
   "admin.plans.credits": "Kireeditii",
-
   "admin.paymentMethods.title": "Malawwan Kaffaltii",
   "admin.paymentMethods.subtitle": "Malawwan kaffaltii fudhataman bulchi",
   "admin.paymentMethods.addMethod": "Malaa Kaffaltii Dabali",
   "admin.paymentMethods.noMethods": "Malaa kaffaltii hin argamne",
   "admin.paymentMethods.instructions": "Qajeelfamoota",
   "admin.paymentMethods.accountInfo": "Odeeffannoo Herregaa",
-
   "admin.activity.title": "Galmeewwan Sochii",
   "admin.activity.subtitle": "Sochii pilaatfoormii dhiyoo",
   "admin.activity.noActivity": "Sochii dhiyoo hin jiru",
-
   "admin.featureToggles.title": "Galmeewwan Addaa",
   "admin.featureToggles.subtitle": "Amaloota pilaatfoormii banii ykn dhangessi",
   "admin.featureToggles.noToggles": "Galmeewwan addaa hin argamne",
   "admin.featureToggles.enabled": "Baname",
   "admin.featureToggles.disabled": "Dhangessame",
-
   "admin.matchmaking.title": "Walfaccii",
   "admin.matchmaking.subtitle": "Qindaa'ina algoriizimii walfaccii",
-
   "admin.aiAutomation.title": "AI Otomaatizimii",
   "admin.aiAutomation.subtitle": "To'annaa fi gargaarsa AI'n kan deggarame",
-
   "admin.security.title": "Nageenya",
   "admin.security.subtitle": "Qindaa'ina nageenya fi hordoffii",
-
   "admin.community.title": "Hawaummaa",
   "admin.community.subtitle": "Bulchinsa hawaummaa fi to'annaa",
-
   "matches.strongMatch": "Wal-madaa cimaa",
   "matches.goodMatch": "Wal-madaa gaarii",
   "matches.potentialMatch": "Wal-madaa eegumsaa",
@@ -1295,7 +1242,6 @@
   "matches.profilesRemaining": "{n} profaayilii hafe|{n} profaayilii hafe",
   "matches.swipeHintFull": "Mirgaatti jaalachuuf · Bitaa dabaluuf",
   "matches.refreshBtn": "Haaraa",
-
   "liked.title": "Jaalatamoo fi Miira",
   "liked.subtitle": "Profaayilii jaalate — deebii eeggannaa",
   "liked.noLikesYet": "Jaalacha hin jiru",
@@ -1315,5 +1261,114 @@
   "liked.serverUnavailable": "Serveri hin jiru",
   "liked.serverDown": "Serveri yeroo ammaa hin hojjene. Yeroo xiqqoo eegi irra deebi'i yaali.",
   "liked.retry": "Ira deebi'i yaali",
-  "liked.notAvailable": "Hin jiru"
+  "liked.notAvailable": "Hin jiru",
+  "nav.books": "Kitaabota",
+  "nav.features": "Addayyoo",
+  "nav.journey": "Safra keessan",
+  "nav.whyJoin": "Maaliif Ethio Nikah qabachu",
+  "nav.downloadApp": "App buusi",
+  "nav.downloadAppMobile": "Mobile irratti gaarii ta'e",
+  "nav.downloadAppMobileShare": "Mobile irratti gaarii ta'e · Share → Add to Home Screen",
+  "nav.trustVerified": "Mirkaneessame",
+  "nav.trustMembers": "Miseensonni",
+  "nav.trustSecure": "Nageenya",
+  "nav.trustMessaging": "Ergaa",
+  "nav.trustSharia": "Shari'a",
+  "nav.trustCompliant": "Waliin",
+  "nav.or": "Yookiin",
+  "nav.locked": "Cufame",
+  "nav.membership": "Miseensa",
+  "nav.upgrade": "Kenni",
+  "nav.pro": "PRO",
+  "nav.banned": "Herrega kee dhabamsiisame",
+  "nav.bannedPermanently": "dhabamsiisaa",
+  "nav.submitComplaint": "Kompilaayintii galchi",
+  "nav.toContactAdmins": "bulchaa waliin walitti dubbachuuf",
+  "nav.premiumMember": "Miseensa Premium",
+  "nav.verified": "Mirkaneessame",
+  "nav.unverified": "Hin mirkaneessamne",
+  "register.step2.appearanceBlack": "Black",
+  "home.featuresEyebrow": "Platform Features",
+  "home.featuresTitle": "Everything You Need to Find Your Spouse",
+  "home.featuresSubtitle": "Powerful tools designed around Islamic values to help you find your righteous partner with confidence.",
+  "home.feature1Title": "Smart Compatibility Matching",
+  "home.feature1Desc": "Our algorithm considers deen, character, education, lifestyle, and life goals to find truly compatible matches — not just surface-level traits.",
+  "home.feature2Title": "Verified & Authentic Profiles",
+  "home.feature2Desc": "Every member goes through manual ID verification. No bots, no fake accounts. Only genuine Muslims serious about marriage.",
+  "home.feature3Title": "Private & Secure Messaging",
+  "home.feature3Desc": "Communicate safely with end-to-end encrypted messages. You control who can contact you and what information you share.",
+  "home.feature4Title": "Wali & Family Involvement",
+  "home.feature4Desc": "Optionally invite your wali or family members to review profiles and participate in the process — maintaining Islamic guidelines every step.",
+  "home.feature5Title": "Advanced Search Filters",
+  "home.feature5Desc": "Filter potential matches by city, education, occupation, religious commitment, marital status, and more to find exactly what you're looking for.",
+  "home.feature6Title": "Health & Transparency Tools",
+  "home.feature6Desc": "Optional, encrypted health information sharing lets you make informed decisions with complete privacy and mutual consent.",
+  "home.benefitsEyebrow": "Why Join Ethio Nikah",
+  "home.benefitsTitle": "Everything You Need for a Blessed Marriage",
+  "home.benefitsSubtitle": "A platform built on Islamic values, designed to help you find your righteous spouse with confidence and peace of mind.",
+  "home.benefit1Title": "Free to Join",
+  "home.benefit1Desc": "Create your profile and browse compatible matches at no cost. No hidden fees, no credit card required to start.",
+  "home.benefit2Title": "100% Verified Members",
+  "home.benefit2Desc": "Every member goes through ID verification. No fake profiles, no bots — only genuine Muslims serious about marriage.",
+  "home.benefit3Title": "Sharia-Compliant Process",
+  "home.benefit3Desc": "Wali involvement, modest interactions, and Islamic guidelines built into every step of your journey.",
+  "home.benefit4Title": "Smart Compatibility Matching",
+  "home.benefit4Desc": "Our algorithm matches you based on deen, character, education, and life goals — not just appearances.",
+  "home.benefit5Title": "Private & Secure",
+  "home.benefit5Desc": "Your data is encrypted and never shared. You control who sees your profile, photos, and contact information.",
+  "home.benefit6Title": "Family Involvement",
+  "home.benefit6Desc": "Invite your wali or family members to review profiles and participate in the process when you're ready.",
+  "home.benefit7Title": "Health Transparency",
+  "home.benefit7Desc": "Optional, encrypted health information sharing lets you make informed decisions with complete privacy and mutual consent.",
+  "home.benefit8Title": "Local & Trusted",
+  "home.benefit8Desc": "Built specifically for the Ethiopian Muslim community. Connect with singles from Addis Ababa, Dire Dawa, Adama, and across the country.",
+  "home.benefitsCta": "Create Your Free Profile",
+  "home.benefitsCtaDesc": "Join today — it takes only 5 minutes",
+  "matches.activeChats": "{count} haasawaa sochaa|{count} haasawaa sochaa",
+  "matches.startConversation": "Haasawaa jalqabi",
+  "matches.sendRequestTo": "Gaafata haasawaa erguu",
+  "matches.addOptionalMessage": "Ergaa dabalataa lakkisaa...",
+  "matches.sendRequest": "Gaafata ergi",
+  "matches.sending": "Gad-lakkisaa jira...",
+  "matches.requestSent": "Gaafata haasawaa ergame!",
+  "matches.requestFailed": "Gaafata erguu hin milkaa'ne",
+  "books.title": "Kitaabota Kutaa",
+  "books.subtitle": "Kitaabota Islaamaa waa'ee fuudhaa, hariiroo fi hawaasa dubbisi",
+  "books.tabLibrary": "Kutaa",
+  "books.tabMyBooks": "Kitaabota koo",
+  "books.searchPlaceholder": "Mata duree, barreessaa ykn galmee irratti baradhaa...",
+  "books.noBooks": "Kitaabonni hin jiranu",
+  "books.noMyBooks": "Kitaabota kamiyyuu hin banne",
+  "books.by": "Barreessaa {author}",
+  "books.free": "Bilisaa",
+  "books.download": "Buusi",
+  "books.pendingReview": "Gabaarsa eegaa",
+  "books.unlockFree": "Bilisa bani",
+  "books.unlockFor": " {price} {currency} tiin bani",
+  "books.backToBooks": "Kitaabotaatti deebi'i",
+  "books.back": "Deebi'i",
+  "books.choosePayment": "Malaa kaffaltii filadhaa",
+  "books.sendAmount": "{amount} gadi jiru herrega tokko irratti ergaa, itti fufuu.",
+  "books.noPaymentMethods": "Malaa kaffaltii hin jiru. Gargaarsa gaafadhaa.",
+  "books.madePayment": "Kaffaltii koo raawwadheera",
+  "books.confirmPayment": "Kaffaltii kee mirkaneessi",
+  "books.confirmDesc": "{amount} {title} {method} tiin kaffale. Iyyataa kee mirkaneessuf deetaa transaktii kee galchi.",
+  "books.refNumber": "Lakkoofsa transaktii / wabii",
+  "books.refNumberPlaceholder": "Fakkeenya: TB1234567890",
+  "books.transactionId": "ID transaktii",
+  "books.transactionIdOptional": "ID transaktii dabalataa yoo jiraate",
+  "books.uploadReceipt": "Risiitii ol ka'i",
+  "books.uploadReceiptHint": "Suuraa risiitii ol ka'uuf cuqaami",
+  "books.submitForVerification": "Mirkaneessuuf ergi",
+  "books.paymentSubmitted": "Kaffaltii ergame!",
+  "books.paymentSubmittedDesc": "Kaffaltii kee {title} qabu amma gabaarsa eegaa jira. Bulchaan kee transaktii kee mirkaneessuun kitaabicha dhugaatti banu. Yoo mirkanaa'e beeksisaa.",
+  "books.copiedToClipboard": "Garagalmeetti garagalchame",
+  "books.bookUnlocked": "Kitaabichi baname!",
+  "books.failedToUnlock": "Kitaabicha banuuf hin milkaa'ne",
+  "books.receiptUploaded": "Risiitii ol ka'e",
+  "books.receiptUploadFailed": "Risiitii ol ka'uu hin milkaa'ne",
+  "books.refNumberRequired": "Lakkoofsa wabii barbaachisa",
+  "books.failedToSubmitPayment": "Kaffaltii erguu hin milkaa'ne",
+  "books.failedToDownload": "Kitaabicha buusuu hin milkaa'ne",
+  "books.recommended": "gaggeeffama"
 }
