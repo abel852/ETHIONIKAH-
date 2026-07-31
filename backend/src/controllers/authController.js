@@ -157,31 +157,33 @@ const register = async (req, res) => {
 
     const hasHealth = hivStatus || stdStatus || hereditaryDiseases || chronicConditions || disabilities || otherConditions;
     if (profile && hasHealth) {
-      const healthEncrypted = (v) => (v ? encrypt(v) : null);
-      await prisma.healthInfo.create({
-        data: {
-          profileId: profile.id,
-          hivStatus: healthEncrypted(hivStatus),
-          stdStatus: healthEncrypted(stdStatus),
-          stdDetails: healthEncrypted(stdDetails),
-          hereditaryDiseases: healthEncrypted(hereditaryDiseases),
-          hereditaryDetails: healthEncrypted(hereditaryDetails),
-          chronicConditions: healthEncrypted(chronicConditions),
-          chronicDetails: healthEncrypted(chronicDetails),
-          disabilities: healthEncrypted(disabilities),
-          disabilityDetails: healthEncrypted(disabilityDetails),
-          dwarfismStatus: healthEncrypted(dwarfismStatus),
-          dwarfismDetails: healthEncrypted(dwarfismDetails),
-          otherConditions: healthEncrypted(otherConditions),
-          shareWithMatches: shareWithMatches ?? false,
-          hivMatchPreference: hivMatchPreference ?? "any",
-          stdMatchPreference: stdMatchPreference ?? "any",
-          hereditaryMatchPreference: hereditaryMatchPreference ?? "any",
-          healthMatchPreference: healthMatchPreference ?? "any",
-        },
-      }).catch((e) => {
-        console.error("HealthInfo creation error (non-fatal):", e);
-      });
+      try {
+        const healthEncrypted = (v) => (v ? encrypt(v) : null);
+        await prisma.healthInfo.create({
+          data: {
+            profileId: profile.id,
+            hivStatus: healthEncrypted(hivStatus),
+            stdStatus: healthEncrypted(stdStatus),
+            stdDetails: healthEncrypted(stdDetails),
+            hereditaryDiseases: healthEncrypted(hereditaryDiseases),
+            hereditaryDetails: healthEncrypted(hereditaryDetails),
+            chronicConditions: healthEncrypted(chronicConditions),
+            chronicDetails: healthEncrypted(chronicDetails),
+            disabilities: healthEncrypted(disabilities),
+            disabilityDetails: healthEncrypted(disabilityDetails),
+            dwarfismStatus: healthEncrypted(dwarfismStatus),
+            dwarfismDetails: healthEncrypted(dwarfismDetails),
+            otherConditions: healthEncrypted(otherConditions),
+            shareWithMatches: shareWithMatches ?? false,
+            hivMatchPreference: hivMatchPreference ?? "any",
+            stdMatchPreference: stdMatchPreference ?? "any",
+            hereditaryMatchPreference: hereditaryMatchPreference ?? "any",
+            healthMatchPreference: healthMatchPreference ?? "any",
+          },
+        });
+      } catch (healthErr) {
+        console.error("HealthInfo creation error (non-fatal):", healthErr);
+      }
     }
 
     const accessToken = generateAccessToken({ userId: user.id, role: user.role, adminRole: user.adminRole, tokenVersion: user.tokenVersion ?? 0 });
