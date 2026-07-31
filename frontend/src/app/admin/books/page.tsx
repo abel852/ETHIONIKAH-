@@ -145,7 +145,7 @@ export default function AdminBooksPage() {
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a2e] text-gray-900 dark:text-white text-sm" />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 dark:text-white mb-1 block">Price (ETB) — 0 for free</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-white mb-1 block">Price (Birr) — 0 for free</label>
               <input type="number" min="0" value={uploadForm.price} onChange={(e) => setUploadForm({ ...uploadForm, price: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a2e] text-gray-900 dark:text-white text-sm" />
             </div>

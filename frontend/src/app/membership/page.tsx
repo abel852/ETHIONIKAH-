@@ -59,7 +59,7 @@ function dbPlanToPlan(p: any): Plan {
     key: p.key,
     name: p.name,
     price: p.price,
-    currency: p.currency || "ETB",
+    currency: p.currency || "Birr",
     durationDays: p.durationDays,
     period: formatPeriod(p.durationDays),
     icon: PLAN_ICON_MAP[p.key] || MessageSquare,
@@ -263,7 +263,7 @@ export default function MembershipPage() {
         key: c.key,
         name: c.name,
         price: c.price,
-        currency: c.currency || "ETB",
+        currency: c.currency || "Birr",
         durationDays: 0,
         planType: "credit",
         features: [`${c.credits} contact credits`, "Credits never expire", "No commitment"],
@@ -432,14 +432,14 @@ export default function MembershipPage() {
                           </div>
                           <p className="text-2xl font-bold text-charcoal-900 dark:text-white">{pkg.credits}</p>
                           <p className="text-xs text-charcoal-400 mb-3">contact credit{pkg.credits === 1 ? "" : "s"}</p>
-                          <p className="text-lg font-bold text-teal-600 dark:text-teal-400 mb-3">{pkg.currency || "ETB"} {pkg.price.toLocaleString()}</p>
+                          <p className="text-lg font-bold text-teal-600 dark:text-teal-400 mb-3">{pkg.currency || "Birr"} {pkg.price.toLocaleString()}</p>
                           <Button
                             variant="secondary"
                             size="sm"
                             className="w-full"
                             onClick={() => handleSelectPlan({
                               ...pkg, key: pkg.key || "pay_per_contact", name: pkg.name || `${pkg.credits} Credits`,
-                              currency: "ETB", period: "one-time", icon: WalletIcon, color: "text-teal-500",
+                              currency: "Birr", period: "one-time", icon: WalletIcon, color: "text-teal-500",
                               gradient: "from-teal-500 to-cyan-500", features: [`${pkg.credits} contact credits`], planType: "credit",
                             } as Plan)}
                           >
@@ -459,7 +459,7 @@ export default function MembershipPage() {
                     icon={ShieldCheck}
                     gradient="from-charcoal-400 to-charcoal-500"
                     color="text-charcoal-500"
-                    priceLabel="ETB 0"
+                    priceLabel="Birr 0"
                     subLabel="Forever free"
                     highlights={["Profile creation", "Photo uploads", "Receive messages", "Browse profiles (limited)"]}
                     isCurrent={activeMembership.activePlan === "free" || !activeMembership.activePlan}
@@ -472,13 +472,13 @@ export default function MembershipPage() {
                     icon={WalletIcon}
                     gradient="from-teal-500 to-cyan-500"
                     color="text-teal-500"
-                    priceLabel="From ETB 100"
+                    priceLabel="From Birr 100"
                     subLabel="Per contact credit"
                     highlights={["Everything in Free", "Initiate conversations", "Unlock contact info", "Credits never expire"]}
                     creditPackages={[
-                      { credits: 1, price: "100 ETB" },
-                      { credits: 5, price: "400 ETB" },
-                      { credits: 10, price: "700 ETB" },
+                      { credits: 1, price: "100 Birr" },
+                      { credits: 5, price: "400 Birr" },
+                      { credits: 10, price: "700 Birr" },
                     ]}
                     isCurrent={activeMembership.activePlan === "pay_per_contact"}
                     onSelect={() => {
@@ -486,7 +486,7 @@ export default function MembershipPage() {
                       if (pkg) {
                         handleSelectPlan({
                           ...pkg, key: pkg.key || "pay_per_contact", name: pkg.name || "Pay-Per-Contact",
-                          currency: "ETB", period: "one-time", icon: WalletIcon, color: "text-teal-500",
+                          currency: "Birr", period: "one-time", icon: WalletIcon, color: "text-teal-500",
                           gradient: "from-teal-500 to-cyan-500", features: [`${pkg.credits} contact credits`], planType: "credit",
                         } as Plan);
                       }
@@ -499,7 +499,7 @@ export default function MembershipPage() {
                     icon={Crown}
                     gradient="from-amber-400 to-yellow-500"
                     color="text-amber-500"
-                    priceLabel={plans.find(p => p.key === "gold") ? `${plans.find(p => p.key === "gold")!.currency} ${plans.find(p => p.key === "gold")!.price.toLocaleString()}` : "ETB —"}
+                    priceLabel={plans.find(p => p.key === "gold") ? `${plans.find(p => p.key === "gold")!.currency} ${plans.find(p => p.key === "gold")!.price.toLocaleString()}` : "Birr —"}
                     subLabel={plans.find(p => p.key === "gold")?.period || "per month"}
                     highlights={["Everything in Pay-Per-Contact", "Unlimited browsing", "Unlimited messaging", "Advanced search filters", "See profile visitors", "See who liked you", "No contact credit charges"]}
                     isPopular
@@ -518,7 +518,7 @@ export default function MembershipPage() {
                     icon={Gem}
                     gradient="from-purple-500 to-fuchsia-500"
                     color="text-purple-500"
-                    priceLabel={plans.find(p => p.key === "platinum") ? `${plans.find(p => p.key === "platinum")!.currency} ${plans.find(p => p.key === "platinum")!.price.toLocaleString()}` : "ETB —"}
+                    priceLabel={plans.find(p => p.key === "platinum") ? `${plans.find(p => p.key === "platinum")!.currency} ${plans.find(p => p.key === "platinum")!.price.toLocaleString()}` : "Birr —"}
                     subLabel={plans.find(p => p.key === "platinum")?.period || "per month"}
                     highlights={["Everything in Gold", "Polygamy chat (no permission needed)", "Last seen visibility", "Featured profile placement", "Highest search ranking", "VIP badge", "Personalized matches", "VIP support", "Early access"]}
                     isCurrent={activeMembership.activePlan === "platinum"}

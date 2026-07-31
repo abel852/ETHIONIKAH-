@@ -290,7 +290,7 @@ function PlanFormModal({ plan, onSave, onClose }: { plan: any; onSave: (data: an
     name: plan?.name || "",
     description: plan?.description || "",
     price: plan?.price ?? 0,
-    currency: plan?.currency || "ETB",
+    currency: plan?.currency || "Birr",
     durationDays: plan?.durationDays ?? 0,
     planType: plan?.planType || "subscription",
     features: plan?.features?.join(", ") || "",
@@ -438,7 +438,7 @@ function CreditFormModal({ pkg, onSave, onClose }: { pkg: any; onSave: (data: an
     name: pkg?.name || "",
     credits: pkg?.credits ?? 1,
     price: pkg?.price ?? 0,
-    currency: pkg?.currency || "ETB",
+    currency: pkg?.currency || "Birr",
     isActive: pkg?.isActive ?? true,
     sortOrder: pkg?.sortOrder ?? 0,
   });

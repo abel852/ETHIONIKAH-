@@ -57,7 +57,7 @@ export default function AdminAnalyticsPage() {
     { label: "Verified Users", value: a.verifiedUsers ?? 0, icon: UserCheck, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-500/10" },
     { label: "Matches", value: a.totalMatches ?? 0, icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
     { label: "Open Reports", value: a.totalReports ?? 0, icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-500/10" },
-    { label: "Total Revenue", value: `$${(a.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10" },
+    { label: "Total Revenue", value: `Birr ${(a.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10" },
     { label: "Total Messages", value: a.totalMessages ?? 0, icon: MessageSquare, color: "text-cyan-500", bg: "bg-cyan-50 dark:bg-cyan-500/10" },
     { label: "Unread Messages", value: a.unreadMessages ?? 0, icon: MessageSquare, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
     { label: "Open Complaints", value: a.openComplaints ?? 0, icon: ShieldAlert, color: "text-red-500", bg: "bg-red-50 dark:bg-red-500/10" },
@@ -84,10 +84,10 @@ export default function AdminAnalyticsPage() {
   ];
 
   const revenueStatsCards = [
-    { label: "Total Revenue", value: `$${(rev.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "text-accent", bg: "bg-amber-50 dark:bg-amber-500/10", sub: "Lifetime" },
+    { label: "Total Revenue", value: `Birr ${(rev.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "text-accent", bg: "bg-amber-50 dark:bg-amber-500/10", sub: "Lifetime" },
     { label: "Active Subs", value: rev.activeSubscriptions ?? 0, icon: CreditCard, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10", sub: `${rev.premiumSubscriptions ?? 0} platinum, ${rev.basicSubscriptions ?? 0} gold` },
     { label: "Conversion Rate", value: `${conversionRate}%`, icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10", sub: "Free to paid" },
-    { label: "ARPU", value: `$${arpu}`, icon: Wallet, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", sub: "Avg revenue/user" },
+    { label: "ARPU", value: `Birr ${arpu}`, icon: Wallet, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", sub: "Avg revenue/user" },
   ];
 
   if (loading) {

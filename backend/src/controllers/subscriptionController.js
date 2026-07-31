@@ -119,7 +119,7 @@ const createSubscription = async (req, res) => {
         userId,
         planType,
         amount: config.price,
-        currency: "ETB",
+        currency: "Birr",
         status: "approved",
         paymentMethod,
         transactionId,

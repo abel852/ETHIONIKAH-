@@ -849,11 +849,11 @@ exports.seedDefaults = async (req, res) => {
 
     // Seed membership plans
     const plans = [
-      { key: "free", name: "Free Membership", description: "Basic access - browse and receive messages", price: 0, currency: "ETB", durationDays: 0, planType: "free", features: ["create_profile", "upload_photos", "browse_profiles", "receive_messages", "limited_daily_profiles"], isActive: true, sortOrder: 0 },
-      { key: "gold", name: "Gold Membership", description: "Unlimited messaging and advanced features (no polygamy access)", price: 2400, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges"], isActive: true, sortOrder: 1 },
-      { key: "platinum", name: "Platinum Membership", description: "All Gold benefits plus polygamy chat, last seen visibility, and VIP features", price: 4800, currency: "ETB", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges", "polygamy_chat", "last_seen_visibility", "featured_placement", "highest_search_ranking", "vip_badge", "personalized_matches", "vip_support", "early_access"], isActive: true, sortOrder: 2 },
-      { key: "verification", name: "Identity Verification", description: "One-time verification fee for verified badge", price: 300, currency: "ETB", durationDays: 0, planType: "verification", features: ["verified_badge", "increased_trust", "higher_visibility"], isActive: true, sortOrder: 3 },
-      { key: "boost", name: "Profile Boost", description: "7-day profile boost for maximum exposure", price: 100, currency: "ETB", durationDays: 7, planType: "boost", features: ["featured_placement", "top_search_ranking", "increased_exposure"], isActive: true, sortOrder: 4 },
+      { key: "free", name: "Free Membership", description: "Basic access - browse and receive messages", price: 0, currency: "Birr", durationDays: 0, planType: "free", features: ["create_profile", "upload_photos", "browse_profiles", "receive_messages", "limited_daily_profiles"], isActive: true, sortOrder: 0 },
+      { key: "gold", name: "Gold Membership", description: "Unlimited messaging and advanced features (no polygamy access)", price: 2400, currency: "Birr", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges"], isActive: true, sortOrder: 1 },
+      { key: "platinum", name: "Platinum Membership", description: "All Gold benefits plus polygamy chat, last seen visibility, and VIP features", price: 4800, currency: "Birr", durationDays: 365, planType: "subscription", features: ["unlimited_messaging", "unlimited_browsing", "advanced_search", "view_visitors", "view_likes", "priority_visibility", "no_credit_charges", "polygamy_chat", "last_seen_visibility", "featured_placement", "highest_search_ranking", "vip_badge", "personalized_matches", "vip_support", "early_access"], isActive: true, sortOrder: 2 },
+      { key: "verification", name: "Identity Verification", description: "One-time verification fee for verified badge", price: 300, currency: "Birr", durationDays: 0, planType: "verification", features: ["verified_badge", "increased_trust", "higher_visibility"], isActive: true, sortOrder: 3 },
+      { key: "boost", name: "Profile Boost", description: "7-day profile boost for maximum exposure", price: 100, currency: "Birr", durationDays: 7, planType: "boost", features: ["featured_placement", "top_search_ranking", "increased_exposure"], isActive: true, sortOrder: 4 },
     ];
     for (const p of plans) {
       await prisma.membershipPlan.upsert({ where: { key: p.key }, update: { price: p.price, durationDays: p.durationDays, features: p.features }, create: p });
@@ -861,9 +861,9 @@ exports.seedDefaults = async (req, res) => {
 
     // Seed contact credit packages
     const creditPackages = [
-      { key: "credit_1", name: "1 Contact Credit", credits: 1, price: 100, currency: "ETB", isActive: true, sortOrder: 0 },
-      { key: "credit_5", name: "5 Contact Credits", credits: 5, price: 400, currency: "ETB", isActive: true, sortOrder: 1 },
-      { key: "credit_10", name: "10 Contact Credits", credits: 10, price: 700, currency: "ETB", isActive: true, sortOrder: 2 },
+      { key: "credit_1", name: "1 Contact Credit", credits: 1, price: 100, currency: "Birr", isActive: true, sortOrder: 0 },
+      { key: "credit_5", name: "5 Contact Credits", credits: 5, price: 400, currency: "Birr", isActive: true, sortOrder: 1 },
+      { key: "credit_10", name: "10 Contact Credits", credits: 10, price: 700, currency: "Birr", isActive: true, sortOrder: 2 },
     ];
     for (const c of creditPackages) {
       await prisma.contactCreditPackage.upsert({ where: { key: c.key }, update: { credits: c.credits, price: c.price }, create: c });

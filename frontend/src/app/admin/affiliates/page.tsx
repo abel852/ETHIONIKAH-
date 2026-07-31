@@ -23,7 +23,7 @@ export default function AffiliatesPage() {
     { label: "Total Referrals", value: stats.total ?? 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20" },
     { label: "Converted", value: stats.converted ?? 0, icon: TrendingUp, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
     { label: "Rewarded", value: stats.rewarded ?? 0, icon: Gift, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/20" },
-    { label: "Total Rewards", value: `$${(stats.totalRewards ?? 0).toFixed(2)}`, icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20" },
+    { label: "Total Rewards", value: `Birr ${(stats.totalRewards ?? 0).toFixed(2)}`, icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20" },
   ];
 
   return (

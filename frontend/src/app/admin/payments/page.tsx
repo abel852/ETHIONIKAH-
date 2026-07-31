@@ -156,7 +156,7 @@ export default function AdminPaymentsPage() {
   };
 
   const statCards = [
-    { label: "Total Revenue", value: `ETB ${(stats.revenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
+    { label: "Total Revenue", value: `Birr ${(stats.revenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
     { label: "Pending", value: stats.pending ?? 0, icon: Clock, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10" },
     { label: "Approved", value: stats.approved ?? 0, icon: CheckCircle, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
     { label: "Rejected", value: stats.rejected ?? 0, icon: XCircle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-500/10" },
@@ -462,7 +462,7 @@ export default function AdminPaymentsPage() {
                           <PlanIcon className="w-3 h-3" /> {p.planType}
                         </span>
                       </td>
-                      <td className="py-3.5 px-3 font-semibold text-charcoal-900 dark:text-white">ETB {p.amount}</td>
+                      <td className="py-3.5 px-3 font-semibold text-charcoal-900 dark:text-white">Birr {p.amount}</td>
                       <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white hidden md:table-cell">{p.referenceNumber || "—"}</td>
                       <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white capitalize">{p.paymentMethod?.replace("_", " ")}</td>
                       <td className="py-3.5 px-3">
@@ -529,7 +529,7 @@ export default function AdminPaymentsPage() {
               </div>
               <div className="bg-charcoal-50 dark:bg-charcoal-700/50 p-3 rounded-xl">
                 <p className="text-xs text-charcoal-400 dark:text-white">Amount</p>
-                <p className="font-semibold text-charcoal-900 dark:text-white">ETB {selected.amount}</p>
+                <p className="font-semibold text-charcoal-900 dark:text-white">Birr {selected.amount}</p>
               </div>
               <div className="bg-charcoal-50 dark:bg-charcoal-700/50 p-3 rounded-xl">
                 <p className="text-xs text-charcoal-400 dark:text-white">Method</p>

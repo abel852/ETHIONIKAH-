@@ -100,7 +100,7 @@ export default function AdminSubscriptionsPage() {
   ];
 
   const statCards = [
-    { label: "Total Revenue", value: `$${(rev.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "text-accent", bg: "bg-amber-50 dark:bg-amber-500/10" },
+    { label: "Total Revenue", value: `Birr ${(rev.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "text-accent", bg: "bg-amber-50 dark:bg-amber-500/10" },
     { label: "Active Subscriptions", value: rev.activeSubscriptions ?? 0, icon: Activity, color: "text-green-500", bg: "bg-green-50 dark:bg-green-500/10" },
     { label: "Platinum", value: rev.premiumSubscriptions ?? 0, icon: Users, color: "text-accent-dark", bg: "bg-amber-50 dark:bg-amber-500/10" },
     { label: "Total Payments", value: payments.length, icon: CreditCard, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-500/10" },
