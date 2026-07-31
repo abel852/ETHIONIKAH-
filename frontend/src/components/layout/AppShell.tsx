@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import DashboardSidebar from "./DashboardSidebar";
+import Navbar from "./Navbar";
 
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone", "/contact-support", "/wali"];
 
@@ -17,7 +18,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   if (isPublicRoute(pathname) || isAdminRoute(pathname)) {
-    return <>{children}</>;
+    return (
+      <>
+        <Navbar />
+        {children}
+      </>
+    );
   }
 
   return (

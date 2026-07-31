@@ -10,7 +10,7 @@ import {
   UserCheck, Heart, MessageCircle,
   Award, Gem, Fingerprint, Users,
 } from "lucide-react";
-import { Navbar, Footer } from "@/components/layout";
+import { Footer } from "@/components/layout";
 import { useI18n } from "@/context/I18nContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -253,7 +253,7 @@ function FeaturesShowcaseSection() {
   ];
 
   return (
-    <section className="relative pt-0 pb-24 md:pt-0 md:pb-32 bg-charcoal-900 overflow-hidden">
+    <section id="features" className="relative pt-0 pb-24 md:pt-0 md:pb-32 bg-charcoal-900 overflow-hidden scroll-mt-20">
       <div className="absolute inset-0 overflow-hidden">
         <Image src="/images/pattern-bg.svg" alt="" fill sizes="100vw" className="object-cover opacity-50" />
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal-900/60 via-charcoal-900/40 to-charcoal-900/60" />
@@ -340,7 +340,7 @@ function TrustSection() {
   ];
 
   return (
-    <section className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden">
+    <section id="trust" className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden scroll-mt-20">
       <div className="absolute inset-0">
         {/* Ambient glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent/[0.03] blur-3xl rounded-full" />
@@ -402,7 +402,7 @@ function JourneySection() {
   ];
 
   return (
-    <section ref={ref} className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden">
+    <section ref={ref} id="journey" className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden scroll-mt-20">
       {/* Ambient glow orbs */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/[0.04] rounded-full blur-3xl" />
@@ -541,7 +541,7 @@ function BenefitsSection() {
   };
 
   return (
-    <section className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden">
+    <section id="why-join" className="relative py-24 md:py-32 bg-charcoal-900 overflow-hidden scroll-mt-20">
       <div className="absolute inset-0 overflow-hidden">
         <Image src="/images/pattern-bg.svg" alt="" fill sizes="100vw" className="object-cover opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal-900/70 via-charcoal-900/50 to-charcoal-900/70" />
@@ -769,7 +769,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
       <HeroSection />
       <WaveSeparator />
       <FeaturesShowcaseSection />

@@ -241,7 +241,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       failCountRef.current = 0;
       lostShownRef.current = false;
       toast.dismiss("socket-reconnecting");
-      toast.error("Connection failed. Please refresh the page.", { id: "socket-err", duration: 5000 });
+      toast.error("Connection failed. Please refresh the page.", { id: "socket-err", duration: 1000 });
     });
 
     socketRef.current = socket;

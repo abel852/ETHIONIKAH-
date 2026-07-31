@@ -7,7 +7,7 @@ import {
   Mail, Lock, User, Phone, Eye, EyeOff, ArrowRight, Check, Calendar, 
   Briefcase, GraduationCap, MapPin, Heart, BookOpen, Building2, Baby, 
   Users, Globe, Cigarette, Dumbbell, Home, Sparkles, Upload, ChevronLeft,
-  ChevronRight, Shield, AlertTriangle
+  ChevronRight, Shield, AlertTriangle, Download, X
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button, Input, WordSuggest } from "@/components/common";
@@ -880,6 +880,38 @@ export default function RegisterPage() {
   const { t } = useI18n();
   const LS_DATA = "ethio-nikah-register-data";
   const LS_STEP = "ethio-nikah-register-step";
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  const [appInstalled, setAppInstalled] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    const installedHandler = () => {
+      setAppInstalled(true);
+      setShowInstallBanner(false);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installedHandler);
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setAppInstalled(true);
+      setShowInstallBanner(false);
+    }
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+    setShowInstallBanner(false);
+  };
   useEffect(() => {
     try {
       const savedStep = localStorage.getItem(LS_STEP);
@@ -1118,6 +1150,57 @@ export default function RegisterPage() {
         </Link>
         <LangSwitcher dark small />
       </div>
+      {/* Install App banner — mobile */}
+      {showInstallBanner && installPrompt && !appInstalled && (
+        <div className="lg:hidden bg-gradient-to-r from-[#D4AF37]/15 to-[#D4AF37]/5 border-b border-[#D4AF37]/20 px-4 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/20 flex items-center justify-center shrink-0">
+              <Download className="w-4 h-4 text-[#D4AF37]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">Install EthioNikah App</p>
+              <p className="text-[11px] text-white/50 truncate">Quick access from your home screen</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleInstallApp}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-[#0c0a1a] bg-[#D4AF37] hover:bg-[#D4AF37]/90 transition-colors"
+            >
+              Install
+            </button>
+            <button
+              onClick={() => setShowInstallBanner(false)}
+              className="p-1 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Install App banner — desktop */}
+      {showInstallBanner && installPrompt && !appInstalled && (
+        <div className="hidden lg:flex absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-gradient-to-r from-[#D4AF37]/15 to-[#D4AF37]/5 border border-[#D4AF37]/20 rounded-xl px-4 py-2 items-center justify-between gap-3 backdrop-blur-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Download className="w-4 h-4 text-[#D4AF37] shrink-0" />
+            <p className="text-sm font-semibold text-white whitespace-nowrap">Install EthioNikah App</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleInstallApp}
+              className="px-3 py-1 rounded-lg text-xs font-bold text-[#0c0a1a] bg-[#D4AF37] hover:bg-[#D4AF37]/90 transition-colors"
+            >
+              Install
+            </button>
+            <button
+              onClick={() => setShowInstallBanner(false)}
+              className="p-1 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex-1 flex items-center justify-center px-4 py-6 lg:py-12 lg:overflow-y-auto" style={{ backgroundColor: "#121212" }}>
         <div className="w-full max-w-2xl mx-auto min-w-0">
           <div className="hidden lg:block text-center mb-8">

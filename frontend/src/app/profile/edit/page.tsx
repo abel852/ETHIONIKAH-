@@ -13,6 +13,7 @@ import { Button, Input, Card, Badge } from "@/components/common";
 import { profileService } from "@/services/profile";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
+import { toast } from "sonner";
 
 const sections = [
   { id: "basic", label: "Basic Info", icon: User },
@@ -164,6 +165,10 @@ export default function EditProfilePage() {
         hasChildren: formData.hasChildren,
         childrenCount: formData.childrenCount,
         childrenCustody: formData.childrenCustody,
+        hasWali: formData.hasWali,
+        waliName: formData.waliName,
+        waliPhone: formData.waliPhone,
+        waliRelation: formData.waliRelation,
         bio: formData.selfDescription,
         qualities: formData.qualities,
         interests: formData.interests ? formData.interests.split(",").map((s: string) => s.trim()) : [],
@@ -171,10 +176,13 @@ export default function EditProfilePage() {
       const [profileRes] = await Promise.all([
         profileService.createOrUpdate(payload),
         formData.username?.length >= 3 ? api.post("/auth/username", { username: formData.username }) : Promise.resolve(),
+        api.post("/spouse-preference", { preferredReligiousCommitment: formData.preferredReligiousCommitment }).catch(() => {}),
       ]);
       if (profileRes.data.user) updateUser(profileRes.data.user);
+      toast.success("Profile saved successfully");
+      router.push("/profile");
     } catch {
-      // error handled silently
+      // error toast handled by axios interceptor
     } finally {
       setIsSaving(false);
     }
@@ -217,6 +225,10 @@ export default function EditProfilePage() {
         hasChildren: formData.hasChildren,
         childrenCount: formData.childrenCount,
         childrenCustody: formData.childrenCustody,
+        hasWali: formData.hasWali,
+        waliName: formData.waliName,
+        waliPhone: formData.waliPhone,
+        waliRelation: formData.waliRelation,
         bio: formData.selfDescription,
         qualities: formData.qualities,
         interests: formData.interests ? formData.interests.split(",").map((s: string) => s.trim()) : [],
@@ -224,11 +236,13 @@ export default function EditProfilePage() {
       await Promise.all([
         profileService.createOrUpdate(payload),
         formData.username?.length >= 3 ? api.post("/auth/username", { username: formData.username }) : Promise.resolve(),
+        api.post("/spouse-preference", { preferredReligiousCommitment: formData.preferredReligiousCommitment }).catch(() => {}),
       ]);
       await profileService.setProfileComplete();
+      toast.success("Profile completed successfully");
       router.push("/profile");
     } catch {
-      // ignore
+      // error toast handled by axios interceptor
     } finally {
       setIsSaving(false);
       setIsCompleting(false);
@@ -385,6 +399,30 @@ export default function EditProfilePage() {
                 <option value="no_custody">No Custody</option>
               </select>
             </div>
+            <div>
+              <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Do you have a Wali (Guardian)?</label>
+              <select name="hasWali" value={formData.hasWali || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            {formData.hasWali === "yes" && (
+              <>
+                <div>
+                  <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Wali Name</label>
+                  <Input name="waliName" value={formData.waliName || ""} onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Wali Phone</label>
+                  <Input name="waliPhone" value={formData.waliPhone || ""} onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Wali Relationship</label>
+                  <Input name="waliRelation" value={formData.waliRelation || ""} onChange={handleChange} placeholder="e.g. Father, Brother, Uncle" />
+                </div>
+              </>
+            )}
           </div>
         );
       case "religious":

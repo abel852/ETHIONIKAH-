@@ -1,23 +1,37 @@
 {
-  "name": "Ethio Nikah - Islamic Matchmaking Platform",
-  "short_name": "Ethio Nikah",
-  "description": "Find your righteous spouse in a safe, Sharia-compliant environment. Premium matchmaking for the Muslim community in Ethiopia.",
+  "name": "EthioNikah - Islamic Matchmaking",
+  "short_name": "EthioNikah",
+  "description": "Find your righteous spouse in a safe, Sharia-compliant environment. Premium matchmaking for the Muslim community.",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0c0a1a",
   "theme_color": "#D4AF37",
+  "categories": ["lifestyle", "social", "dating"],
   "icons": [
     {
       "src": "/images/logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/images/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

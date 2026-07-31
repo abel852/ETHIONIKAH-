@@ -227,12 +227,12 @@ const messageUploadLimiter = createLimiter({
 });
 
 // ============================================================
-// 7. PROFILE UPDATE LIMITER — 3 updates / 15 min per user
+// 7. PROFILE UPDATE LIMITER — 30 updates / 15 min per user
 //    Prevents profile abuse / automated scraping
 // ============================================================
 const profileUpdateLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 3,
+  max: 30,
   keyGenerator: (req) => req.user?.userId || req.ip,
   message: { error: "Too many profile updates. Please try again later." },
   standardHeaders: true,

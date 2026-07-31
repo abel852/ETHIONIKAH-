@@ -68,7 +68,7 @@ export function ToastProvider() {
             "bg-white dark:bg-charcoal-800 border border-charcoal-100/50 dark:border-charcoal-700 shadow-elevated rounded-xl text-charcoal-900 dark:text-white",
             "font-sans"
           ),
-          duration: 4000,
+          duration: 1000,
           style: {
             zIndex: 999999,
           },

@@ -92,11 +92,11 @@ api.interceptors.response.use(
     // Network / connection errors
     if (!error.response) {
       if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
-        toast.error("No internet connection. Check your network.", { id: networkToast.id, duration: 5000 });
+        toast.error("No internet connection. Check your network.", { id: networkToast.id, duration: 1000 });
       } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
-        toast.error("Request timed out. Please try again.", { id: networkToast.id, duration: 5000 });
+        toast.error("Request timed out. Please try again.", { id: networkToast.id, duration: 1000 });
       } else {
-        toast.error("Network error. Please try again.", { id: networkToast.id, duration: 5000 });
+        toast.error("Network error. Please try again.", { id: networkToast.id, duration: 1000 });
       }
       return Promise.reject(error);
     }
@@ -124,8 +124,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     } else if (status >= 500) {
       // Only show toast if the server provided a specific error message
-      if (serverMsg && !original._noToast) {
-        toast.error(serverMsg, { id: "server-error", duration: 4000 });
+      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+        toast.error(serverMsg, { id: "server-error", duration: 1000 });
       }
       return Promise.reject(error);
     } else if (status === 403) {
@@ -148,18 +148,18 @@ api.interceptors.response.use(
         }
         return Promise.reject(error);
       }
-      if (serverMsg && !original._noToast) {
-        toast.error(serverMsg, { duration: 4000 });
+      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+        toast.error(serverMsg, { duration: 1000 });
       }
     } else if (status === 429) {
       // Rate limited — show error toast overlay
-      if (serverMsg && !original._noToast) {
-        toast.error(serverMsg, { duration: 5000, id: "rate-limited" });
+      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+        toast.error(serverMsg, { duration: 1000, id: "rate-limited" });
       }
       return Promise.reject(error);
     } else if (status >= 400) {
-      if (serverMsg && !original._noToast) {
-        toast.error(serverMsg, { duration: 4000 });
+      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+        toast.error(serverMsg, { duration: 1000 });
       }
     }
 

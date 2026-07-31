@@ -14,6 +14,45 @@ const createOrUpdateProfile = async (req, res) => {
       delete data[field];
     }
 
+    // Only allow fields that exist in the Profile model
+    const allowedFields = [
+      "nationality", "region", "height", "weight", "appearance",
+      "hasWali", "waliName", "waliPhone", "waliRelation",
+      "hasChildren", "childrenCount", "childrenCustody", "childrenStatus",
+      "religiousCommitment", "prayerHabits", "quranReadingFrequency",
+      "islamicClassesAttendance", "islamicTradition", "islamicTraditionOther",
+      "islamicMatchPreference", "personalPreference",
+      "educationLevel", "occupation", "employmentStatus", "monthlyIncomeRange",
+      "reasonForJoining", "desiredMarriageTimeline", "childrenPreference",
+      "ethnicBackground", "motherTongue", "familyInvolvement",
+      "smokingHabits", "khatUsage", "exerciseHabits", "livingPreference",
+      "selfDescription", "qualities", "interests", "bio",
+      "country", "city", "maritalStatus", "religiousLevel",
+      "ethnicity", "languages", "photos", "isProfileComplete",
+    ];
+    const cleanData = {};
+    for (const key of allowedFields) {
+      if (key in data) {
+        // Skip empty strings for non-optional fields, keep null for optional ones
+        if (data[key] === "" && key === "height") {
+          cleanData[key] = null;
+        } else if (data[key] === "" && key === "maritalStatus") {
+          // maritalStatus is a required enum — skip empty string
+          continue;
+        } else if (data[key] !== "") {
+          cleanData[key] = data[key];
+        } else {
+          // For other optional string fields, convert empty string to null
+          cleanData[key] = null;
+        }
+      }
+    }
+    // Ensure height is Int or null
+    if (cleanData.height !== null && cleanData.height !== undefined) {
+      cleanData.height = Number(cleanData.height);
+      if (isNaN(cleanData.height)) cleanData.height = null;
+    }
+
     const existingProfile = await prisma.profile.findUnique({
       where: { userId },
     });
@@ -23,15 +62,15 @@ const createOrUpdateProfile = async (req, res) => {
       profile = await prisma.profile.update({
         where: { userId },
         data: {
-          ...data,
-          isProfileComplete: data.isProfileComplete !== undefined ? data.isProfileComplete : existingProfile.isProfileComplete,
+          ...cleanData,
+          isProfileComplete: cleanData.isProfileComplete !== undefined ? cleanData.isProfileComplete : existingProfile.isProfileComplete,
         },
       });
     } else {
       profile = await prisma.profile.create({
         data: {
           userId,
-          ...data,
+          ...cleanData,
         },
       });
     }
@@ -54,7 +93,7 @@ const createOrUpdateProfile = async (req, res) => {
     console.error("Profile update error:", error.message || error);
     if (error.code) console.error("Error code:", error.code);
     if (error.meta) console.error("Error meta:", JSON.stringify(error.meta));
-    res.status(500).json({ error: "Failed to update profile" });
+    res.status(500).json({ error: error.message || "Failed to update profile" });
   }
 };
 

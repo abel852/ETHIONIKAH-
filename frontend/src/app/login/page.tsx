@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Shield, Smartphone, Key, Home, Clock, AlertTriangle, LifeBuoy, HelpCircle, Headphones } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Shield, Smartphone, Key, Home, Clock, AlertTriangle, LifeBuoy, HelpCircle, Headphones, Download, X } from "lucide-react";
 import { useI18n, type Lang } from "@/context/I18nContext";
 import { Button, Input } from "@/components/common";
 import api from "@/lib/api";
@@ -44,6 +44,38 @@ export default function LoginPage() {
   const [showContactAdmin, setShowContactAdmin] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [attemptsInfo, setAttemptsInfo] = useState<{remaining: number; nextLockout: string} | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  const [appInstalled, setAppInstalled] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    const installedHandler = () => {
+      setAppInstalled(true);
+      setShowInstallBanner(false);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installedHandler);
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setAppInstalled(true);
+      setShowInstallBanner(false);
+    }
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+    setShowInstallBanner(false);
+  };
 
   useEffect(() => {
     if (requires2FA && twoFactorRef.current) twoFactorRef.current.focus();
@@ -339,6 +371,35 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Install App banner */}
+      {showInstallBanner && installPrompt && !appInstalled && (
+        <div className="relative z-10 bg-gradient-to-r from-[#D4AF37]/15 to-[#D4AF37]/5 border-b border-[#D4AF37]/20 px-4 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/20 flex items-center justify-center shrink-0">
+              <Download className="w-4 h-4 text-[#D4AF37]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate">Install EthioNikah App</p>
+              <p className="text-[11px] text-white/50 truncate">Quick access from your home screen</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleInstallApp}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-[#0c0a1a] bg-[#D4AF37] hover:bg-[#D4AF37]/90 transition-colors"
+            >
+              Install
+            </button>
+            <button
+              onClick={() => setShowInstallBanner(false)}
+              className="p-1 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 lg:py-10">
         <div className="w-full max-w-md mx-auto">
@@ -505,10 +566,7 @@ export default function LoginPage() {
 
               {/* Support row */}
               {(!lockout || (!lockout.locked && !lockout.permanent)) && (
-                <div className="flex items-center justify-between text-sm">
-                  <Link href="/contact-support" className="text-charcoal-500 dark:text-charcoal-400 hover:text-accent font-medium flex items-center gap-1.5 transition-colors">
-                    <Headphones className="w-4 h-4" /> Contact Support
-                  </Link>
+                <div className="flex items-center justify-end text-sm">
                   <Link href="/forgot-password" className="text-accent hover:text-accent-dark font-semibold transition-colors">
                     {t('auth.forgotPassword')}
                   </Link>
