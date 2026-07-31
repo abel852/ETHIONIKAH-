@@ -109,7 +109,16 @@ exports.createBackup = async (req, res) => {
     const filepath = path.join(BACKUP_DIR, filename);
 
     const cmd = `pg_dump -h ${db.host} -p ${db.port} -U ${db.user} -d ${db.database} -F p --clean --if-exists -f "${filepath}"`;
-    await execAsync(cmd, { env: buildEnv(db), maxBuffer: 1024 * 1024 * 100 });
+    try {
+      await execAsync(cmd, { env: buildEnv(db), maxBuffer: 1024 * 1024 * 100 });
+    } catch (dumpErr) {
+      // pg_dump may exit non-zero with warnings but still produce a valid dump
+      if (!fs.existsSync(filepath) || fs.statSync(filepath).size === 0) {
+        console.error("Backup creation error:", dumpErr.message);
+        return res.status(500).json({ error: "Failed to create backup" });
+      }
+      console.warn("Backup created with warnings:", dumpErr.stderr?.slice(0, 200));
+    }
 
     const stats = fs.statSync(filepath);
     const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
@@ -136,7 +145,7 @@ exports.createBackup = async (req, res) => {
     });
   } catch (error) {
     console.error("Backup creation error:", error.message);
-    res.status(500).json({ error: "Failed to create backup" });
+    res.status(500).json({ error: "Failed to create backup: " + error.message });
   }
 };
 
@@ -448,7 +457,15 @@ exports.createFullBackup = async (req, res) => {
     // Step 1: Create database dump to temp file
     tempSqlPath = path.join(BACKUP_DIR, `temp-db-${timestamp}.sql`);
     const dumpCmd = `pg_dump -h ${db.host} -p ${db.port} -U ${db.user} -d ${db.database} -F p --clean --if-exists -f "${tempSqlPath}"`;
-    await execAsync(dumpCmd, { env: buildEnv(db), maxBuffer: 1024 * 1024 * 200 });
+    try {
+      await execAsync(dumpCmd, { env: buildEnv(db), maxBuffer: 1024 * 1024 * 200 });
+    } catch (dumpErr) {
+      if (!fs.existsSync(tempSqlPath) || fs.statSync(tempSqlPath).size === 0) {
+        console.error("Full backup: pg_dump failed:", dumpErr.message);
+        return res.status(500).json({ error: "Failed to create database dump" });
+      }
+      console.warn("Full backup: pg_dump completed with warnings:", dumpErr.stderr?.slice(0, 200));
+    }
 
     // Step 2: Create tar.gz with both the SQL dump and uploads directory
     // Structure inside the archive:
