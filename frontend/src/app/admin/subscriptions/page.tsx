@@ -130,7 +130,7 @@ export default function AdminSubscriptionsPage() {
                   <stat.icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
                 {stat.label === "Total Revenue" && (
-                  <span className="text-xs text-green-600 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full font-medium">+$5.2k</span>
+                  <span className="text-xs text-green-600 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full font-medium">+Birr 5.2k</span>
                 )}
               </div>
               <p className="text-2xl font-bold text-charcoal-900 dark:text-white">{stat.value}</p>
@@ -146,7 +146,7 @@ export default function AdminSubscriptionsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold text-charcoal-900 dark:text-white">Revenue Overview</h3>
-              <p className="text-xs text-charcoal-400 dark:text-white">Monthly revenue in USD</p>
+              <p className="text-xs text-charcoal-400 dark:text-white">Monthly revenue in Birr</p>
             </div>
           </div>
           <div className="h-64">
@@ -161,7 +161,7 @@ export default function AdminSubscriptionsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#999" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#999" />
-                <RechartsTooltip formatter={(value: any) => [`$${value}`, "Revenue"]} />
+                <RechartsTooltip formatter={(value: any) => [`Birr ${value}`, "Revenue"]} />
                 <Area type="monotone" dataKey="revenue" stroke="#D4AF37" fill="url(#revGrad)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -354,7 +354,7 @@ export default function AdminSubscriptionsPage() {
                       </div>
                     </td>
                     <td className="py-3.5 px-3 font-semibold text-charcoal-900 dark:text-white">${pay.amount}</td>
-                    <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white">{pay.currency || "USD"}</td>
+                    <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white">{pay.currency || "Birr"}</td>
                     <td className="py-3.5 px-3 text-xs text-charcoal-500 dark:text-white capitalize">{pay.paymentMethod || "N/A"}</td>
                     <td className="py-3.5 px-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
