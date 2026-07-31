@@ -230,9 +230,9 @@ export default function AdminDashboard() {
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t('admin.dashboard.revenueOverview')}</h2>
               <div className="mb-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin.dashboard.totalRevenue')}</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">${(s.totalRevenue || 0).toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">Birr {(s.totalRevenue || 0).toLocaleString()}</p>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  +${(s.revenueThisMonth || 0).toLocaleString()} {t('admin.analytics.thisMonth').toLowerCase()}
+                  +Birr {(s.revenueThisMonth || 0).toLocaleString()} {t('admin.analytics.thisMonth').toLowerCase()}
                 </p>
               </div>
               <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
