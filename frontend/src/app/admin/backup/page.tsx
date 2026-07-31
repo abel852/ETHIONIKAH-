@@ -36,6 +36,9 @@ export default function BackupPage() {
   const [restoreMessage, setRestoreMessage] = useState("");
   const [restoreDetails, setRestoreDetails] = useState("");
   const [restoreFilename, setRestoreFilename] = useState("");
+  const [restorePercent, setRestorePercent] = useState(0);
+  const [restorePhase, setRestorePhase] = useState("");
+  const restorePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isSuperAdmin = user?.adminRole === "super_admin";
 
@@ -102,16 +105,43 @@ export default function BackupPage() {
     }
   };
 
+  const startRestorePolling = () => {
+    if (restorePollRef.current) clearInterval(restorePollRef.current);
+    restorePollRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get("/admin/backup/restore-progress", { _noToast: true } as any);
+        if (data.active) {
+          setRestorePercent(data.percent || 0);
+          setRestorePhase(data.phase || "");
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 1000);
+  };
+
+  const stopRestorePolling = () => {
+    if (restorePollRef.current) {
+      clearInterval(restorePollRef.current);
+      restorePollRef.current = null;
+    }
+  };
+
   const handleRestore = async (filename: string) => {
     setRestoring(true);
     setRestoreStatus("loading");
     setRestoreFilename(filename);
     setRestoreMessage(`Restoring database from "${filename}"...`);
     setRestoreDetails("");
+    setRestorePercent(0);
+    setRestorePhase("preparing");
     setConfirmRestore(null);
+    startRestorePolling();
 
     try {
       const { data } = await api.post("/admin/backup/restore", { filename });
+      stopRestorePolling();
+      setRestorePercent(100);
       setRestoreStatus("success");
       setRestoreMessage(data.message || "Backup restored successfully");
       const detailsParts = [`Restored from: ${data.filename || filename}`];
@@ -122,6 +152,7 @@ export default function BackupPage() {
       toast.success("Backup restored successfully");
       fetchBackups();
     } catch (err: any) {
+      stopRestorePolling();
       setRestoreStatus("error");
       const errMsg = err?.response?.data?.error || "Failed to restore backup";
       const errDetails = err?.response?.data?.details || "";
@@ -133,10 +164,13 @@ export default function BackupPage() {
   };
 
   const closeRestoreModal = () => {
+    stopRestorePolling();
     setRestoreStatus("idle");
     setRestoreMessage("");
     setRestoreDetails("");
     setRestoreFilename("");
+    setRestorePercent(0);
+    setRestorePhase("");
   };
 
   const handleDelete = async (filename: string) => {
@@ -500,7 +534,17 @@ export default function BackupPage() {
                   <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Restoring Backup...</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{restoreMessage}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{restoreMessage}</p>
+                <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-amber-500 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${restorePercent}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span className="capitalize">{restorePhase || "processing"}...</span>
+                  <span className="font-bold text-amber-500">{restorePercent}%</span>
+                </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">Please do not close this window.</p>
               </div>
             )}

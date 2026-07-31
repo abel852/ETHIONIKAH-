@@ -53,6 +53,7 @@ router.post("/backup/auto-trigger", ...superAdmin, async (req, res) => {
 router.get("/backup/list", ...superAdmin, backupController.listBackups);
 router.get("/backup/download/:filename", ...superAdmin, backupController.downloadBackup);
 router.post("/backup/restore", ...superAdmin, backupController.restoreBackup);
+router.get("/backup/restore-progress", ...superAdmin, backupController.getRestoreProgress);
 router.delete("/backup/:filename", ...superAdmin, backupController.deleteBackup);
 router.post("/backup/upload", ...superAdmin, uploadBackup.single("backupFile"), backupController.uploadBackup);
 

@@ -1,4 +1,4 @@
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const { promisify } = require("util");
 const fs = require("fs");
 const path = require("path");
@@ -6,6 +6,74 @@ const { logAudit } = require("../utils/auditLogger");
 const { uploadBackup: uploadToS3, listS3Backups, deleteS3Backup, downloadBackup: downloadFromS3, isS3Configured } = require("../utils/backupStorage");
 
 const execAsync = promisify(exec);
+
+let restoreProgress = { active: false, percent: 0, phase: "idle", totalLines: 0, processedLines: 0 };
+
+function getRestoreProgress() {
+  return { ...restoreProgress };
+}
+
+function countFileLines(filepath) {
+  try {
+    const content = fs.readFileSync(filepath, "utf-8");
+    return content.split("\n").length;
+  } catch {
+    return 0;
+  }
+}
+
+function runPsqlWithProgress(db, sqlFilepath, env) {
+  return new Promise((resolve, reject) => {
+    const totalLines = countFileLines(sqlFilepath);
+    restoreProgress.totalLines = totalLines;
+    restoreProgress.processedLines = 0;
+    restoreProgress.percent = 0;
+    restoreProgress.phase = "restoring database";
+
+    const args = [
+      "-h", db.host,
+      "-p", String(db.port),
+      "-U", db.user,
+      "-d", db.database,
+      "-f", sqlFilepath,
+    ];
+
+    const child = spawn("psql", args, { env });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (data) => {
+      stdout += data.toString();
+      const newLines = data.toString().split("\n").length - 1;
+      restoreProgress.processedLines += newLines;
+      if (totalLines > 0) {
+        restoreProgress.percent = Math.min(99, Math.round((restoreProgress.processedLines / totalLines) * 100));
+      }
+    });
+
+    child.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    child.on("close", (code) => {
+      restoreProgress.percent = 100;
+      restoreProgress.phase = "completed";
+      if (code === 0 || stderr.includes("already exists") || stderr.includes("duplicate key")) {
+        resolve({ stdout, stderr });
+      } else {
+        const err = new Error("psql failed with code " + code);
+        err.stderr = stderr;
+        err.stdout = stdout;
+        reject(err);
+      }
+    });
+
+    child.on("error", (err) => {
+      restoreProgress.phase = "error";
+      reject(err);
+    });
+  });
+}
 
 const BACKUP_DIR = path.join(__dirname, "..", "..", "backups");
 const UPLOADS_DIR = path.join(__dirname, "..", "..", "uploads");
@@ -232,17 +300,20 @@ exports.restoreBackup = async (req, res) => {
       }
     }
 
-    // Restore database from SQL dump
+    // Restore database from SQL dump with progress tracking
     const db = parseDatabaseUrl();
-    const cmd = `psql -h ${db.host} -p ${db.port} -U ${db.user} -d ${db.database} -f "${sqlFilepath}"`;
+    restoreProgress.active = true;
+    restoreProgress.percent = 0;
+    restoreProgress.phase = "preparing";
 
     let stdout = "", stderr = "";
     try {
-      const result = await execAsync(cmd, { env: buildEnv(db), maxBuffer: 1024 * 1024 * 200 });
+      const result = await runPsqlWithProgress(db, sqlFilepath, buildEnv(db));
       stdout = result.stdout || "";
       stderr = result.stderr || "";
     } catch (execErr) {
       stderr = execErr.stderr || execErr.message || "";
+      restoreProgress.active = false;
       if (stderr.includes("password authentication failed")) {
         return res.status(500).json({ error: "Database authentication failed. Check DATABASE_URL credentials." });
       }
@@ -286,6 +357,9 @@ exports.restoreBackup = async (req, res) => {
       console.log(`[RESTORE] ${skippedCount} non-fatal errors ignored (schema/data already exists)`);
     }
 
+    restoreProgress.active = false;
+    restoreProgress.phase = "completed";
+
     // Clean up temp directory
     if (tempDir && fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
@@ -317,6 +391,8 @@ exports.restoreBackup = async (req, res) => {
       try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch {}
     }
     console.error("Backup restore error:", error.message);
+    restoreProgress.active = false;
+    restoreProgress.phase = "error";
     res.status(500).json({
       error: "An unexpected error occurred during restore.",
     });
@@ -437,6 +513,11 @@ exports.createFullBackup = async (req, res) => {
     console.error("Full backup creation error:", error.message);
     res.status(500).json({ error: "Failed to create full backup" });
   }
+};
+
+// GET /api/admin/backup/restore-progress
+exports.getRestoreProgress = (req, res) => {
+  res.json(getRestoreProgress());
 };
 
 // POST /api/admin/backup/upload

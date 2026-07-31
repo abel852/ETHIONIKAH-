@@ -396,8 +396,8 @@ export default function MatchesPage() {
         }
         setLikedProfileIds((prev) => { const n = new Set(prev); n.add(id); return n; });
       }
-    } catch {
-      // ignore
+    } catch (err: any) {
+      console.error("Like error:", err);
     } finally {
       setLikeLoadingId(null);
     }
