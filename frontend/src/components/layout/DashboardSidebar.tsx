@@ -137,21 +137,20 @@ export default function DashboardSidebar() {
           {/* Matches */}
           {!isBanned && (
             <Link href="/matches" className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
-              pathname === "/matches" ? "text-[#D4AF37] bg-[#D4AF37]/10" : "text-[#8B8B8B]"
+              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+              pathname === "/matches" ? "text-[#D4AF37]" : "text-[#8B8B8B]"
             )}>
-              {pathname === "/matches" && (
-                <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-[#D4AF37]" />
-              )}
               <div className="relative">
                 <Heart className={cn("w-5 h-5", pathname === "/matches" && "text-[#D4AF37]")} fill={pathname === "/matches" ? "#D4AF37" : "none"} />
+                {pathname === "/matches" && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D4AF37]" />}
                 {badgeForHref("/matches") !== null && (
                   <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold px-0.5 leading-none bg-red-500 text-white shadow-md">
                     {badgeForHref("/matches")}
                   </span>
                 )}
               </div>
-              <span className={cn("text-[10px]", pathname === "/matches" ? "font-bold" : "font-medium")}>{t('nav.matches')}</span>
+              <span className={cn("text-[10px]", pathname === "/matches" ? "font-bold text-[#D4AF37]" : "font-medium")}>{t('nav.matches')}</span>
+              {pathname === "/matches" && <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />}
             </Link>
           )}
 
@@ -169,14 +168,15 @@ export default function DashboardSidebar() {
               </div>
             ) : (
               <Link href="/liked-interest" className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
-                likedActive ? "text-[#D4AF37] bg-[#D4AF37]/10" : "text-[#8B8B8B]"
+                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+                likedActive ? "text-[#D4AF37]" : "text-[#8B8B8B]"
               )}>
-                {likedActive && (
-                  <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-[#D4AF37]" />
-                )}
-                <Sparkles className={cn("w-5 h-5", likedActive && "text-[#D4AF37]")} />
-                <span className={cn("text-[10px]", likedActive ? "font-bold" : "font-medium")}>{t('nav.liked')}</span>
+                <div className="relative">
+                  <Sparkles className={cn("w-5 h-5", likedActive && "text-[#D4AF37]")} />
+                  {likedActive && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D4AF37]" />}
+                </div>
+                <span className={cn("text-[10px]", likedActive ? "font-bold text-[#D4AF37]" : "font-medium")}>{t('nav.liked')}</span>
+                {likedActive && <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />}
               </Link>
             );
           })()}
@@ -195,21 +195,20 @@ export default function DashboardSidebar() {
               </div>
             ) : (
               <Link href="/messages" className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
-                msgActive ? "text-[#D4AF37] bg-[#D4AF37]/10" : "text-[#8B8B8B]"
+                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+                msgActive ? "text-[#D4AF37]" : "text-[#8B8B8B]"
               )}>
-                {msgActive && (
-                  <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-[#D4AF37]" />
-                )}
                 <div className="relative">
                   <MessageCircle className={cn("w-5 h-5", msgActive && "text-[#D4AF37]")} />
+                  {msgActive && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D4AF37]" />}
                   {badgeForHref("/messages") !== null && (
                     <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold px-0.5 leading-none bg-red-500 text-white shadow-md">
                       {badgeForHref("/messages")}
                     </span>
                   )}
                 </div>
-                <span className={cn("text-[10px]", msgActive ? "font-bold" : "font-medium")}>{t('nav.messages')}</span>
+                <span className={cn("text-[10px]", msgActive ? "font-bold text-[#D4AF37]" : "font-medium")}>{t('nav.messages')}</span>
+                {msgActive && <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />}
               </Link>
             );
           })()}
@@ -217,28 +216,30 @@ export default function DashboardSidebar() {
           {/* Books */}
           {!isBanned && (
             <Link href="/books" className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
-              pathname === "/books" || pathname.startsWith("/books/") ? "text-[#D4AF37] bg-[#D4AF37]/10" : "text-[#8B8B8B]"
+              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+              pathname === "/books" || pathname.startsWith("/books/") ? "text-[#D4AF37]" : "text-[#8B8B8B]"
             )}>
-              {(pathname === "/books" || pathname.startsWith("/books/")) && (
-                <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-[#D4AF37]" />
-              )}
-              <BookOpen className={cn("w-5 h-5", (pathname === "/books" || pathname.startsWith("/books/")) && "text-[#D4AF37]")} />
-              <span className={cn("text-[10px]", (pathname === "/books" || pathname.startsWith("/books/")) ? "font-bold" : "font-medium")}>{t('nav.books')}</span>
+              <div className="relative">
+                <BookOpen className={cn("w-5 h-5", (pathname === "/books" || pathname.startsWith("/books/")) && "text-[#D4AF37]")} />
+                {(pathname === "/books" || pathname.startsWith("/books/")) && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D4AF37]" />}
+              </div>
+              <span className={cn("text-[10px]", (pathname === "/books" || pathname.startsWith("/books/")) ? "font-bold text-[#D4AF37]" : "font-medium")}>{t('nav.books')}</span>
+              {(pathname === "/books" || pathname.startsWith("/books/")) && <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />}
             </Link>
           )}
 
           {/* Profile */}
           {!isBanned ? (
             <Link href="/profile" className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl",
-              pathname === "/profile" || pathname.startsWith("/profile/") ? "text-[#D4AF37] bg-[#D4AF37]/10" : "text-[#8B8B8B]"
+              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+              pathname === "/profile" || pathname.startsWith("/profile/") ? "text-[#D4AF37]" : "text-[#8B8B8B]"
             )}>
-              {(pathname === "/profile" || pathname.startsWith("/profile/")) && (
-                <motion.div layoutId="nav-pill" className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-[#D4AF37]" />
-              )}
-              <User className={cn("w-5 h-5", (pathname === "/profile" || pathname.startsWith("/profile/")) && "text-[#D4AF37]")} />
-              <span className={cn("text-[10px]", (pathname === "/profile" || pathname.startsWith("/profile/")) ? "font-bold" : "font-medium")}>{t('nav.profile')}</span>
+              <div className="relative">
+                <User className={cn("w-5 h-5", (pathname === "/profile" || pathname.startsWith("/profile/")) && "text-[#D4AF37]")} />
+                {(pathname === "/profile" || pathname.startsWith("/profile/")) && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#D4AF37]" />}
+              </div>
+              <span className={cn("text-[10px]", (pathname === "/profile" || pathname.startsWith("/profile/")) ? "font-bold text-[#D4AF37]" : "font-medium")}>{t('nav.profile')}</span>
+              {(pathname === "/profile" || pathname.startsWith("/profile/")) && <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />}
             </Link>
           ) : (
             <Link href="/complaints" className="flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl text-[#D4AF37]">
