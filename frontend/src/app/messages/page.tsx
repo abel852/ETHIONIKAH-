@@ -225,11 +225,13 @@ function MessagesContent() {
   // Mobile keyboard — use Visual Viewport API to detect keyboard and auto-scroll
   useEffect(() => {
     let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+    let initialHeight = 0;
 
     const update = () => {
       const vv = window.visualViewport;
       if (!vv) return;
-      const keyboardOpen = vv.height < window.innerHeight - 120;
+      if (initialHeight === 0) initialHeight = vv.height;
+      const keyboardOpen = vv.height < initialHeight - 120;
       setMobileKeyboardOpen(keyboardOpen);
 
       // Debounced auto-scroll to latest message after keyboard animation
@@ -239,9 +241,15 @@ function MessagesContent() {
       }, 250);
     };
 
+    // Capture initial height before any keyboard events
+    if (window.visualViewport) {
+      initialHeight = window.visualViewport.height;
+    }
     window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
     return () => {
       window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
       if (scrollTimer) clearTimeout(scrollTimer);
     };
   }, []);
