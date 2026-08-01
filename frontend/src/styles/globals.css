@@ -13,6 +13,14 @@
 
   body {
     @apply bg-background text-charcoal-900 font-sans antialiased dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300;
+    /* Support dynamic viewport units for mobile keyboard handling */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent iOS Safari body scroll when keyboard opens */
+  html {
+    overscroll-behavior: none;
   }
 
   h1, h5, h6 {

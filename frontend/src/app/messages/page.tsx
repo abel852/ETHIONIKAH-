@@ -223,26 +223,42 @@ function MessagesContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Mobile keyboard — keep header + input visible, only messages scroll
+  // Mobile keyboard — use Visual Viewport API to resize chat when keyboard opens
+  // Behaves like WhatsApp/Telegram: input sits directly above keyboard, no gap
   useEffect(() => {
     const update = () => {
       const vv = window.visualViewport;
       const root = document.getElementById("messages-root");
       if (!root || !vv) return;
-      if (vv.height < window.innerHeight) {
+      const keyboardOpen = vv.height < window.innerHeight - 80;
+      if (keyboardOpen) {
         setMobileKeyboardOpen(true);
+        // Use visualViewport height so the chat container shrinks to exactly above the keyboard
         root.style.height = `${vv.height}px`;
         document.body.style.overflow = "hidden";
+        // Auto-scroll to latest message after keyboard animation settles
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          });
+        });
       } else {
         setMobileKeyboardOpen(false);
         root.style.height = "";
         document.body.style.overflow = "";
+        // Scroll back to bottom when keyboard closes
+        requestAnimationFrame(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        });
       }
     };
     update();
+    // Use both resize and scroll events for maximum compatibility (iOS Safari + Android Chrome)
     window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
     return () => {
       window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
       document.body.style.overflow = "";
     };
   }, []);
@@ -665,8 +681,8 @@ function MessagesContent() {
 
   return (
     <div className="relative h-dvh flex flex-col overflow-hidden">
-    <div id="messages-root" className="relative z-10 h-dvh flex flex-col overflow-hidden">
-      <div className="flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0 pb-20 lg:pb-0 [padding-bottom:calc(80px+env(safe-area-inset-bottom,0px))] lg:[padding-bottom:0]">
+    <div id="messages-root" className="relative z-10 h-dvh flex flex-col overflow-hidden [transition:height_0.25s_ease]">
+      <div className={`flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0 ${mobileKeyboardOpen ? "pb-0" : "pb-20 lg:pb-0 [padding-bottom:calc(80px+env(safe-area-inset-bottom,0px))] lg:[padding-bottom:0]"}`}>
         <div className="flex flex-1 min-h-0 min-w-0">
 
           {/* Conversation List — with IslamicPatternBackground */}
@@ -1358,7 +1374,7 @@ function MessagesContent() {
 
                 {/* Bottom Message Bar — Floating Glassmorphism */}
                 {activeConversation && !blockedUsers.includes(activeConversation) ? (
-                  <div className={`shrink-0 z-10 ${bottomBarBg} w-full min-w-0`}>
+                  <div className={`shrink-0 z-10 ${bottomBarBg} w-full min-w-0`} style={{ paddingBottom: mobileKeyboardOpen ? "0px" : "env(safe-area-inset-bottom, 0px)" }}>
                     <div className="px-1.5 sm:px-3 lg:px-4 py-2 sm:py-3">
                       {/* Reply bar */}
                       {replyTo && (
@@ -1528,7 +1544,8 @@ function MessagesContent() {
         </div>
       </div>
 
-      {/* Floating Bottom Navigation — blur background, gold active indicator */}
+      {/* Floating Bottom Navigation — hidden when keyboard is open on mobile */}
+      {!mobileKeyboardOpen && (
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2">
         <div className="mx-auto max-w-sm flex items-center justify-around rounded-[22px] bg-[#111827]/80 backdrop-blur-xl border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2 py-2">
           <a href="/discover" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
@@ -1557,6 +1574,7 @@ function MessagesContent() {
           </a>
         </div>
       </nav>
+      )}
 
       {/* Report Dialog */}
       {showReportDialog && (
