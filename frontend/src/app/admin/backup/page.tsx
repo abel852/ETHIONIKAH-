@@ -266,19 +266,19 @@ export default function BackupPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <Database className="w-7 h-7 text-amber-500" />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3">
+              <Database className="w-6 h-6 sm:w-7 sm:h-7 text-amber-500" />
               Backup &amp; Restore
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
               Create, download, upload, and restore full backups (database + files). Super admin only.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <input
               ref={fileInputRef}
               type="file"
@@ -315,12 +315,12 @@ export default function BackupPage() {
 
         {/* Upload progress bar */}
         {(uploading || uploadError) && uploadProgress && (
-          <div className="mb-6 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <div className="mb-6 p-3 sm:p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                 {uploadError ? "Upload failed" : "Uploading backup…"}
               </span>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <span className="text-sm font-bold text-amber-500">{uploadProgress.percent}%</span>
                 {uploading && (
                   <button
@@ -356,16 +356,16 @@ export default function BackupPage() {
         )}
 
         {/* Warning banner */}
-        <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 flex items-start gap-3">
+        <div className="mb-6 p-3 sm:p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 flex items-start gap-2 sm:gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="text-sm text-amber-700 dark:text-amber-300">
+          <div className="text-xs sm:text-sm text-amber-700 dark:text-amber-300">
             <p className="font-semibold mb-1">Warning</p>
             <p>Restoring a backup will <strong>overwrite all current data</strong> with the contents of the backup file. This action cannot be undone. Always create a backup before restoring.</p>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
           <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-1">
               <FileText className="w-4 h-4" />
@@ -406,8 +406,8 @@ export default function BackupPage() {
             <p className="text-gray-500 dark:text-gray-400">No backups yet. Click &quot;Create Backup&quot; to get started.</p>
           </div>
         ) : (
-          <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <table className="w-full">
+          <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden overflow-x-auto">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   <th className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase px-4 py-3">Filename</th>
@@ -526,7 +526,7 @@ export default function BackupPage() {
       {/* Centered Restore Status Modal */}
       {restoreStatus !== "idle" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 max-w-md w-full mx-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-5 sm:p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             {/* Loading state */}
             {restoreStatus === "loading" && (
               <div className="text-center">
