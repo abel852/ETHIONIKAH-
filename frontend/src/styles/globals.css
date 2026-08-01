@@ -37,6 +37,18 @@
   }
   .btn-anim { animation: btnIn 0.2s ease-out; }
 
+  /* In-app notification popup entrance */
+  @keyframes notifIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Notification progress bar countdown */
+  @keyframes notifProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
   h1, h5, h6 {
     @apply font-display font-semibold;
   }

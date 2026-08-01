@@ -10,8 +10,12 @@ import { playMessageSound } from "@/lib/messageSound";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface ToastNotif {
+  id: string;
   name: string;
   content: string;
+  type?: string;
+  url?: string;
+  avatar?: string;
 }
 
 interface SocketContextValue {
@@ -45,9 +49,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   fetchUnreadCountRef.current = fetchUnreadCount;
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
-  const [notif, setNotif] = useState<ToastNotif | null>(null);
+  const [notifs, setNotifs] = useState<ToastNotif[]>([]);
+  const notifIdRef = useRef(0);
   const lostShownRef = useRef(false);
   const failCountRef = useRef(0);
+
+  const pushNotif = useCallback((n: Omit<ToastNotif, "id">) => {
+    const id = `notif-${++notifIdRef.current}`;
+    setNotifs((prev) => [...prev.slice(-3), { ...n, id }]);
+    setTimeout(() => {
+      setNotifs((prev) => prev.filter((x) => x.id !== id));
+    }, 5000);
+  }, []);
+
+  const dismissNotif = useCallback((id: string) => {
+    setNotifs((prev) => prev.filter((x) => x.id !== id));
+  }, []);
 
   const emitTyping = useCallback((conversationId: string, isTyping: boolean) => {
     const socket = socketRef.current;
@@ -108,8 +125,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           if (store.activeConversation === msg.senderId) {
             addMessageRef.current(msg);
           }
-          setNotif({ name: senderName, content: preview });
-          setTimeout(() => setNotif(null), 3000);
+          pushNotif({ name: senderName, content: preview, type: "message", url: "/messages" });
           playMessageSound("receive");
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
             new Notification(`Message from ${senderName}`, { body: preview, icon: "/favicon.ico" });
@@ -130,8 +146,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           );
           useMessageStore.setState({ conversations: updated });
         }
-        setNotif({ name: senderName, content: preview });
-        setTimeout(() => setNotif(null), 3000);
+        pushNotif({ name: senderName, content: preview, type: "message", url: "/messages" });
         playMessageSound("receive");
         if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
           new Notification(`Message from ${senderName}`, { body: preview, icon: "/favicon.ico" });
@@ -184,9 +199,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     socket.on("new_notification", (notification) => {
       fetchUnreadCountRef.current();
       if (notification?.type !== "message") {
-        toast.success(notification?.title || "New notification", {
-          description: notification?.body || "",
-          duration: 5000,
+        pushNotif({
+          name: notification?.title || "New notification",
+          content: notification?.body || "",
+          type: notification?.type || "system",
+          url: notification?.type === "match" ? "/matches" : notification?.type === "interest" ? "/liked-interest" : "/notifications",
         });
       }
     });
@@ -263,29 +280,65 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   return (
     <SocketContext.Provider value={{ socket: socketRef.current, typingUsers, emitTyping }}>
       {children}
-      {notif && (
-        <div className="fixed top-0 left-0 right-0 z-[200] animate-slideDown">
-          <div className="bg-white dark:bg-charcoal-800 shadow-elevated flex items-stretch cursor-pointer" onClick={() => setNotif(null)}>
-            <div className="w-1 bg-primary-500 shrink-0" />
-            <div className="flex items-center gap-3 px-4 py-3 flex-1 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+      {/* In-app notification popups — floating top-right, dark/gold theme */}
+      <div className="fixed top-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none" style={{ maxWidth: "calc(100vw - 2rem)" }}>
+        {notifs.map((n) => (
+          <div
+            key={n.id}
+            className="pointer-events-auto rounded-2xl bg-[#1A1A24] border border-[#2D2D2D] shadow-2xl shadow-black/40 overflow-hidden transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+            style={{ animation: "notifIn 0.35s ease-out", width: 360, maxWidth: "calc(100vw - 2rem)" }}
+            onClick={() => {
+              if (n.url) {
+                window.location.href = n.url;
+              }
+              dismissNotif(n.id);
+            }}
+          >
+            <div className="flex items-stretch">
+              {/* Gold accent bar */}
+              <div className="w-1 bg-gradient-to-b from-[#D4AF37] to-[#F2D675] shrink-0" />
+              <div className="flex items-center gap-3 px-4 py-3 flex-1 min-w-0">
+                {/* Icon based on type */}
+                <div className="w-10 h-10 rounded-full bg-[#D4AF37]/15 flex items-center justify-center shrink-0">
+                  {n.type === "message" ? (
+                    <svg className="w-5 h-5 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  ) : n.type === "match" ? (
+                    <svg className="w-5 h-5 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                    </svg>
+                  ) : n.type === "interest" ? (
+                    <svg className="w-5 h-5 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{n.name}</p>
+                  <p className="text-xs text-[#C8C8C8] truncate">{n.content}</p>
+                </div>
+                <button
+                  className="shrink-0 p-1 hover:bg-[#2D2D2D] rounded-full transition-colors"
+                  onClick={(e) => { e.stopPropagation(); dismissNotif(n.id); }}
+                >
+                  <svg className="w-4 h-4 text-[#8B8B8B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-charcoal-900 dark:text-white truncate">{notif.name}</p>
-                <p className="text-xs text-charcoal-500 dark:text-charcoal-400 truncate">{notif.content}</p>
-              </div>
-              <button className="shrink-0 p-1 hover:bg-charcoal-100 dark:hover:bg-charcoal-700 rounded-full" onClick={(e) => { e.stopPropagation(); setNotif(null); }}>
-                <svg className="w-4 h-4 text-charcoal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            </div>
+            {/* Progress bar */}
+            <div className="h-0.5 bg-[#D4AF37]/20">
+              <div className="h-full bg-gradient-to-r from-[#D4AF37] to-[#F2D675]" style={{ animation: "notifProgress 5s linear forwards" }} />
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
     </SocketContext.Provider>
   );
 }
