@@ -71,6 +71,22 @@ export default function AdminAnalyticsPage() {
       // HEADER
       pdf.setFillColor(15, 15, 16);
       pdf.rect(0, 0, pageW, 45, "F");
+
+      // Logo — load image and place in header
+      try {
+        const logoResp = await fetch("/images/logo.png");
+        const logoBlob = await logoResp.blob();
+        const logoReader = new FileReader();
+        const logoDataUrl: string = await new Promise((resolve, reject) => {
+          logoReader.onload = () => resolve(logoReader.result as string);
+          logoReader.onerror = reject;
+          logoReader.readAsDataURL(logoBlob);
+        });
+        pdf.addImage(logoDataUrl, "PNG", 12, 8, 28, 28);
+      } catch {
+        // If logo fails to load, continue without it
+      }
+
       pdf.setTextColor(212, 175, 55);
       pdf.setFontSize(24);
       pdf.setFont("helvetica", "bold");
