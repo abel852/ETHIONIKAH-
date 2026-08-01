@@ -666,7 +666,7 @@ function MessagesContent() {
   return (
     <div className="relative flex flex-col overflow-hidden">
     <div id="messages-root" className="relative z-10 h-dvh flex flex-col overflow-hidden">
-      <div className={`flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0 ${mobileKeyboardOpen ? "pb-0" : "pb-20 lg:pb-0 [padding-bottom:calc(80px+env(safe-area-inset-bottom,0px))] lg:[padding-bottom:0]"}`}>
+      <div className="flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0">
         <div className="flex flex-1 min-h-0 min-w-0">
 
           {/* Conversation List — with IslamicPatternBackground */}
@@ -1528,9 +1528,9 @@ function MessagesContent() {
         </div>
       </div>
 
-      {/* Floating Bottom Navigation — hidden when keyboard is open on mobile */}
+      {/* Bottom Navigation — part of flex layout, no gap with input bar */}
       {!mobileKeyboardOpen && (
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2">
+      <nav className="lg:hidden shrink-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2">
         <div className="mx-auto max-w-sm flex items-center justify-around rounded-[22px] bg-[#111827]/80 backdrop-blur-xl border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2 py-2">
           <a href="/discover" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
             <Compass className="w-5 h-5 text-[#8B8B8B]" />
