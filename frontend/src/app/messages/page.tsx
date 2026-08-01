@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User } from "lucide-react";
+import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User, BookOpen } from "lucide-react";
 import { Input, Button, Avatar, IslamicPatternBackground } from "@/components/common";
 import { ScreenshotGuard } from "@/components/common";
 import { useMessageStore } from "@/store/messages";
@@ -1532,13 +1532,13 @@ function MessagesContent() {
       {!mobileKeyboardOpen && (
       <nav className="lg:hidden shrink-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2">
         <div className="mx-auto max-w-sm flex items-center justify-around rounded-[22px] bg-[#111827]/80 backdrop-blur-xl border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2 py-2">
-          <a href="/discover" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
-            <Compass className="w-5 h-5 text-[#8B8B8B]" />
-            <span className="text-[10px] font-medium text-[#8B8B8B]">Discover</span>
-          </a>
           <a href="/matches" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
             <Heart className="w-5 h-5 text-[#8B8B8B]" />
             <span className="text-[10px] font-medium text-[#8B8B8B]">Matches</span>
+          </a>
+          <a href="/liked-interest" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
+            <Sparkles className="w-5 h-5 text-[#8B8B8B]" />
+            <span className="text-[10px] font-medium text-[#8B8B8B]">Liked</span>
           </a>
           <a href="/messages" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors">
             <div className="relative">
@@ -1548,9 +1548,9 @@ function MessagesContent() {
             <span className="text-[10px] font-bold text-[#D4AF37]">Messages</span>
             <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />
           </a>
-          <a href="/notifications" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
-            <Sparkles className="w-5 h-5 text-[#8B8B8B]" />
-            <span className="text-[10px] font-medium text-[#8B8B8B]">Activity</span>
+          <a href="/books" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
+            <BookOpen className="w-5 h-5 text-[#8B8B8B]" />
+            <span className="text-[10px] font-medium text-[#8B8B8B]">Books</span>
           </a>
           <a href="/profile" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
             <User className="w-5 h-5 text-[#8B8B8B]" />
