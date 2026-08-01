@@ -680,7 +680,7 @@ function MessagesContent() {
   const bottomBarInner = "bg-[#1A1A24] border-[#2D2D2D]";
 
   return (
-    <div className="relative h-dvh flex flex-col overflow-hidden">
+    <div className="relative flex flex-col overflow-hidden">
     <div id="messages-root" className="relative z-10 h-dvh flex flex-col overflow-hidden [transition:height_0.25s_ease]">
       <div className={`flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0 ${mobileKeyboardOpen ? "pb-0" : "pb-20 lg:pb-0 [padding-bottom:calc(80px+env(safe-area-inset-bottom,0px))] lg:[padding-bottom:0]"}`}>
         <div className="flex flex-1 min-h-0 min-w-0">
