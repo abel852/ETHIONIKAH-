@@ -77,7 +77,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     if (!token) return;
 
-    const socket = io(process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000", {
+    const socket = io(process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") ?? "http://localhost:5000", {
       auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
