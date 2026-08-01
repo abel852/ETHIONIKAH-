@@ -113,7 +113,6 @@ function MessagesContent() {
   const [unreadScrollCount, setUnreadScrollCount] = useState(0);
   const [reactionMsgId, setReactionMsgId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number; openUpward: boolean } | null>(null);
-  const [emojiSearch, setEmojiSearch] = useState("");
   const [failedMsgIds, setFailedMsgIds] = useState<Set<string>>(new Set());
   const [pinnedMsgId, setPinnedMsgId] = useState<string | null>(null);
   const messagesScrollRef = useRef<HTMLDivElement>(null);
@@ -717,22 +716,20 @@ function MessagesContent() {
     el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
   }, []);
 
-  // Emoji categories for searchable picker
+  // Emoji categories
   const EMOJI_CATEGORIES = [
-    { name: "Smileys", emojis: ["😊","🥰","😍","❤️","💕","😘","😇","😁","😂","🤗","😎","🥹","😅","😳","🤔","😢","😭","🥺","😌","🤩","🥳","😏","🙃","😋","🤤","😴","🤯","😱","🥶","🤠","🥸","😈","💀","👻","🤖"] },
-    { name: "Gestures", emojis: ["👍","👎","👌","✌️","🤝","🙏","👋","🫂","👏","🙌","🤲","💪","✊","🤞","🤟","🤙","👋","handshake"] },
-    { name: "Islamic", emojis: ["🤲","🌙","⭐","🕌","📿","☪️","🌸","🌹","💐","✨","🤍","💚","💍","🎉","🕊️"] },
-    { name: "Symbols", emojis: ["✨","💫","⭐","🌟","💥","🔥","💯","✅","❌","⚠️","🔔","💬","💭","📝","📌","🎯","🎁","🏆"] },
+    { name: "Smileys & People", emojis: ["😊","🥰","😍","❤️","💕","😘","😇","😁","😂","🤗","😎","🥹","😅","😳","🤔","😢","😭","🥺","😌","🤩","🥳","😏","🙃","😋","🤤","😴","🤯","😱","🥶","🤠","🥸","😈","💀","👻","🤖","😀","😃","😄","😆","😉","😠","😡","🤬","😶","😐","😕","😯","😴","🤢","🤮","🤧","🥵","🥴","🤠","🥳","🥺","🤔","🤭","🤫","🤥","🙄","😬","😮‍💨","🥱","🤪","😩","😫","🥹","😇","🤓","🧐","😺","😸","😹","😻","😼","😽","🙀","😿","😾","🙈","🙉","🙊","💋","💌","💘","💝","💖","💗","💓","💞","💟","❣️","💔","❤️‍🔥","❤️‍🩹","💑","💏","👪","🤱","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","👵","👴","🧓","👼","👸","🤴","👰","🤵","🤰"] },
+    { name: "Gestures & Body", emojis: ["👍","👎","👌","✌️","🤝","🙏","👋","🫂","👏","🙌","🤲","💪","✊","🤞","🤟","🤙","👈","👉","👆","👇","☝️","✋","🤚","🖐️","🖖","🤜","🤛","🤘","🤞","✌️","🤟","🤘","🤙","👏","🙌","👐","🤲","🙏","🤝","💪","✊","🤞","🤟","🤘","🤙","🧠","🫀","🫁","🦷","🦴","👀","👁️","👅","👄","💋","🩷","🩵","🩶"] },
+    { name: "Islamic & Spiritual", emojis: ["🤲","🌙","⭐","🕌","📿","☪️","🌸","🌹","💐","✨","🤍","💚","💍","🎉","🕊️","🕋","🕌","🌅","🌄","🌠","🌟","💫","☁️","⛅","🌤️","☀️","🌛","🌜","🌸","🌺","🌻","🌼","🌷","🌱","🪴","🌲","🌳","🌴","🌵","🌾","🌿","☘️","🍀","🍁","🍂","🍃"] },
+    { name: "Hearts & Symbols", emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","❤️‍🔥","❤️‍🩹","💯","✅","❌","⚠️","🔔","💬","💭","📝","📌","🎯","🎁","🏆","✨","💫","⭐","🌟","💥","🔥","♦️","♠️","♣️","♥️","🆗","🆕","🆒","🆓","🆙","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔺","🔻","🔸","🔹","🔶","🔷"] },
+    { name: "Animals & Nature", emojis: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐽","🐸","🐵","🐔","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🕷️","🕸️","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🐃","🐂","🐄","🐎","🐖","🐏","🐑","🐐","🦌","🐕","🐈","🐈‍⬛","🪶","🐓","🦃","🦚","🦜","🦢","🦩","🕊️","🐇","🦝","🦨","🦡","🦫","🦦","🐁","🐀","🐿️","🦔"] },
+    { name: "Food & Drink", emojis: ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🥬","🥒","🌶️","🌽","🥕","🫒","🧄","🧅","🥔","🍠","🥐","🥯","🍞","🥖","🥨","🧀","🥚","🍳","🧈","🥞","🧇","🥓","🥩","🍗","🍖","🌭","🍔","🍟","🍕","🥪","🥙","🧆","🌮","🌯","🥗","🥘","🍝","🍜","🍲","🍛","🍣","🍱","🥟","🍤","🍙","🍚","🍘","🍥","🥠","🍢","🍡","🍧","🍨","🍦","🥧","🧁","🍰","🎂","🍮","🍭","🍬","🍫","🍿","🍩","🍪","🌰","🥜","🍯","🥛","🍼","🫖","☕","🍵","🧃","🥤","🧋","🍶","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🍾","🧊"] },
+    { name: "Activities & Travel", emojis: ["⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏸","🏒","🏑","🥍","🏏","🥅","⛳","🪁","🏹","🎣","🤿","🥊","🥋","🎽","🛹","🛼","🛷","⛸️","🥌","🎿","⛷️","🏂","🪂","🏋️","🤼","🤸","🤺","⛹️","🤾","🏌️","🏇","🧘","🏄","🏊","🤽","🚣","🧗","🚵","🚴","🏆","🥇","🥈","🥉","🏅","🎖️","🏵️","🎗️","🎫","🎟️","🎪","🤹","🎭","🩰","🎨","🎬","🎤","🎧","🎼","🎹","🥁","🎷","🎺","🎸","🪕","🎻","🎲","♟️","🎯","🎳","🎮","🎰","🧩","🚗","🚕","🚙","🚌","🏎️","🚓","🚑","🚒","🚐","🚚","🚛","🚜","🛴","🚲","🛵","🏍️","🚨","🚔","🚍","🚘","🚖","🚡","🚠","🚟","🚃","🚋","🚞","🚝","🚄","🚅","🚈","🚂","🚆","🚇","🚊","🚉","✈️","🛫","🛬","🛩️","💺","🛰️","🚀","🛸","🚁","🛶","⛵","🚤","🛥️","🛳️","⛴️","🚢","⚓","⛽","🚧","🚦","🚥","🚏","🗺️","🗿","🗽","🗼","🏰","🏯","🏟️","🎡","🎢","🎠","⛲","⛱️","🏖️","🏝️","🏜️","🌋","⛰️","🏔️","🗻","🏕️","⛺","🏠","🏡","🏘️","🏚️","🏗️","🏭","🏢","🏬","🏣","🏤","🏥","🏦","🏨","🏪","🏫","🏩","💒","🏛️","⛪","🕌","🕍","🛕","🕋","⛩️","🛤️","🛣️","🗾","🎑","🏞️","🌅","🌄","🌠","🎇","🎆","🌇","🌆","🏙️","🌃","🌌","🌉"] },
+    { name: "Objects", emojis: ["⌚","📱","📲","💻","⌨️","🖥️","🖨️","🖱️","🖲️","🕹️","🗜️","💽","💾","💿","📀","📼","📷","📸","📹","🎥","📽️","🎞️","📞","☎️","📟","📠","📺","📻","🎙️","🎚️","🎛️","🧭","⏱️","⏲️","⏰","🕰️","⌛","⏳","📡","🔋","🔌","💡","🔦","🕯️","🪔","🧯","🛢️","💸","💵","💴","💶","💷","💰","💳","💎","⚖️","🪜","🧰","🪛","🔧","🔨","⚒️","🛠️","⛏️","🪚","🔩","⚙️","🪤","🧱","⛓️","🧲","🔫","💣","🧨","🪓","🔪","🗡️","⚔️","🛡️","🚬","⚰️","🪦","⚱️","🏺","🔮","📿","🧿","💈","⚗️","🔭","🔬","🕳️","🩹","🩺","💊","💉","🩸","🧬","🦠","🧫","🌡️","🧪"] },
   ];
 
-  const getFilteredEmojis = useCallback(() => {
-    if (!emojiSearch.trim()) return EMOJI_CATEGORIES;
-    const q = emojiSearch.toLowerCase();
-    return EMOJI_CATEGORIES.map(c => ({
-      ...c,
-      emojis: c.emojis.filter(e => e.includes(q) || c.name.toLowerCase().includes(q)),
-    })).filter(c => c.emojis.length > 0);
-  }, [emojiSearch]);
+  // Emoji picker — categorized, no search
+  // (removed search bar per user request, added more emojis)
 
   // Retry failed message
   const handleRetryFailed = useCallback((msgId: string) => {
@@ -1694,21 +1691,10 @@ function MessagesContent() {
                           </button>
                         </div>
                       )}
-                      {/* Emoji picker — modern searchable */}
+                      {/* Emoji picker — categorized */}
                       {showEmojiPicker && (
                         <div ref={emojiPickerRef} className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1A1A24] rounded-[20px] shadow-2xl border border-[#2D2D2D] p-3 max-h-[45vh] overflow-y-auto w-[90vw] max-w-md">
-                          {/* Search bar */}
-                          <div className="relative mb-2">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B8B]" />
-                            <input
-                              autoFocus
-                              value={emojiSearch}
-                              onChange={(e) => setEmojiSearch(e.target.value)}
-                              placeholder="Search emojis…"
-                              className="w-full pl-8 pr-3 h-9 rounded-xl bg-[#222222] border border-[#2D2D2D] text-sm text-white placeholder-[#8B8B8B] outline-none focus:border-[#D4AF37]/40"
-                            />
-                          </div>
-                          {getFilteredEmojis().map((cat) => (
+                          {EMOJI_CATEGORIES.map((cat) => (
                             <div key={cat.name} className="mb-2">
                               <p className="text-[10px] font-bold text-[#8B8B8B] uppercase tracking-wider mb-1.5 px-1">{cat.name}</p>
                               <div className="grid grid-cols-8 gap-0.5">
@@ -1731,9 +1717,6 @@ function MessagesContent() {
                               </div>
                             </div>
                           ))}
-                          {getFilteredEmojis().length === 0 && (
-                            <p className="text-center text-sm text-[#8B8B8B] py-4">No emojis found</p>
-                          )}
                         </div>
                       )}
                       {/* Server busy indicator */}
