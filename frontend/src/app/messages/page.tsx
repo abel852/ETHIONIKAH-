@@ -663,7 +663,6 @@ function MessagesContent() {
   const bottomBarInner = "bg-[#1A1A24] border-[#2D2D2D]";
 
   return (
-    <div className="relative flex flex-col overflow-hidden">
     <div id="messages-root" className="relative z-10 h-dvh flex flex-col overflow-hidden">
       <div className="flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0">
         <div className="flex flex-1 min-h-0 min-w-0">
@@ -1527,9 +1526,16 @@ function MessagesContent() {
         </div>
       </div>
 
-      {/* Bottom Navigation — part of flex layout, no gap with input bar */}
-      {!mobileKeyboardOpen && (
-      <nav className="lg:hidden shrink-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2">
+      {/* Bottom Navigation — inside h-dvh flex column, animated slide/fade when keyboard opens */}
+      <nav
+        className="lg:hidden shrink-0 z-40 px-4 pt-2 overflow-hidden transition-all duration-300 ease-out"
+        style={{
+          maxHeight: mobileKeyboardOpen ? "0px" : "100px",
+          opacity: mobileKeyboardOpen ? "0" : "1",
+          transform: mobileKeyboardOpen ? "translateY(100%)" : "translateY(0)",
+          paddingBottom: mobileKeyboardOpen ? "0px" : "calc(env(safe-area-inset-bottom,0px) + 8px)",
+        }}
+      >
         <div className="mx-auto max-w-sm flex items-center justify-around rounded-[22px] bg-[#111827]/80 backdrop-blur-xl border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2 py-2">
           <a href="/matches" className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors hover:bg-[#2D2D2D]/40">
             <Heart className="w-5 h-5 text-[#8B8B8B]" />
@@ -1557,7 +1563,6 @@ function MessagesContent() {
           </a>
         </div>
       </nav>
-      )}
 
       {/* Report Dialog */}
       {showReportDialog && (
@@ -2115,7 +2120,6 @@ function MessagesContent() {
           />
         </div>
       )}
-    </div>
     </div>
   );
 }
