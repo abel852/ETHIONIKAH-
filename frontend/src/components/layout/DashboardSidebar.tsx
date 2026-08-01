@@ -132,8 +132,8 @@ export default function DashboardSidebar() {
       )}
 
       {/* Mobile Bottom Nav — 5 clean items: Matches, Liked, Messages, Books, Profile */}
-      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-charcoal-900/95 backdrop-blur-xl border-t border-charcoal-100/50 dark:border-charcoal-800 safe-area-bottom ${pathname === "/messages" || pathname.startsWith("/messages/") ? "hidden" : ""}`}>
-        <div className="flex items-center justify-around px-1 py-1">
+      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2 ${pathname === "/messages" || pathname.startsWith("/messages/") ? "hidden" : ""}`}>
+        <div className="mx-auto max-w-sm flex items-center justify-around rounded-[22px] bg-white/95 dark:bg-charcoal-900/95 backdrop-blur-xl border border-charcoal-100/50 dark:border-charcoal-800 shadow-lg shadow-black/10 px-2 py-2">
           {/* Matches */}
           {!isBanned && (
             <Link href="/matches" className={cn(
