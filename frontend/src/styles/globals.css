@@ -23,6 +23,20 @@
     overscroll-behavior: none;
   }
 
+  /* Message bubble entrance animation */
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg-anim { animation: msgIn 0.3s ease-out; }
+
+  /* Scroll-to-bottom button entrance */
+  @keyframes btnIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .btn-anim { animation: btnIn 0.2s ease-out; }
+
   h1, h5, h6 {
     @apply font-display font-semibold;
   }

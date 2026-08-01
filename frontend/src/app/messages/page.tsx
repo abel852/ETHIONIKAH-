@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User, BookOpen } from "lucide-react";
+import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User, BookOpen, Copy, Forward, Pin, Info, ArrowDown, AlertCircle } from "lucide-react";
 import { Input, Button, Avatar, IslamicPatternBackground } from "@/components/common";
 import { useMessageStore } from "@/store/messages";
 import { useAuth } from "@/context/AuthContext";
@@ -109,6 +109,14 @@ function MessagesContent() {
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
   const [showShieldDetails, setShowShieldDetails] = useState(false);
   const [showWaliDetails, setShowWaliDetails] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [unreadScrollCount, setUnreadScrollCount] = useState(0);
+  const [reactionMsgId, setReactionMsgId] = useState<string | null>(null);
+  const [emojiSearch, setEmojiSearch] = useState("");
+  const [failedMsgIds, setFailedMsgIds] = useState<Set<string>>(new Set());
+  const [pinnedMsgId, setPinnedMsgId] = useState<string | null>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -154,6 +162,7 @@ function MessagesContent() {
       try {
         const savedDraft = localStorage.getItem(`draft:${activeConversation}`);
         setNewMessage(savedDraft || "");
+        if (savedDraft) setTimeout(() => autoGrowTextarea(), 50);
       } catch { setNewMessage(""); }
       fetchMessages(activeConversation);
       // Fetch pending permission requests where this chat partner is the partner (incoming)
@@ -258,6 +267,7 @@ function MessagesContent() {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuMsgId(null);
+        setReactionMsgId(null);
       }
       if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
         setShowHeaderMenu(false);
@@ -440,26 +450,47 @@ function MessagesContent() {
     }
     const textToSend = newMessage.trim();
     const replyToId = replyTo?.id;
+    const tempId = `temp-${Date.now()}`;
+    const store = useMessageStore.getState();
+    // Optimistic add
+    store.addMessage({
+      id: tempId,
+      senderId: myId || activeConversation,
+      receiverId: activeConversation,
+      content: textToSend,
+      createdAt: new Date().toISOString(),
+      readAt: null,
+      replyToId: replyToId || null,
+    } as any);
+    setNewMessage("");
+    setReplyTo(null);
+    if (activeConversation) {
+      try { localStorage.removeItem(`draft:${activeConversation}`); } catch {}
+    }
+    emitTyping(activeConversation, false);
     try {
       playMessageSound("send");
       await sendMessage(activeConversation, textToSend, replyToId);
+      store.removeMessage(tempId);
     } catch (e: any) {
       if (e?.response?.status === 503 && e?.response?.data?.code === "SERVER_BUSY") {
         const retryAfter = e.response.data.retryAfter || 3;
         startBusyCountdown(retryAfter, { type: "text", conversationId: activeConversation, content: textToSend, replyToId });
+        store.removeMessage(tempId);
+        setNewMessage(textToSend);
         return;
       }
       const errMsg = e?.response?.data?.error;
       // Silently drop when the receiver blocked the sender — never reveal it
       if (errMsg?.includes("cannot message this user")) {
-        setNewMessage("");
-        setReplyTo(null);
+        store.removeMessage(tempId);
         return;
       }
+      // Mark as failed instead of removing
+      markMessageFailed(tempId);
       playMessageSound("error");
       if (errMsg) {
         if (errMsg.includes("Exclusive Marriage Process") || errMsg.includes("exclusive partner")) {
-          // Show permission dialog — user needs to request permission from their exclusive partner
           if (myPartnership) {
             const partnerId = myPartnership.userAId === myId ? myPartnership.userBId : myPartnership.userAId;
             setPermissionPartnerId(partnerId);
@@ -476,12 +507,6 @@ function MessagesContent() {
       }
       return;
     }
-    setNewMessage("");
-    setReplyTo(null);
-    if (activeConversation) {
-      try { localStorage.removeItem(`draft:${activeConversation}`); } catch {}
-    }
-    emitTyping(activeConversation, false);
     await fetchConversations();
   }, [newMessage, activeConversation, replyTo, sendMessage, fetchConversations, emitTyping, imagePreview, filePreview, caption, blockedUsers, playMessageSound, t, startBusyCountdown, myPartnership]);
 
@@ -555,9 +580,10 @@ function MessagesContent() {
     touchMovedRef.current = false;
     longPressTimerRef.current = setTimeout(() => {
       if (!touchMovedRef.current) {
-        setMenuMsgId(msg.id);
+        setReactionMsgId(msg.id);
+        setMenuMsgId(null);
       }
-    }, 600);
+    }, 500);
   }, []);
 
   const handleMsgTouchMove = useCallback((e: React.TouchEvent, msg: Message) => {
@@ -633,6 +659,131 @@ function MessagesContent() {
 
   const activeConv = conversations.find((c) => c.id === activeConversation);
   const showThread = !!activeConversation && urlParamsProcessed;
+
+  // Date separator helper
+  const formatDateSeparator = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const msgDate = new Date(date);
+    msgDate.setHours(0, 0, 0, 0);
+    if (msgDate.getTime() === today.getTime()) return "Today";
+    if (msgDate.getTime() === yesterday.getTime()) return "Yesterday";
+    return msgDate.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  };
+
+  // Check if two dates are the same day
+  const isSameDay = (d1: string | Date, d2: string | Date) => {
+    const a = new Date(d1); const b = new Date(d2);
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  };
+
+  // Scroll to bottom helper
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
+
+  // Handle scroll to detect if we should show scroll-to-bottom button
+  const handleMessagesScroll = useCallback(() => {
+    const container = messagesScrollRef.current;
+    if (!container) return;
+    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    const isAway = distFromBottom > 200;
+    setShowScrollToBottom(isAway);
+    if (isAway) {
+      // Count unread messages below current scroll position
+      let count = 0;
+      for (const msg of messages) {
+        if (msg.senderId !== myId && !msg.readAt) count++;
+      }
+      setUnreadScrollCount(count);
+    } else {
+      setUnreadScrollCount(0);
+    }
+  }, [messages, myId]);
+
+  // Auto-grow textarea
+  const autoGrowTextarea = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const maxHeight = 5 * 24; // ~5 lines
+    el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, []);
+
+  // Emoji categories for searchable picker
+  const EMOJI_CATEGORIES = [
+    { name: "Smileys", emojis: ["😊","🥰","😍","❤️","💕","😘","😇","😁","😂","🤗","😎","🥹","😅","😳","🤔","😢","😭","🥺","😌","🤩","🥳","😏","🙃","😋","🤤","😴","🤯","😱","🥶","🤠","🥸","😈","💀","👻","🤖"] },
+    { name: "Gestures", emojis: ["👍","👎","👌","✌️","🤝","🙏","👋","🫂","👏","🙌","🤲","💪","✊","🤞","🤟","🤙","👋","handshake"] },
+    { name: "Islamic", emojis: ["🤲","🌙","⭐","🕌","📿","☪️","🌸","🌹","💐","✨","🤍","💚","💍","🎉","🕊️"] },
+    { name: "Symbols", emojis: ["✨","💫","⭐","🌟","💥","🔥","💯","✅","❌","⚠️","🔔","💬","💭","📝","📌","🎯","🎁","🏆"] },
+  ];
+
+  const getFilteredEmojis = useCallback(() => {
+    if (!emojiSearch.trim()) return EMOJI_CATEGORIES;
+    const q = emojiSearch.toLowerCase();
+    return EMOJI_CATEGORIES.map(c => ({
+      ...c,
+      emojis: c.emojis.filter(e => e.includes(q) || c.name.toLowerCase().includes(q)),
+    })).filter(c => c.emojis.length > 0);
+  }, [emojiSearch]);
+
+  // Retry failed message
+  const handleRetryFailed = useCallback((msgId: string) => {
+    const msg = messages.find(m => m.id === msgId);
+    if (!msg || !activeConversation) return;
+    setFailedMsgIds(prev => { const n = new Set(prev); n.delete(msgId); return n; });
+    const store = useMessageStore.getState();
+    store.removeMessage(msgId);
+    if (msg.content?.startsWith("IMG:") || msg.content?.startsWith("FILE:")) {
+      // Can't retry media without the file — just remove
+      return;
+    }
+    setNewMessage(msg.content || "");
+    setTimeout(() => handleSend(), 100);
+  }, [messages, activeConversation, handleSend]);
+
+  // Delete failed message
+  const handleDeleteFailed = useCallback((msgId: string) => {
+    const store = useMessageStore.getState();
+    store.removeMessage(msgId);
+    setFailedMsgIds(prev => { const n = new Set(prev); n.delete(msgId); return n; });
+  }, []);
+
+  // Handle send error — mark as failed
+  const markMessageFailed = useCallback((tempId: string) => {
+    setFailedMsgIds(prev => new Set(prev).add(tempId));
+  }, []);
+
+  // Copy message to clipboard
+  const handleCopyMessage = useCallback((content: string) => {
+    if (content?.startsWith("IMG:") || content?.startsWith("FILE:")) return;
+    navigator.clipboard.writeText(content || "").then(() => {
+      setToastError(false);
+      setToast("Copied to clipboard");
+      setTimeout(() => setToast(null), 2000);
+    }).catch(() => {});
+    setMenuMsgId(null);
+  }, []);
+
+  // Forward message
+  const handleForwardMessage = useCallback((content: string) => {
+    if (content?.startsWith("IMG:") || content?.startsWith("FILE:")) return;
+    setNewMessage(content || "");
+    setMenuMsgId(null);
+    textareaRef.current?.focus();
+  }, []);
+
+  // Pin message
+  const handlePinMessage = useCallback((msgId: string) => {
+    setPinnedMsgId(pinnedMsgId === msgId ? null : msgId);
+    setMenuMsgId(null);
+  }, [pinnedMsgId]);
+
+  // Reaction emojis
+  const REACTIONS = ["❤️", "😂", "👍", "👎", "😢", "🤲"];
 
   // === PREMIUM DARK MODE THEME ===
   const isGoldChat = true;
@@ -1126,7 +1277,7 @@ function MessagesContent() {
                 )}
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 p-3 lg:p-4 space-y-2 lg:space-y-3 z-10">
+                <div ref={messagesScrollRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 p-3 lg:p-4 space-y-1.5 lg:space-y-2 z-10 scroll-smooth">
                   {isLoading && messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-sm text-[#8B8B8B]">Loading messages...</div>
                   ) : messages.length === 0 ? (
@@ -1168,7 +1319,7 @@ function MessagesContent() {
                       </div>
                     </div>
                   ) : (
-                    [...messages].map((msg) => {
+                    [...messages].map((msg, idx) => {
                       const otherId = activeConversation;
                       const isOwn = otherId ? msg.senderId !== otherId : true;
                       const otherAvatar = mediaUrl(activeConv?.avatar);
@@ -1178,14 +1329,38 @@ function MessagesContent() {
                       const senderInitials = isOwn
                         ? [user?.firstName, user?.lastName].filter(Boolean).map((n) => n?.[0]).join("")
                         : otherName.split(" ").map((n) => n[0]).join("") || "U";
+                      const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                      const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+                      const isFailed = failedMsgIds.has(msg.id);
+                      const isPending = msg.id?.startsWith("temp-") && !isFailed;
+                      // Unread divider: show before first unread message from other user
+                      const prevWasRead = !prevMsg || prevMsg.readAt || (prevMsg.senderId === myId);
+                      const showUnreadDivider = !isOwn && !msg.readAt && prevWasRead;
                       return (
+                        <div key={msg.id}>
+                          {/* Date separator */}
+                          {showDateSeparator && (
+                            <div className="flex items-center justify-center my-3 lg:my-4">
+                              <div className="px-3 py-1 rounded-full bg-[#1A1A24] border border-[#2D2D2D]/60 text-[11px] font-medium text-[#8B8B8B] shadow-sm">
+                                {formatDateSeparator(new Date(msg.createdAt))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Unread messages divider */}
+                          {showUnreadDivider && (
+                            <div className="flex items-center gap-2 my-3">
+                              <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                              <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider px-2">Unread Messages</span>
+                              <div className="flex-1 h-px bg-[#D4AF37]/30" />
+                            </div>
+                          )}
                         <div
-                          key={msg.id}
                           ref={(el) => { messageRefs.current[msg.id] = el; }}
-                          className={`relative group flex items-end mb-2 px-6 rounded-2xl transition-all duration-500 ${isOwn ? "justify-end" : "justify-start"} ${highlightMsgId === msg.id ? "bg-[#D4AF37]/10 ring-2 ring-[#D4AF37]/30" : ""}`}
+                          className={`relative group flex items-end mb-1.5 px-6 rounded-2xl transition-all duration-300 ${isOwn ? "justify-end" : "justify-start"} ${highlightMsgId === msg.id ? "bg-[#D4AF37]/10 ring-2 ring-[#D4AF37]/30" : ""} ${isFailed ? "opacity-90" : ""}`}
                           onTouchStart={(e) => handleMsgTouchStart(e, msg)}
                           onTouchMove={(e) => handleMsgTouchMove(e, msg)}
                           onTouchEnd={handleMsgTouchEnd}
+                          onContextMenu={(e) => { e.preventDefault(); setMenuMsgId(msg.id); setReactionMsgId(msg.id); }}
                         >
                           {/* 3-dots menu button - absolutely positioned so it doesn't affect alignment */}
                           <button
@@ -1196,17 +1371,49 @@ function MessagesContent() {
                             <MoreVertical className="w-4 h-4 text-[#8B8B8B]" />
                           </button>
 
+                          {/* Reaction bar — shows on long press / right click */}
+                          {reactionMsgId === msg.id && (
+                            <div ref={menuRef} className={`absolute -top-10 z-50 flex items-center gap-0.5 rounded-full bg-[#1A1A24] border border-[#2D2D2D] shadow-2xl px-1.5 py-1 ${isOwn ? "right-6" : "left-6"}`}>
+                              {REACTIONS.map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => { setReactionMsgId(null); setMenuMsgId(null); }}
+                                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#2D2D2D] hover:scale-125 transition-all text-base"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
                           {/* Context menu */}
-                          {menuMsgId === msg.id && (
+                          {menuMsgId === msg.id && reactionMsgId !== msg.id && (
                             <div ref={menuRef} className={`absolute top-8 z-50 rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[175px] overflow-hidden bg-[#222222] ${isOwn ? "right-6" : "left-6"}`}>
                               <button onClick={() => { setReplyTo(msg); setMenuMsgId(null); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
                                 <Reply className="w-4 h-4 shrink-0" /> Reply
                               </button>
+                              {!msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
+                                <button onClick={() => handleCopyMessage(msg.content)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                  <Copy className="w-4 h-4 shrink-0" /> Copy
+                                </button>
+                              )}
+                              {!msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
+                                <button onClick={() => handleForwardMessage(msg.content)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                  <Forward className="w-4 h-4 shrink-0" /> Forward
+                                </button>
+                              )}
                               {isOwn && !msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
                                 <button onClick={() => handleEditClick(msg)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
                                   <Pencil className="w-4 h-4 shrink-0" /> Edit
                                 </button>
                               )}
+                              <button onClick={() => handlePinMessage(msg.id)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                <Pin className="w-4 h-4 shrink-0" /> {pinnedMsgId === msg.id ? "Unpin" : "Pin"}
+                              </button>
+                              <button onClick={() => { setMenuMsgId(null); setToastError(false); setToast(`Sent at ${new Date(msg.createdAt).toLocaleString()}`); setTimeout(() => setToast(null), 3000); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                <Info className="w-4 h-4 shrink-0" /> Info
+                              </button>
+                              <div className="border-t border-[#2D2D2D] my-1" />
                               <button onClick={() => handleDelete(msg.id, "me")} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
                                 <Trash2 className="w-4 h-4 shrink-0" /> Delete for me
                               </button>
@@ -1229,9 +1436,9 @@ function MessagesContent() {
 
                           {/* Message bubble */}
                           <div
-                            className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[70%] lg:max-w-[55%] transition-transform duration-200 ${swipeMsgId === msg.id ? (isOwn ? "translate-x-8" : "-translate-x-8") : ""}`}
+                            className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[80%] lg:max-w-[65%] transition-transform duration-200 ${swipeMsgId === msg.id ? (isOwn ? "translate-x-8" : "-translate-x-8") : ""}`}
                           >
-                            <div className={`overflow-hidden transition-all hover:shadow-lg ${isOwn ? ownBubble : otherBubble}`} style={{ fontSize: "clamp(0.75rem, 3.5vw, 0.875rem)" }}>
+                            <div className={`overflow-hidden transition-all hover:shadow-lg msg-anim ${isFailed ? "!bg-red-900/40 !border-red-500/40" : isOwn ? ownBubble : otherBubble}`} style={{ fontSize: "clamp(0.75rem, 3.5vw, 0.875rem)", overflowWrap: "anywhere", wordBreak: "break-word" }}>
                               {msg.replyTo && (
                                 <div
                                   onClick={() => msg.replyTo?.id && scrollToMessage(msg.replyTo.id)}
@@ -1246,7 +1453,6 @@ function MessagesContent() {
                               {(() => {
                                 const imgSrc = msg.content?.startsWith("IMG:") ? msg.content.split("|")[0].slice(4) : msg.imageUrl || null;
                                 const capText = msg.content?.startsWith("IMG:") && msg.content.includes("|") ? msg.content.split("|")[1] : null;
-                                 const isPending = msg.id?.startsWith("temp-");
                                  const fileMatch = msg.content?.startsWith("FILE:") ? msg.content.slice(5).split("|") : null;
                                  const fileUrl = fileMatch?.[0];
                                  const fileName = fileMatch?.[1] || "File";
@@ -1323,25 +1529,43 @@ function MessagesContent() {
                                   )
                                 ) : null;
                               })()}
-                              <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
-                                {msg.isEdited && (
-                                  <span className={`text-[10px] italic ${isOwn ? "text-black/50" : "text-[#8B8B8B]"}`}>edited</span>
-                                )}
-                                <p className="font-semibold" style={{ fontSize: "clamp(0.625rem, 2.5vw, 0.75rem)", color: isOwn ? "#D1D5DB" : "#8B8B8B" }}>
-                                  {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
-                                </p>
-                                {isOwn && (
-                                  msg.readAt ? (
-                                    <CheckCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                                  ) : msg.deliveredAt ? (
-                                    <CheckCheck className="w-3.5 h-3.5 text-white/50" />
-                                  ) : (
-                                    <Check className="w-3.5 h-3.5 text-white/40" />
-                                  )
-                                )}
-                              </div>
+                              {/* Failed message actions */}
+                              {isFailed ? (
+                                <div className="flex items-center gap-2 px-4 pb-2">
+                                  <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                                  <span className="text-[10px] text-red-400 font-medium">Failed</span>
+                                  <button onClick={() => handleRetryFailed(msg.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-[#D4AF37] text-black font-medium hover:bg-[#F2D675] transition-colors">
+                                    Retry
+                                  </button>
+                                  <button onClick={() => handleDeleteFailed(msg.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 font-medium hover:bg-red-500/30 transition-colors">
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+                                  {msg.isEdited && (
+                                    <span className={`text-[10px] italic ${isOwn ? "text-black/50" : "text-[#8B8B8B]"}`}>edited</span>
+                                  )}
+                                  {isPending && (
+                                    <span className="text-[10px] text-white/40 animate-pulse">sending…</span>
+                                  )}
+                                  <p className="font-semibold" style={{ fontSize: "clamp(0.625rem, 2.5vw, 0.75rem)", color: isOwn ? "#D1D5DB" : "#8B8B8B" }}>
+                                    {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                                  </p>
+                                  {isOwn && !isPending && (
+                                    msg.readAt ? (
+                                      <CheckCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+                                    ) : msg.deliveredAt ? (
+                                      <CheckCheck className="w-3.5 h-3.5 text-white/50" />
+                                    ) : (
+                                      <Check className="w-3.5 h-3.5 text-white/40" />
+                                    )
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
+                        </div>
                         </div>
                       );
                     })
@@ -1359,6 +1583,21 @@ function MessagesContent() {
                   )}
                   <div ref={messagesEndRef} />
                 </div>
+
+                {/* Floating Scroll-to-Bottom button with unread count */}
+                {showScrollToBottom && (
+                  <button
+                    onClick={() => scrollToBottom("smooth")}
+                    className="absolute bottom-24 right-4 z-30 w-11 h-11 rounded-full bg-[#1A1A24] border border-[#2D2D2D] shadow-xl flex items-center justify-center hover:bg-[#222222] transition-all duration-200 btn-anim"
+                  >
+                    <ArrowDown className="w-5 h-5 text-[#D4AF37]" />
+                    {unreadScrollCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 leading-none bg-[#D4AF37] text-black shadow-md border-2 border-[#111827]">
+                        {unreadScrollCount > 99 ? "99+" : unreadScrollCount}
+                      </span>
+                    )}
+                  </button>
+                )}
 
                 {/* Reply bar - moved to bottom bar below */}
 
@@ -1433,24 +1672,46 @@ function MessagesContent() {
                           </button>
                         </div>
                       )}
-                      {/* Emoji picker */}
+                      {/* Emoji picker — modern searchable */}
                       {showEmojiPicker && (
-                        <div ref={emojiPickerRef} className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1A1A24] rounded-[20px] shadow-2xl border border-[#2D2D2D] p-3 max-h-[40vh] overflow-y-auto w-[90vw] max-w-md">
-                          <div className="grid grid-cols-7 gap-1">
-                            {["😊","🥰","😍","❤️","💕","😘","😇","🤲","🌙","⭐","🌸","🌹","💐","🕌","🤝","💍","🎉","🥺","😌","💭","✨","🙏","😁","😂","🤗","😎","🥹","😅","😳","🤔","😢","😭","👍","👋","🫂"].map((emoji, idx) => (
-                              <button
-                                key={`emoji-${idx}`}
-                                type="button"
-                                onClick={() => {
-                                  setNewMessage((prev) => prev + emoji);
-                                  setShowEmojiPicker(false);
-                                }}
-                                className="w-9 h-9 flex items-center justify-center hover:bg-[#2D2D2D] rounded-lg text-lg transition-colors"
-                              >
-                                {emoji}
-                              </button>
-                            ))}
+                        <div ref={emojiPickerRef} className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1A1A24] rounded-[20px] shadow-2xl border border-[#2D2D2D] p-3 max-h-[45vh] overflow-y-auto w-[90vw] max-w-md">
+                          {/* Search bar */}
+                          <div className="relative mb-2">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B8B]" />
+                            <input
+                              autoFocus
+                              value={emojiSearch}
+                              onChange={(e) => setEmojiSearch(e.target.value)}
+                              placeholder="Search emojis…"
+                              className="w-full pl-8 pr-3 h-9 rounded-xl bg-[#222222] border border-[#2D2D2D] text-sm text-white placeholder-[#8B8B8B] outline-none focus:border-[#D4AF37]/40"
+                            />
                           </div>
+                          {getFilteredEmojis().map((cat) => (
+                            <div key={cat.name} className="mb-2">
+                              <p className="text-[10px] font-bold text-[#8B8B8B] uppercase tracking-wider mb-1.5 px-1">{cat.name}</p>
+                              <div className="grid grid-cols-8 gap-0.5">
+                                {cat.emojis.map((emoji, idx) => (
+                                  <button
+                                    key={`${cat.name}-${idx}`}
+                                    type="button"
+                                    onClick={() => {
+                                      setNewMessage((prev) => prev + emoji);
+                                      if (textareaRef.current) {
+                                        textareaRef.current.focus();
+                                        autoGrowTextarea();
+                                      }
+                                    }}
+                                    className="w-9 h-9 flex items-center justify-center hover:bg-[#2D2D2D] rounded-lg text-lg transition-all hover:scale-125"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          {getFilteredEmojis().length === 0 && (
+                            <p className="text-center text-sm text-[#8B8B8B] py-4">No emojis found</p>
+                          )}
                         </div>
                       )}
                       {/* Server busy indicator */}
@@ -1460,10 +1721,10 @@ function MessagesContent() {
                           Server busy — retrying in {busyCountdown}s…
                         </div>
                       )}
-                      {/* Floating input bar — premium pill, 60px, gold send with glow */}
+                      {/* Floating input bar — premium pill, auto-growing textarea, gold send with glow */}
                       <div className="relative">
                         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-4 rounded-full bg-[#D4AF37]/20 blur-xl pointer-events-none" />
-                      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex items-center gap-1.5 h-[60px] rounded-[30px] bg-[#1A1A24] border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2.5 w-full box-border overflow-hidden">
+                      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex items-end gap-1.5 min-h-[60px] rounded-[30px] bg-[#1A1A24] border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2.5 py-2 w-full box-border overflow-hidden">
                         {/* Emoji button */}
                         <button
                           type="button"
@@ -1478,13 +1739,18 @@ function MessagesContent() {
                           <Paperclip className="w-5 h-5 text-[#D4AF37]" />
                           <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" className="hidden" onChange={handleImageSelect} disabled={serverBusy} />
                         </label>
-                        {/* Input field */}
-                        <input
+                        {/* Auto-growing textarea */}
+                        <textarea
+                          ref={textareaRef}
                           value={newMessage}
-                          onChange={(e) => handleInputChange(e.target.value)}
+                          onChange={(e) => { handleInputChange(e.target.value); autoGrowTextarea(); }}
+                          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                          onInput={autoGrowTextarea}
                           placeholder={serverBusy ? "Busy…" : "Message…"}
                           disabled={uploading || serverBusy}
-                          className="flex-1 min-w-0 h-10 bg-white/15 rounded-full text-sm font-medium text-white placeholder-[#8B8B8B] outline-none border-none px-4"
+                          rows={1}
+                          className="flex-1 min-w-0 max-h-[120px] bg-white/15 rounded-2xl text-sm font-medium text-white placeholder-[#8B8B8B] outline-none border-none px-4 py-2.5 resize-none overflow-y-auto leading-relaxed transition-all"
+                          style={{ height: "40px" }}
                         />
                         {/* Send button — gold circular with soft glow */}
                         <button
