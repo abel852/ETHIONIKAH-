@@ -112,6 +112,7 @@ function MessagesContent() {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unreadScrollCount, setUnreadScrollCount] = useState(0);
   const [reactionMsgId, setReactionMsgId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number; openUpward: boolean } | null>(null);
   const [emojiSearch, setEmojiSearch] = useState("");
   const [failedMsgIds, setFailedMsgIds] = useState<Set<string>>(new Set());
   const [pinnedMsgId, setPinnedMsgId] = useState<string | null>(null);
@@ -268,6 +269,7 @@ function MessagesContent() {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuMsgId(null);
         setReactionMsgId(null);
+        setMenuPosition(null);
       }
       if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
         setShowHeaderMenu(false);
@@ -545,6 +547,7 @@ function MessagesContent() {
   const handleDelete = useCallback(async (msgId: string, delFor: "me" | "both") => {
     await deleteMessage(msgId, delFor);
     setMenuMsgId(null);
+    setMenuPosition(null);
   }, [deleteMessage]);
 
   const handleEditClick = useCallback((msg: Message) => {
@@ -552,6 +555,7 @@ function MessagesContent() {
     setEditingMsgId(msg.id);
     setEditText(rawContent);
     setMenuMsgId(null);
+    setMenuPosition(null);
   }, []);
 
   const handleEditSubmit = useCallback(async () => {
@@ -766,6 +770,7 @@ function MessagesContent() {
       setTimeout(() => setToast(null), 2000);
     }).catch(() => {});
     setMenuMsgId(null);
+    setMenuPosition(null);
   }, []);
 
   // Forward message
@@ -773,6 +778,7 @@ function MessagesContent() {
     if (content?.startsWith("IMG:") || content?.startsWith("FILE:")) return;
     setNewMessage(content || "");
     setMenuMsgId(null);
+    setMenuPosition(null);
     textareaRef.current?.focus();
   }, []);
 
@@ -780,6 +786,7 @@ function MessagesContent() {
   const handlePinMessage = useCallback((msgId: string) => {
     setPinnedMsgId(pinnedMsgId === msgId ? null : msgId);
     setMenuMsgId(null);
+    setMenuPosition(null);
   }, [pinnedMsgId]);
 
   // Reaction emojis
@@ -1336,6 +1343,8 @@ function MessagesContent() {
                       // Unread divider: show before first unread message from other user
                       const prevWasRead = !prevMsg || prevMsg.readAt || (prevMsg.senderId === myId);
                       const showUnreadDivider = !isOwn && !msg.readAt && prevWasRead;
+                      // Open menu upward if message is near the bottom of the list
+                      const isNearBottom = idx >= messages.length - 3;
                       return (
                         <div key={msg.id}>
                           {/* Date separator */}
@@ -1364,7 +1373,20 @@ function MessagesContent() {
                         >
                           {/* 3-dots menu button - absolutely positioned so it doesn't affect alignment */}
                           <button
-                            onClick={() => setMenuMsgId(menuMsgId === msg.id ? null : msg.id)}
+                            onClick={(e) => {
+                              if (menuMsgId === msg.id) {
+                                setMenuMsgId(null);
+                                setReactionMsgId(null);
+                                setMenuPosition(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const viewportH = window.innerHeight;
+                                const openUpward = rect.top > viewportH / 2;
+                                setMenuPosition({ x: rect.right, y: openUpward ? rect.top : rect.bottom, openUpward });
+                                setMenuMsgId(msg.id);
+                                setReactionMsgId(null);
+                              }
+                            }}
                             className={`absolute top-1/2 -translate-y-1/2 z-30 shrink-0 p-1.5 rounded-full transition-all ${menuMsgId === msg.id ? "opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"} ${isOwn ? "right-0" : "left-0"} hover:bg-[#2D2D2D]`}
                             title="More"
                           >
@@ -1373,7 +1395,7 @@ function MessagesContent() {
 
                           {/* Reaction bar — shows on long press / right click */}
                           {reactionMsgId === msg.id && (
-                            <div ref={menuRef} className={`absolute -top-10 z-50 flex items-center gap-0.5 rounded-full bg-[#1A1A24] border border-[#2D2D2D] shadow-2xl px-1.5 py-1 ${isOwn ? "right-6" : "left-6"}`}>
+                            <div ref={menuRef} className={`absolute z-50 flex items-center gap-0.5 rounded-full bg-[#1A1A24] border border-[#2D2D2D] shadow-2xl px-1.5 py-1 ${isNearBottom ? "bottom-8" : "-top-10"} ${isOwn ? "right-6" : "left-6"}`}>
                               {REACTIONS.map((emoji) => (
                                 <button
                                   key={emoji}
@@ -1386,9 +1408,9 @@ function MessagesContent() {
                             </div>
                           )}
 
-                          {/* Context menu */}
-                          {menuMsgId === msg.id && reactionMsgId !== msg.id && (
-                            <div ref={menuRef} className={`absolute top-8 z-50 rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[175px] overflow-hidden bg-[#222222] ${isOwn ? "right-6" : "left-6"}`}>
+                          {/* Context menu — fixed position to avoid clipping by overflow container */}
+                          {menuMsgId === msg.id && reactionMsgId !== msg.id && menuPosition && (
+                            <div ref={menuRef} className="fixed z-[100] rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[175px] overflow-hidden bg-[#222222]" style={{ left: isOwn ? Math.max(8, menuPosition.x - 175) : Math.min(menuPosition.x, window.innerWidth - 185), top: menuPosition.openUpward ? Math.max(8, menuPosition.y - 280) : menuPosition.y }}>
                               <button onClick={() => { setReplyTo(msg); setMenuMsgId(null); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
                                 <Reply className="w-4 h-4 shrink-0" /> Reply
                               </button>
@@ -1410,7 +1432,7 @@ function MessagesContent() {
                               <button onClick={() => handlePinMessage(msg.id)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
                                 <Pin className="w-4 h-4 shrink-0" /> {pinnedMsgId === msg.id ? "Unpin" : "Pin"}
                               </button>
-                              <button onClick={() => { setMenuMsgId(null); setToastError(false); setToast(`Sent at ${new Date(msg.createdAt).toLocaleString()}`); setTimeout(() => setToast(null), 3000); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                              <button onClick={() => { setMenuMsgId(null); setMenuPosition(null); setToastError(false); setToast(`Sent at ${new Date(msg.createdAt).toLocaleString()}`); setTimeout(() => setToast(null), 3000); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
                                 <Info className="w-4 h-4 shrink-0" /> Info
                               </button>
                               <div className="border-t border-[#2D2D2D] my-1" />
