@@ -137,7 +137,7 @@ export default function DashboardSidebar() {
           {/* Matches */}
           {!isBanned && (
             <Link href="/matches" className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+              "flex flex-col items-center gap-0.5 px-3 py-1 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
               pathname === "/matches" ? "text-[#D4AF37]" : "text-[#8B8B8B]"
             )}>
               <div className="relative">
@@ -159,7 +159,7 @@ export default function DashboardSidebar() {
             const likedActive = pathname === "/liked-interest";
             const likedDisabled = !isVerified;
             return likedDisabled ? (
-              <div className="flex flex-col items-center gap-0.5 py-2 px-2 opacity-40 cursor-not-allowed">
+              <div className="flex flex-col items-center gap-0.5 px-3 py-1 opacity-40 cursor-not-allowed">
                 <div className="relative">
                   <Sparkles className="w-5 h-5 text-[#8B8B8B]" />
                   <Lock className="absolute -top-1 -right-1.5 w-2.5 h-2.5 text-[#8B8B8B]" />
@@ -168,7 +168,7 @@ export default function DashboardSidebar() {
               </div>
             ) : (
               <Link href="/liked-interest" className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+                "flex flex-col items-center gap-0.5 px-3 py-1 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
                 likedActive ? "text-[#D4AF37]" : "text-[#8B8B8B]"
               )}>
                 <div className="relative">
@@ -186,7 +186,7 @@ export default function DashboardSidebar() {
             const msgActive = pathname === "/messages" || pathname.startsWith("/messages/");
             const msgDisabled = !isVerified;
             return msgDisabled ? (
-              <div className="flex flex-col items-center gap-0.5 py-2 px-2 opacity-40 cursor-not-allowed">
+              <div className="flex flex-col items-center gap-0.5 px-3 py-1 opacity-40 cursor-not-allowed">
                 <div className="relative">
                   <MessageCircle className="w-5 h-5 text-[#8B8B8B]" />
                   <Lock className="absolute -top-1 -right-1.5 w-2.5 h-2.5 text-[#8B8B8B]" />
@@ -195,7 +195,7 @@ export default function DashboardSidebar() {
               </div>
             ) : (
               <Link href="/messages" className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+                "flex flex-col items-center gap-0.5 px-3 py-1 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
                 msgActive ? "text-[#D4AF37]" : "text-[#8B8B8B]"
               )}>
                 <div className="relative">
@@ -216,7 +216,7 @@ export default function DashboardSidebar() {
           {/* Books */}
           {!isBanned && (
             <Link href="/books" className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+              "flex flex-col items-center gap-0.5 px-3 py-1 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
               pathname === "/books" || pathname.startsWith("/books/") ? "text-[#D4AF37]" : "text-[#8B8B8B]"
             )}>
               <div className="relative">
@@ -231,7 +231,7 @@ export default function DashboardSidebar() {
           {/* Profile */}
           {!isBanned ? (
             <Link href="/profile" className={cn(
-              "flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
+              "flex flex-col items-center gap-0.5 px-3 py-1 relative rounded-xl transition-colors hover:bg-[#2D2D2D]/40",
               pathname === "/profile" || pathname.startsWith("/profile/") ? "text-[#D4AF37]" : "text-[#8B8B8B]"
             )}>
               <div className="relative">
@@ -242,7 +242,7 @@ export default function DashboardSidebar() {
               {(pathname === "/profile" || pathname.startsWith("/profile/")) && <span className="absolute -bottom-0.5 h-0.5 w-6 rounded-full bg-[#D4AF37]" />}
             </Link>
           ) : (
-            <Link href="/complaints" className="flex flex-col items-center gap-0.5 py-2 px-2 relative rounded-xl text-[#D4AF37]">
+            <Link href="/complaints" className="flex flex-col items-center gap-0.5 px-3 py-1 relative rounded-xl text-[#D4AF37]">
               <HelpCircle className="w-5 h-5" />
               <span className="text-[10px] font-medium">{t('settings.help')}</span>
             </Link>
