@@ -17,7 +17,6 @@ export {
 } from "./Skeleton";
 export { Avatar } from "./Avatar";
 export { ToastProvider } from "./Toast";
-export { ScreenshotGuard } from "./ScreenshotGuard";
 export { NetworkBanner } from "./NetworkBanner";
 export { default as WordSuggest } from "./WordSuggest";
 export { IslamicPatternBackground } from "./IslamicPatternBackground";

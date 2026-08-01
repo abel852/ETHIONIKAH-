@@ -4,7 +4,6 @@ import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User, BookOpen } from "lucide-react";
 import { Input, Button, Avatar, IslamicPatternBackground } from "@/components/common";
-import { ScreenshotGuard } from "@/components/common";
 import { useMessageStore } from "@/store/messages";
 import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
@@ -2129,7 +2128,6 @@ export default function MessagesPage() {
       </div>
     }>
       <MessagesContent />
-      <ScreenshotGuard />
     </Suspense>
   );
 }
