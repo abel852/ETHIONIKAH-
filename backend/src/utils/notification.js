@@ -7,6 +7,22 @@ const createNotification = async ({ userId, type, title, body }) => {
   });
   emitNotification(userId, notification);
 
+  // Send web push notification (works even when app is closed)
+  try {
+    const { sendPushToUser } = require("./pushService");
+    sendPushToUser(userId, {
+      title,
+      body,
+      type,
+      notificationId: notification.id,
+      icon: "/icon.png",
+      badge: "/icon.png",
+      tag: type,
+    });
+  } catch (e) {
+    // Push service may not be configured — silently ignore
+  }
+
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },

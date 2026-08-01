@@ -175,6 +175,7 @@ const exclusivePartnershipRoutes = require("./routes/exclusivePartnership");
 const waliRoutes = require("./routes/wali");
 const backupRoutes = require("./routes/backup");
 const bookRoutes = require("./routes/book");
+const pushRoutes = require("./routes/push");
 require("./utils/cleanup"); // schedules cleanup of old verification images
 const { setupSocket } = require("./sockets/handler");
 const { setSocket } = require("./utils/messageSocket");
@@ -210,6 +211,7 @@ app.use("/api/conversation-requests", authedLimiter, conversationRequestRoutes);
 app.use("/api/exclusive-partnerships", authedLimiter, exclusivePartnershipRoutes);
 app.use("/api/wali", authedLimiter, waliRoutes);
 app.use("/api", bookRoutes);
+app.use("/api/push", pushRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -283,6 +285,14 @@ try {
   initStorageCron();
 } catch (e) {
   console.log("[STORAGE] R2 monitoring not initialized:", e.message);
+}
+
+// Initialize Web Push
+try {
+  const { initWebPush } = require("./utils/pushService");
+  initWebPush();
+} catch (e) {
+  console.log("[PUSH] Web push not initialized:", e.message);
 }
 
 // Initialize conversation request expiry cron job

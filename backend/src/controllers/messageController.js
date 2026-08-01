@@ -3,6 +3,28 @@ const { emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited }
 const { ensureContactCredits } = require("./membershipPlanController");
 const { uploadMulterFile, isR2Enabled } = require("../config/r2");
 
+// Send push notification for new message (fire-and-forget)
+function sendPushForMessage(message, receiverId) {
+  try {
+    const { sendPushToUser } = require("../utils/pushService");
+    const senderName = `${message.sender?.firstName || ""} ${message.sender?.lastName || ""}`.trim() || "Someone";
+    const isImage = message.content?.startsWith("IMG:");
+    const isFile = message.content?.startsWith("FILE:");
+    const preview = isImage ? "📷 Photo" : isFile ? "📎 File" : (message.content || "");
+    sendPushToUser(receiverId, {
+      title: `Message from ${senderName}`,
+      body: preview.length > 80 ? preview.substring(0, 80) + "..." : preview,
+      type: "message",
+      icon: "/icon.png",
+      badge: "/icon.png",
+      tag: "message",
+      data: { url: "/messages" },
+    });
+  } catch (e) {
+    // Push may not be configured — silently ignore
+  }
+}
+
 const blockedWords = [
   "fuck", "shit", "ass", "bitch", "damn", "bastard", "crap", "dick",
   "piss", "slut", "whore", "cock", "cunt", "douche", "fag", "nigger",
@@ -329,6 +351,7 @@ const sendMessage = async (req, res) => {
     });
 
     emitNewMessage(message, receiverId);
+    sendPushForMessage(message, receiverId);
 
     res.status(201).json({ message });
   } catch (error) {
@@ -831,6 +854,7 @@ const sendImage = async (req, res) => {
     });
 
     emitNewMessage(message, receiverId);
+    sendPushForMessage(message, receiverId);
     res.status(201).json({ message, creditsUsed: creditResult.creditsUsed, creditsRemaining: creditResult.creditsRemaining });
   } catch (error) {
     console.error("Send image error:", error);
@@ -895,6 +919,7 @@ const sendFile = async (req, res) => {
     });
 
     emitNewMessage(message, receiverId);
+    sendPushForMessage(message, receiverId);
     res.status(201).json({ message, creditsUsed: creditResult.creditsUsed, creditsRemaining: creditResult.creditsRemaining });
   } catch (error) {
     console.error("Send file error:", error);

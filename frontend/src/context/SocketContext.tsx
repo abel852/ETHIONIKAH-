@@ -7,6 +7,7 @@ import { useAuth } from "./AuthContext";
 import { useMessageStore } from "@/store/messages";
 import { useNotificationStore } from "@/store/notifications";
 import { playMessageSound } from "@/lib/messageSound";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface ToastNotif {
   name: string;
@@ -23,6 +24,7 @@ const SocketContext = createContext<SocketContextValue>({ socket: null, typingUs
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  usePushNotifications();
   const socketRef = useRef<Socket | null>(null);
   const addMessage = useMessageStore((s) => s.addMessage);
   const removeMessage = useMessageStore((s) => s.removeMessage);

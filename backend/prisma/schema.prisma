@@ -96,6 +96,7 @@ model User {
   partnershipRequestsSent      ExclusivePartnershipRequest[] @relation("PartnershipRequester")
   partnershipRequestsReceived  ExclusivePartnershipRequest[] @relation("PartnershipReceiver")
   waliInvitationsCreated       WaliInvitation[]              @relation("WaliCreatedBy")
+  pushSubscriptions            PushSubscription[]
 
   @@index([isActive, isVerified, deletedAt])
   @@index([role, isActive])
@@ -233,6 +234,19 @@ model Notification {
   @@index([userId, isRead, createdAt])
   @@index([type, createdAt])
   @@map("notifications")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String
+  keys      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([endpoint])
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model Report {
