@@ -390,6 +390,16 @@ const getConversation = async (req, res) => {
       take: limit,
     });
 
+    // Get unread message IDs before marking them as read
+    const unreadMessages = await prisma.message.findMany({
+      where: {
+        senderId: otherUserId,
+        receiverId: userId,
+        isRead: false,
+      },
+      select: { id: true },
+    });
+
     await prisma.message.updateMany({
       where: {
         senderId: otherUserId,
@@ -398,6 +408,11 @@ const getConversation = async (req, res) => {
       },
       data: { isRead: true, readAt: new Date() },
     });
+
+    // Emit read receipts to the sender for each message that was marked as read
+    for (const msg of unreadMessages) {
+      emitMessageRead(msg.id, otherUserId, otherUserId);
+    }
 
     const matchRecord = await prisma.match.findFirst({
       where: {

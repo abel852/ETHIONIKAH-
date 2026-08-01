@@ -120,6 +120,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         // Regular user messages: show message badge
         if (store.activeConversation === msg.senderId) {
           addMessageRef.current(msg);
+          // Auto-mark as read since user is viewing this conversation — sends read receipt to sender
+          import("@/services/messages").then(({ messageService }) => {
+            messageService.markAsRead(msg.id).catch(() => {});
+          });
         } else {
           const updated = store.conversations.map((c) =>
             c.id === msg.senderId ? { ...c, unreadCount: c.unreadCount + 1 } : c
