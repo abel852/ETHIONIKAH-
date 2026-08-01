@@ -223,64 +223,26 @@ function MessagesContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Mobile keyboard — use Visual Viewport API to resize chat when keyboard opens
-  // Behaves like WhatsApp/Telegram: input sits directly above keyboard, no gap
+  // Mobile keyboard — use Visual Viewport API to detect keyboard and auto-scroll
   useEffect(() => {
-    // Capture initial layout height before keyboard ever opens
-    let initialHeight = window.innerHeight;
     let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 
     const update = () => {
       const vv = window.visualViewport;
-      const root = document.getElementById("messages-root");
-      if (!root || !vv) return;
-
-      // Always set the root height to the visual viewport height
-      // This covers both keyboard open and URL bar show/hide
-      root.style.height = `${vv.height}px`;
-      root.style.top = `${vv.offsetTop}px`;
-
-      // Detect keyboard: visual viewport is significantly smaller than initial layout
-      const keyboardOpen = vv.height < initialHeight - 120;
+      if (!vv) return;
+      const keyboardOpen = vv.height < window.innerHeight - 120;
       setMobileKeyboardOpen(keyboardOpen);
 
-      if (keyboardOpen) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "";
-      }
-
-      // Debounced auto-scroll to latest message
+      // Debounced auto-scroll to latest message after keyboard animation
       if (scrollTimer) clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 200);
+      }, 250);
     };
 
-    // Store initial height on mount (before any keyboard interaction)
-    initialHeight = window.innerHeight;
-
-    // Set initial height
-    const vv = window.visualViewport;
-    const root = document.getElementById("messages-root");
-    if (vv && root) {
-      root.style.height = `${vv.height}px`;
-    }
-
-    // Listen to both resize and scroll for iOS Safari + Android Chrome compatibility
     window.visualViewport?.addEventListener("resize", update);
-    window.visualViewport?.addEventListener("scroll", update);
-    // Also listen to window resize as fallback (some Android browsers)
-    window.addEventListener("resize", update);
     return () => {
       window.visualViewport?.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-      document.body.style.overflow = "";
-      if (root) {
-        root.style.height = "";
-        root.style.top = "";
-      }
       if (scrollTimer) clearTimeout(scrollTimer);
     };
   }, []);
@@ -703,7 +665,7 @@ function MessagesContent() {
 
   return (
     <div className="relative flex flex-col overflow-hidden">
-    <div id="messages-root" className="fixed inset-0 z-10 flex flex-col overflow-hidden">
+    <div id="messages-root" className="relative z-10 h-dvh flex flex-col overflow-hidden">
       <div className={`flex-1 flex min-h-0 min-w-0 lg:pl-64 pt-0 lg:pt-0 ${mobileKeyboardOpen ? "pb-0" : "pb-20 lg:pb-0 [padding-bottom:calc(80px+env(safe-area-inset-bottom,0px))] lg:[padding-bottom:0]"}`}>
         <div className="flex flex-1 min-h-0 min-w-0">
 

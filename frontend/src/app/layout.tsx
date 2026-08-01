@@ -17,6 +17,14 @@ const allura = Allura({ subsets: ["latin"], weight: ["400"], variable: "--font-a
 const bonbon = Bonbon({ subsets: ["latin"], weight: ["400"], variable: "--font-bonbon", display: "swap" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-cormorant", display: "swap" });
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  interactiveWidget: 'resizes-content',
+} as const;
+
 export const metadata: Metadata = {
   title: {
     default: "Ethio Nikah - Islamic Matchmaking Platform",
@@ -80,6 +88,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth" className={`${inter.variable} ${nektar.variable} ${allura.variable} ${bonbon.variable} ${cormorant.variable}`} nonce={nonce}>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
+      </head>
       <body className="font-sans antialiased bg-background text-charcoal-900 dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300">
         <ThemeInit />
         <NetworkBanner />
