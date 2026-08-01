@@ -663,6 +663,22 @@ function MessagesContent() {
   const activeConv = conversations.find((c) => c.id === activeConversation);
   const showThread = !!activeConversation && urlParamsProcessed;
 
+  // Format reply content — hide raw URLs/filenames, show clean labels
+  const formatReplyContent = (content: string | undefined | null): string => {
+    if (!content) return "";
+    if (content.startsWith("IMG:")) {
+      const parts = content.split("|");
+      return parts[1] ? `📷 ${parts[1]}` : "📷 Photo";
+    }
+    if (content.startsWith("FILE:")) {
+      const parts = content.slice(5).split("|");
+      const fileName = parts[1] || "File";
+      const fileCap = parts[3];
+      return fileCap ? `📎 ${fileCap}` : `📎 ${fileName}`;
+    }
+    return content;
+  };
+
   // Date separator helper
   const formatDateSeparator = (date: Date) => {
     const today = new Date();
@@ -1466,7 +1482,7 @@ function MessagesContent() {
                                   <p className={`text-xs font-bold ${isOwn ? "text-black" : "text-[#D4AF37]"}`}>
                                     {msg.replyTo.senderId === myId ? t('messages.you') : (msg.replyTo.sender?.firstName || "User")}
                                   </p>
-                                  <p className={`text-xs truncate font-medium ${isOwn ? "text-black/70" : "text-[#C8C8C8]"}`}>{msg.replyTo.content || ""}</p>
+                                  <p className={`text-xs truncate font-medium ${isOwn ? "text-black/70" : "text-[#C8C8C8]"}`}>{formatReplyContent(msg.replyTo.content)}</p>
                                 </div>
                               )}
                               {(() => {
@@ -1635,7 +1651,7 @@ function MessagesContent() {
                             <p className="text-xs font-bold text-[#D4AF37]">
                               {replyTo.senderId === myId ? t('messages.you') : (activeConv?.name || urlName || "User")}
                             </p>
-                            <p className="text-xs truncate font-medium text-[#C8C8C8]">{replyTo.content || ""}</p>
+                            <p className="text-xs truncate font-medium text-[#C8C8C8]">{formatReplyContent(replyTo.content)}</p>
                           </div>
                           <button onClick={(e) => { e.stopPropagation(); setReplyTo(null); }} className="p-1 rounded-full transition-colors hover:bg-[#2D2D2D]">
                             <X className="w-4 h-4 text-[#8B8B8B]" />
