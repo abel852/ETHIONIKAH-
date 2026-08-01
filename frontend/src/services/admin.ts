@@ -114,13 +114,13 @@ export const adminService = {
   markReportViewed: () => api.post("/reports/mark-viewed"),
   getSubscriptions: (params?: Record<string, unknown>) => api.get("/subscriptions/admin/subscriptions", { params }),
   getPayments: (params?: Record<string, unknown>) => api.get("/subscriptions/admin/payments", { params }),
-  getRevenueStats: () => api.get("/subscriptions/admin/revenue"),
+  getRevenueStats: () => api.get("/subscriptions/admin/revenue", { _noToast: true } as any),
   updateSubscription: (id: string, data: Record<string, unknown>) => api.put(`/subscriptions/admin/subscriptions/${id}`, data),
   cancelSubscription: (id: string) => api.delete(`/subscriptions/admin/subscriptions/${id}`),
 
   // Payments (manual verification queue)
   getAdminPayments: (params?: Record<string, unknown>) => api.get("/payments/admin/payments", { params }),
-  getPaymentStats: (params?: Record<string, unknown>) => api.get("/payments/admin/payments/stats", { params }),
+  getPaymentStats: (params?: Record<string, unknown>) => api.get("/payments/admin/payments/stats", { params, _noToast: true } as any),
   getRenewalReminders: (params?: Record<string, unknown>) => api.get("/payments/admin/payments/renewals", { params }),
   approvePayment: (id: string, adminNote?: string) => api.post(`/payments/admin/payments/${id}/approve`, { adminNote }),
   rejectPayment: (id: string, adminNote?: string) => api.post(`/payments/admin/payments/${id}/reject`, { adminNote }),

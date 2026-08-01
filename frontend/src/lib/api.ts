@@ -104,6 +104,7 @@ api.interceptors.response.use(
     // Server errors
     const status = error.response.status;
     const serverMsg = error.response.data?.error || error.response.data?.message || "";
+    const suppressToast = original._noToast || original.headers?.["X-No-Toast"];
 
     // Catch-all: any 401 that wasn't handled above — redirect to login
     if (status === 401) {
@@ -124,7 +125,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     } else if (status >= 500) {
       // Only show toast if the server provided a specific error message
-      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+      if (serverMsg && !suppressToast) {
         toast.error(serverMsg, { id: "server-error", duration: 1000 });
       }
       return Promise.reject(error);
@@ -148,17 +149,17 @@ api.interceptors.response.use(
         }
         return Promise.reject(error);
       }
-      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+      if (serverMsg && !suppressToast) {
         toast.error(serverMsg, { duration: 1000 });
       }
     } else if (status === 429) {
       // Rate limited — show error toast overlay
-      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+      if (serverMsg && !suppressToast) {
         toast.error(serverMsg, { duration: 1000, id: "rate-limited" });
       }
       return Promise.reject(error);
     } else if (status >= 400) {
-      if (serverMsg && !original.headers?.["X-No-Toast"]) {
+      if (serverMsg && !suppressToast) {
         toast.error(serverMsg, { duration: 1000 });
       }
     }
