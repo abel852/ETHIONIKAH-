@@ -1,21 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Users, UserCheck, ShieldAlert, AlertTriangle, DollarSign,
   Activity, TrendingUp, CreditCard, Wallet, MessageSquare,
-  Ban, UserX, Download, Calendar, BarChart3,
+  Ban, UserX, Download, Calendar,
 } from "lucide-react";
 import { useI18n } from "@/context/I18nContext";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
-import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from "recharts";
-
-const CHART_COLORS = ["#D4AF37", "#10B981", "#3B82F6", "#8B5CF6", "#EF4444", "#F59E0B"];
 
 export default function AdminAnalyticsPage() {
   const { t } = useI18n();
@@ -24,7 +17,6 @@ export default function AdminAnalyticsPage() {
   const [paymentStats, setPaymentStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const reportRef = useRef<HTMLDivElement>(null);
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
@@ -99,90 +91,203 @@ export default function AdminAnalyticsPage() {
   // Monthly data from analytics (already returned by backend)
   const monthlyData = a.monthlyData || [];
 
-  // Gender pie data
-  const genderPieData = [
-    { name: "Male", value: a.genderDistribution?.male ?? 0 },
-    { name: "Female", value: a.genderDistribution?.female ?? 0 },
-  ];
-
-  // Payment pie data
-  const paymentPieData = [
-    { name: "Approved", value: a.paymentStats?.approved ?? ps.approved ?? 0 },
-    { name: "Pending", value: a.paymentStats?.pending ?? ps.pending ?? 0 },
-    { name: "Rejected", value: a.paymentStats?.rejected ?? ps.rejected ?? 0 },
-  ].filter(d => d.value > 0);
-
-  // Subscription pie data
-  const subPieData = [
-    { name: "Active", value: a.subscriptionStats?.active ?? 0 },
-    { name: "Inactive", value: Math.max(0, (a.subscriptionStats?.total ?? 0) - (a.subscriptionStats?.active ?? 0)) },
-  ].filter(d => d.value > 0);
-
-  // PDF export
+  // Text-based PDF export — no screenshots, pure text report
   const handleExportPDF = async () => {
-    if (!reportRef.current) return;
     setExporting(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
       const jsPDF = (await import("jspdf")).default;
-
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#0F0F10",
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
       const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = 210;
+      const pageH = 297;
+      const margin = 20;
+      let y = 0;
 
-      // Premium header
+      const ensureSpace = (h: number) => {
+        if (y + h > pageH - 15) {
+          pdf.addPage();
+          y = 20;
+        }
+      };
+
+      // === HEADER ===
       pdf.setFillColor(15, 15, 16);
-      pdf.rect(0, 0, 210, 40, "F");
+      pdf.rect(0, 0, pageW, 45, "F");
       pdf.setTextColor(212, 175, 55);
-      pdf.setFontSize(22);
+      pdf.setFontSize(24);
       pdf.setFont("helvetica", "bold");
-      pdf.text("ETHIONIKAH", 105, 18, { align: "center" });
-      pdf.setFontSize(10);
+      pdf.text("ETHIONIKAH", pageW / 2, 20, { align: "center" });
+      pdf.setFontSize(11);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(200, 200, 200);
-      pdf.text("Premium Analytics Report", 105, 26, { align: "center" });
-      pdf.text(`Generated: ${new Date().toLocaleString()}`, 105, 32, { align: "center" });
+      pdf.text("Analytics Report", pageW / 2, 28, { align: "center" });
+      pdf.setFontSize(9);
+      pdf.setTextColor(160, 160, 160);
+      pdf.text(`Generated: ${new Date().toLocaleString()}`, pageW / 2, 35, { align: "center" });
 
-      // Gold divider line
+      // Gold divider
       pdf.setDrawColor(212, 175, 55);
       pdf.setLineWidth(0.8);
-      pdf.line(20, 42, 190, 42);
+      pdf.line(margin, 48, pageW - margin, 48);
 
-      // Add screenshot
-      const imgData = canvas.toDataURL("image/png");
-      const pageHeight = 297; // A4 height
-      let heightLeft = imgHeight;
-      let position = 48;
+      y = 58;
 
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= (pageHeight - position);
+      // === SECTION 1: PLATFORM OVERVIEW ===
+      pdf.setTextColor(212, 175, 55);
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("1. Platform Overview", margin, y);
+      y += 8;
+      pdf.setDrawColor(212, 175, 55);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 8;
 
-      while (heightLeft > 0) {
-        position = -(imgHeight - heightLeft);
-        pdf.addPage();
-        pdf.setFillColor(15, 15, 16);
-        pdf.rect(0, 0, 210, pageHeight, "F");
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      const overviewItems = [
+        ["Total Users", String(a.totalUsers ?? 0)],
+        ["Active Users", String(a.activeUsers ?? 0)],
+        ["Verified Users", String(a.verifiedUsers ?? 0)],
+        ["Pending Verifications", String(a.pendingVerifications ?? 0)],
+        ["New Users (30 days)", String(a.newUsersThisMonth ?? 0)],
+        ["Total Matches", String(a.totalMatches ?? 0)],
+        ["Total Messages", String(a.totalMessages ?? 0)],
+        ["Unread Messages", String(a.unreadMessages ?? 0)],
+        ["Open Reports", String(a.totalReports ?? 0)],
+        ["Open Complaints", String(a.openComplaints ?? 0)],
+        ["Suspended Users", String(a.suspendedUsers ?? 0)],
+        ["Banned Users", String(a.bannedUsers ?? 0)],
+      ];
+      overviewItems.forEach(([label, val]) => {
+        ensureSpace(7);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(label, margin + 4, y);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(val, pageW - margin - 4, y, { align: "right" });
+        y += 7;
+      });
 
-      // Footer on last page
+      y += 6;
+
+      // === SECTION 2: REVENUE & SUBSCRIPTIONS ===
+      ensureSpace(20);
+      pdf.setTextColor(212, 175, 55);
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("2. Revenue & Subscriptions", margin, y);
+      y += 8;
+      pdf.setDrawColor(212, 175, 55);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(60, 60, 60);
+      const revenueItems = [
+        ["Total Revenue", `Birr ${(rev.totalRevenue ?? a.totalRevenue ?? 0).toLocaleString()}`],
+        ["Total Payments", String(rev.totalPayments ?? a.paymentStats?.total ?? ps.total ?? 0)],
+        ["Approved Payments", String(a.paymentStats?.approved ?? ps.approved ?? 0)],
+        ["Pending Payments", String(a.paymentStats?.pending ?? ps.pending ?? 0)],
+        ["Rejected Payments", String(a.paymentStats?.rejected ?? ps.rejected ?? 0)],
+        ["Active Subscriptions", String(rev.activeSubscriptions ?? a.subscriptionStats?.active ?? 0)],
+        ["Total Subscriptions", String(a.subscriptionStats?.total ?? 0)],
+        ["Platinum Subscriptions", String(rev.premiumSubscriptions ?? 0)],
+        ["Gold Subscriptions", String(rev.basicSubscriptions ?? 0)],
+        ["Conversion Rate", `${conversionRate}%`],
+        ["ARPU (Avg Revenue/User)", `Birr ${arpu}`],
+      ];
+      revenueItems.forEach(([label, val]) => {
+        ensureSpace(7);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(label, margin + 4, y);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(val, pageW - margin - 4, y, { align: "right" });
+        y += 7;
+      });
+
+      y += 6;
+
+      // === SECTION 3: GENDER DISTRIBUTION ===
+      ensureSpace(20);
+      pdf.setTextColor(212, 175, 55);
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("3. Gender Distribution", margin, y);
+      y += 8;
+      pdf.setDrawColor(212, 175, 55);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(60, 60, 60);
+      const totalGender = (a.genderDistribution?.male ?? 0) + (a.genderDistribution?.female ?? 0);
+      const malePct = totalGender ? (((a.genderDistribution?.male ?? 0) / totalGender) * 100).toFixed(1) : "0";
+      const femalePct = totalGender ? (((a.genderDistribution?.female ?? 0) / totalGender) * 100).toFixed(1) : "0";
+      [
+        ["Male Users", `${a.genderDistribution?.male ?? 0} (${malePct}%)`],
+        ["Female Users", `${a.genderDistribution?.female ?? 0} (${femalePct}%)`],
+      ].forEach(([label, val]) => {
+        ensureSpace(7);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(label, margin + 4, y);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(val, pageW - margin - 4, y, { align: "right" });
+        y += 7;
+      });
+
+      y += 6;
+
+      // === SECTION 4: MONTHLY BREAKDOWN ===
+      ensureSpace(20);
+      pdf.setTextColor(212, 175, 55);
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("4. Monthly Breakdown (Last 6 Months)", margin, y);
+      y += 8;
+      pdf.setDrawColor(212, 175, 55);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 10;
+
+      // Table header
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(100, 100, 100);
+      pdf.text("Month", margin + 4, y);
+      pdf.text("New Users", margin + 70, y, { align: "right" });
+      pdf.text("Matches", margin + 115, y, { align: "right" });
+      pdf.text("Revenue (Birr)", pageW - margin - 4, y, { align: "right" });
+      y += 2;
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.2);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 7;
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      monthlyData.forEach((m: any) => {
+        ensureSpace(7);
+        pdf.text(String(m.month || ""), margin + 4, y);
+        pdf.text(String(m.users ?? 0), margin + 70, y, { align: "right" });
+        pdf.text(String(m.matches ?? 0), margin + 115, y, { align: "right" });
+        pdf.setFont("helvetica", "bold");
+        pdf.text(String((m.revenue ?? 0).toLocaleString()), pageW - margin - 4, y, { align: "right" });
+        pdf.setFont("helvetica", "normal");
+        y += 7;
+      });
+
+      // === FOOTER ===
       const pageCount = pdf.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         pdf.setPage(i);
         pdf.setFontSize(8);
-        pdf.setTextColor(120, 120, 120);
-        pdf.text(`EthioNikah Admin Analytics — Page ${i} of ${pageCount}`, 105, pageHeight - 5, { align: "center" });
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`EthioNikah Admin Analytics Report — Page ${i} of ${pageCount}`, pageW / 2, pageH - 8, { align: "center" });
       }
 
-      pdf.save(`EthioNikah-Analytics-${new Date().toISOString().split("T")[0]}.pdf`);
+      pdf.save(`EthioNikah-Analytics-Report-${new Date().toISOString().split("T")[0]}.pdf`);
     } catch {
       // Silent fail
     } finally {
@@ -202,6 +307,11 @@ export default function AdminAnalyticsPage() {
       </AdminLayout>
     );
   }
+
+  // Build monthly table rows for display
+  const monthlyRows = monthlyData.length > 0 ? monthlyData : [
+    { month: "—", users: 0, matches: 0, revenue: 0 },
+  ];
 
   return (
     <AdminLayout>
@@ -223,201 +333,148 @@ export default function AdminAnalyticsPage() {
         </button>
       </div>
 
-      {/* Report Container — captured for PDF */}
-      <div ref={reportRef} className="bg-[#0F0F10] p-6 rounded-2xl space-y-8">
-
-      {/* Platform Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {statsCards.map((stat) => (
-          <div key={stat.label} className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+      <div className="space-y-6">
+        {/* Platform Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {statsCards.map((stat) => (
+            <div key={stat.label} className="bg-white dark:bg-white/[0.06] backdrop-blur-xl border border-charcoal-100 dark:border-white/10 rounded-2xl p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center">
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                </div>
               </div>
-            </div>
-            <p className="text-2xl font-bold text-white mb-0.5">{stat.value}</p>
-            <p className="text-xs text-white/60">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Monthly Analytics Charts */}
-      <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Calendar className="w-5 h-5 text-[#D4AF37]" />
-          <h2 className="text-lg font-semibold text-white">Monthly Analytics (Last 6 Months)</h2>
-        </div>
-
-        {monthlyData.length > 0 ? (
-          <div className="space-y-8">
-            {/* Revenue Chart */}
-            <div>
-              <h3 className="text-sm font-medium text-white/80 mb-3">Monthly Revenue (Birr)</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.5} />
-                      <stop offset="95%" stopColor="#D4AF37" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                  <XAxis dataKey="month" stroke="#ffffff60" fontSize={12} />
-                  <YAxis stroke="#ffffff60" fontSize={12} />
-                  <Tooltip contentStyle={{ background: "#1A1A24", border: "1px solid #2D2D2D", borderRadius: "12px", color: "#fff" }} />
-                  <Area type="monotone" dataKey="revenue" stroke="#D4AF37" strokeWidth={2} fill="url(#revGrad)" name="Revenue" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Users & Matches Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-medium text-white/80 mb-3">New Users per Month</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                    <XAxis dataKey="month" stroke="#ffffff60" fontSize={12} />
-                    <YAxis stroke="#ffffff60" fontSize={12} />
-                    <Tooltip contentStyle={{ background: "#1A1A24", border: "1px solid #2D2D2D", borderRadius: "12px", color: "#fff" }} />
-                    <Bar dataKey="users" fill="#3B82F6" radius={[8, 8, 0, 0]} name="New Users" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-white/80 mb-3">Matches per Month</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                    <XAxis dataKey="month" stroke="#ffffff60" fontSize={12} />
-                    <YAxis stroke="#ffffff60" fontSize={12} />
-                    <Tooltip contentStyle={{ background: "#1A1A24", border: "1px solid #2D2D2D", borderRadius: "12px", color: "#fff" }} />
-                    <Bar dataKey="matches" fill="#8B5CF6" radius={[8, 8, 0, 0]} name="Matches" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Combined trend line */}
-            <div>
-              <h3 className="text-sm font-medium text-white/80 mb-3">Combined Trends</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                  <XAxis dataKey="month" stroke="#ffffff60" fontSize={12} />
-                  <YAxis stroke="#ffffff60" fontSize={12} />
-                  <Tooltip contentStyle={{ background: "#1A1A24", border: "1px solid #2D2D2D", borderRadius: "12px", color: "#fff" }} />
-                  <Legend wrapperStyle={{ color: "#fff", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="users" stroke="#3B82F6" strokeWidth={2} name="Users" dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="matches" stroke="#8B5CF6" strokeWidth={2} name="Matches" dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="revenue" stroke="#D4AF37" strokeWidth={2} name="Revenue" dot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-40 text-white/40 text-sm">
-            <BarChart3 className="w-6 h-6 mr-2" /> No monthly data available yet
-          </div>
-        )}
-      </div>
-
-      {/* Revenue Highlight Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {revenueStatsCards.map((stat) => (
-          <div key={stat.label} className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                <stat.icon className={`w-4 h-4 ${stat.color}`} />
-              </div>
-            </div>
-            <p className="text-xl font-bold text-white mb-0.5">{stat.value}</p>
-            <p className="text-xs font-medium text-white/80">{stat.label}</p>
-            <p className="text-[11px] text-white/50 mt-0.5">{stat.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Pie Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gender Distribution Pie */}
-        <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Gender Distribution</h3>
-          {genderPieData.some(d => d.value > 0) ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={genderPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`}>
-                  {genderPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: "#1A1A24", border: "1px solid #2D2D2D", borderRadius: "12px", color: "#fff" }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : <div className="flex items-center justify-center h-[200px] text-white/40 text-sm">No data</div>}
-        </div>
-
-        {/* Payment Stats Pie */}
-        <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Payment Distribution</h3>
-          {paymentPieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={paymentPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`}>
-                  {paymentPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i + 1]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: "#1A1A24", border: "1px solid #2D2D2D", borderRadius: "12px", color: "#fff" }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : <div className="flex items-center justify-center h-[200px] text-white/40 text-sm">No data</div>}
-        </div>
-
-        {/* Subscription Pie */}
-        <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Subscription Status</h3>
-          {subPieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={subPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`}>
-                  {subPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i + 3]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: "#1A1A24", border: "1px solid #2D2D2D", borderRadius: "12px", color: "#fff" }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : <div className="flex items-center justify-center h-[200px] text-white/40 text-sm">No data</div>}
-        </div>
-      </div>
-
-      {/* Detailed Stats Table */}
-      <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-white">Platform Statistics</h3>
-            <p className="text-xs text-white/60">Detailed metrics breakdown</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Total Users", value: a.totalUsers ?? 0, sub: `+${a.newUsersThisMonth ?? 0} this month` },
-            { label: "Active Users", value: a.activeUsers ?? 0, sub: `${Math.round(((a.activeUsers ?? 0) / (a.totalUsers || 1)) * 100)}% engagement rate` },
-            { label: "Verified Users", value: a.verifiedUsers ?? 0, sub: `${a.pendingVerifications ?? 0} pending review` },
-            { label: "Total Matches", value: a.totalMatches ?? 0, sub: `successful connections` },
-            { label: "New Users (30d)", value: a.newUsersThisMonth ?? 0, sub: `this month` },
-            { label: "Open Reports", value: a.totalReports ?? 0, sub: `need attention` },
-            { label: "Total Revenue", value: `Birr ${(a.totalRevenue ?? 0).toLocaleString()}`, sub: `lifetime revenue` },
-            { label: "Active Subs", value: rev.activeSubscriptions ?? a.subscriptionStats?.active ?? 0, sub: `${rev.premiumSubscriptions ?? 0} platinum, ${rev.basicSubscriptions ?? 0} gold` },
-            { label: "Total Messages", value: a.totalMessages ?? 0, sub: `${a.unreadMessages ?? 0} unread` },
-            { label: "Open Complaints", value: a.openComplaints ?? 0, sub: `need attention` },
-            { label: "Suspended Users", value: a.suspendedUsers ?? 0, sub: `currently suspended` },
-            { label: "Banned Users", value: a.bannedUsers ?? 0, sub: `permanently banned` },
-          ].map((stat) => (
-            <div key={stat.label} className="p-4 bg-white/[0.04] rounded-xl border border-white/5">
-              <p className="text-xs text-white/60 mb-1">{stat.label}</p>
-              <p className="text-xl font-bold text-white">{stat.value}</p>
-              <p className="text-[11px] text-white/50 mt-0.5">{stat.sub}</p>
+              <p className="text-2xl font-bold text-charcoal-900 dark:text-white mb-0.5">{stat.value}</p>
+              <p className="text-xs text-charcoal-400 dark:text-white/60">{stat.label}</p>
             </div>
           ))}
         </div>
-      </div>
 
+        {/* Monthly Analytics Table */}
+        <div className="bg-white dark:bg-white/[0.06] backdrop-blur-xl border border-charcoal-100 dark:border-white/10 rounded-2xl p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-5 h-5 text-[#D4AF37]" />
+            <h2 className="text-lg font-semibold text-charcoal-900 dark:text-white">Monthly Analytics (Last 6 Months)</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-charcoal-100 dark:border-white/10">
+                  <th className="text-left py-3 px-4 font-semibold text-charcoal-600 dark:text-white/70">Month</th>
+                  <th className="text-right py-3 px-4 font-semibold text-charcoal-600 dark:text-white/70">New Users</th>
+                  <th className="text-right py-3 px-4 font-semibold text-charcoal-600 dark:text-white/70">Matches</th>
+                  <th className="text-right py-3 px-4 font-semibold text-charcoal-600 dark:text-white/70">Revenue (Birr)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyRows.map((m: any, i: number) => (
+                  <tr key={i} className="border-b border-charcoal-50 dark:border-white/5 hover:bg-charcoal-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3 px-4 font-medium text-charcoal-900 dark:text-white">{m.month}</td>
+                    <td className="py-3 px-4 text-right text-charcoal-700 dark:text-white/80">{m.users ?? 0}</td>
+                    <td className="py-3 px-4 text-right text-charcoal-700 dark:text-white/80">{m.matches ?? 0}</td>
+                    <td className="py-3 px-4 text-right font-bold text-[#D4AF37]">{(m.revenue ?? 0).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Revenue & Subscriptions */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {revenueStatsCards.map((stat) => (
+            <div key={stat.label} className="bg-white dark:bg-white/[0.06] backdrop-blur-xl border border-charcoal-100 dark:border-white/10 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center">
+                  <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                </div>
+              </div>
+              <p className="text-xl font-bold text-charcoal-900 dark:text-white mb-0.5">{stat.value}</p>
+              <p className="text-xs font-medium text-charcoal-600 dark:text-white/80">{stat.label}</p>
+              <p className="text-[11px] text-charcoal-400 dark:text-white/50 mt-0.5">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Payment Statistics Table */}
+        <div className="bg-white dark:bg-white/[0.06] backdrop-blur-xl border border-charcoal-100 dark:border-white/10 rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Payment Statistics</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {paymentCards.map((stat) => (
+              <div key={stat.label} className="p-4 bg-charcoal-50 dark:bg-white/[0.04] rounded-xl border border-charcoal-100 dark:border-white/5">
+                <p className="text-xs text-charcoal-400 dark:text-white/60 mb-1">{stat.label}</p>
+                <p className="text-xl font-bold text-charcoal-900 dark:text-white">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Gender & Subscription Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-white/[0.06] backdrop-blur-xl border border-charcoal-100 dark:border-white/10 rounded-2xl p-6">
+            <h2 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Gender Distribution</h2>
+            <div className="space-y-3">
+              {genderCards.map((stat) => (
+                <div key={stat.label} className="flex items-center justify-between p-3 bg-charcoal-50 dark:bg-white/[0.04] rounded-xl border border-charcoal-100 dark:border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center">
+                      <Users className={`w-4 h-4 ${stat.color}`} />
+                    </div>
+                    <span className="text-sm font-medium text-charcoal-600 dark:text-white/80">{stat.label}</span>
+                  </div>
+                  <span className="text-xl font-bold text-charcoal-900 dark:text-white">{stat.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white dark:bg-white/[0.06] backdrop-blur-xl border border-charcoal-100 dark:border-white/10 rounded-2xl p-6">
+            <h2 className="text-lg font-semibold text-charcoal-900 dark:text-white mb-4">Subscription Statistics</h2>
+            <div className="space-y-3">
+              {subscriptionCards.map((stat) => (
+                <div key={stat.label} className="flex items-center justify-between p-3 bg-charcoal-50 dark:bg-white/[0.04] rounded-xl border border-charcoal-100 dark:border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center">
+                      <CreditCard className={`w-4 h-4 ${stat.color}`} />
+                    </div>
+                    <span className="text-sm font-medium text-charcoal-600 dark:text-white/80">{stat.label}</span>
+                  </div>
+                  <span className="text-xl font-bold text-charcoal-900 dark:text-white">{stat.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Stats Table */}
+        <div className="bg-white dark:bg-white/[0.06] backdrop-blur-xl border border-charcoal-100 dark:border-white/10 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-charcoal-900 dark:text-white">Platform Statistics</h3>
+              <p className="text-xs text-charcoal-400 dark:text-white/60">Detailed metrics breakdown</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Total Users", value: a.totalUsers ?? 0, sub: `+${a.newUsersThisMonth ?? 0} this month` },
+              { label: "Active Users", value: a.activeUsers ?? 0, sub: `${Math.round(((a.activeUsers ?? 0) / (a.totalUsers || 1)) * 100)}% engagement rate` },
+              { label: "Verified Users", value: a.verifiedUsers ?? 0, sub: `${a.pendingVerifications ?? 0} pending review` },
+              { label: "Total Matches", value: a.totalMatches ?? 0, sub: `successful connections` },
+              { label: "New Users (30d)", value: a.newUsersThisMonth ?? 0, sub: `this month` },
+              { label: "Open Reports", value: a.totalReports ?? 0, sub: `need attention` },
+              { label: "Total Revenue", value: `Birr ${(a.totalRevenue ?? 0).toLocaleString()}`, sub: `lifetime revenue` },
+              { label: "Active Subs", value: rev.activeSubscriptions ?? a.subscriptionStats?.active ?? 0, sub: `${rev.premiumSubscriptions ?? 0} platinum, ${rev.basicSubscriptions ?? 0} gold` },
+              { label: "Total Messages", value: a.totalMessages ?? 0, sub: `${a.unreadMessages ?? 0} unread` },
+              { label: "Open Complaints", value: a.openComplaints ?? 0, sub: `need attention` },
+              { label: "Suspended Users", value: a.suspendedUsers ?? 0, sub: `currently suspended` },
+              { label: "Banned Users", value: a.bannedUsers ?? 0, sub: `permanently banned` },
+            ].map((stat) => (
+              <div key={stat.label} className="p-4 bg-charcoal-50 dark:bg-white/[0.04] rounded-xl border border-charcoal-100 dark:border-white/5">
+                <p className="text-xs text-charcoal-400 dark:text-white/60 mb-1">{stat.label}</p>
+                <p className="text-xl font-bold text-charcoal-900 dark:text-white">{stat.value}</p>
+                <p className="text-[11px] text-charcoal-400 dark:text-white/50 mt-0.5">{stat.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
