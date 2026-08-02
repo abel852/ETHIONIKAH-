@@ -265,6 +265,62 @@ const respondToPartnershipRequest = async (req, res) => {
       },
     });
 
+    // --- Notify all users with active conversations that chats are now read-only ---
+    if (status === "accepted") {
+      const userAId = result.requesterId;
+      const userBId = result.receiverId;
+
+      // Get names for both partners
+      const [userA, userB] = await Promise.all([
+        prisma.user.findUnique({ where: { id: userAId }, select: { firstName: true, lastName: true } }),
+        prisma.user.findUnique({ where: { id: userBId }, select: { firstName: true, lastName: true } }),
+      ]);
+
+      // Find all users who have exchanged messages with EITHER partner (excluding each other and admins)
+      for (const [partnerId, partnerName, otherPartnerId] of [
+        [userAId, userA, userBId],
+        [userBId, userB, userAId],
+      ]) {
+        // Users who received messages FROM this partner
+        const sentTo = await prisma.message.findMany({
+          where: { senderId: partnerId, receiverId: { not: otherPartnerId } },
+          select: { receiverId: true },
+          distinct: ["receiverId"],
+        });
+        // Users who sent messages TO this partner
+        const receivedFrom = await prisma.message.findMany({
+          where: { receiverId: partnerId, senderId: { not: otherPartnerId } },
+          select: { senderId: true },
+          distinct: ["senderId"],
+        });
+
+        // Combine unique conversation partner IDs
+        const conversationUserIds = [...new Set([
+          ...sentTo.map((m) => m.receiverId),
+          ...receivedFrom.map((m) => m.senderId),
+        ])];
+
+        // Notify each conversation partner
+        for (const otherUserId of conversationUserIds) {
+          // Skip admins
+          const otherUser = await prisma.user.findUnique({
+            where: { id: otherUserId },
+            select: { role: true },
+          });
+          if (!otherUser || otherUser.role === "admin") continue;
+
+          await prisma.notification.create({
+            data: {
+              userId: otherUserId,
+              type: "conversation_read_only",
+              title: "Conversation Now Read-Only",
+              body: `${partnerName?.firstName} ${partnerName?.lastName} has entered an Exclusive Marriage Process. This conversation is now read-only until the partnership ends.`,
+            },
+          });
+        }
+      }
+    }
+
     res.json({ message: "Partnership request " + status, request: result });
   } catch (error) {
     if (error.code && error.message) {
