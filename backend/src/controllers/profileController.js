@@ -75,11 +75,22 @@ const createOrUpdateProfile = async (req, res) => {
       });
     }
 
-    // --- Sync Wali record for female users ---
+    // --- Wali ownership enforcement ---
+    // Only female users may create, update, or delete Wali records.
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { gender: true },
     });
+
+    const WALI_PROFILE_FIELDS = ["hasWali", "waliName", "waliPhone", "waliRelation", "waliEmail"];
+    const waliFieldsPresent = WALI_PROFILE_FIELDS.some((f) => cleanData[f] !== undefined);
+
+    if (currentUser && currentUser.gender !== "female" && waliFieldsPresent) {
+      return res.status(403).json({
+        error: "Wali information can only be set by female users.",
+        code: "WALI_FEMALE_ONLY",
+      });
+    }
 
     if (currentUser && currentUser.gender === "female") {
       const existingWali = await prisma.wali.findUnique({
@@ -313,6 +324,24 @@ const updateProfileStep = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { step, data } = req.body;
+
+    // --- Wali ownership enforcement ---
+    const WALI_PROFILE_FIELDS = ["hasWali", "waliName", "waliPhone", "waliRelation", "waliEmail"];
+    const waliFieldsPresent = WALI_PROFILE_FIELDS.some((f) => data && data[f] !== undefined);
+
+    if (waliFieldsPresent) {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { gender: true },
+      });
+
+      if (currentUser && currentUser.gender !== "female") {
+        return res.status(403).json({
+          error: "Wali information can only be set by female users.",
+          code: "WALI_FEMALE_ONLY",
+        });
+      }
+    }
 
     const existingProfile = await prisma.profile.findUnique({
       where: { userId },
