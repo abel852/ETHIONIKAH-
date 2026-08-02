@@ -109,8 +109,9 @@ const requestExclusivePartnership = async (req, res) => {
 // Rules:
 //   - Use transaction to prevent race conditions
 //   - On accept: revalidate no active partnership for either user
-//   - On accept: expire all OTHER pending requests received by the receiver
-//   - On accept: expire all pending requests SENT BY the requester
+//   - On accept: expire all OTHER pending requests received by the receiver (B→C, D→C)
+//   - On accept: expire all OTHER pending requests sent BY the requester (A→X, A→Y)
+//   - On accept: expire all pending requests sent BY the receiver (C→X, C→Y)
 //   - On decline: just mark as declined
 // ============================================================
 const respondToPartnershipRequest = async (req, res) => {
@@ -182,12 +183,21 @@ const respondToPartnershipRequest = async (req, res) => {
           data: { status: "expired", respondedAt: new Date() },
         });
 
-        // Expire all OTHER pending requests sent BY the requester
+        // Expire all OTHER pending requests sent BY the requester (A→X, A→Y)
         await tx.exclusivePartnershipRequest.updateMany({
           where: {
             requesterId: request.requesterId,
             status: "pending",
             id: { not: requestId },
+          },
+          data: { status: "expired", respondedAt: new Date() },
+        });
+
+        // Expire all OTHER pending requests sent BY the receiver (C→X, C→Y)
+        await tx.exclusivePartnershipRequest.updateMany({
+          where: {
+            requesterId: receiverId,
+            status: "pending",
           },
           data: { status: "expired", respondedAt: new Date() },
         });
