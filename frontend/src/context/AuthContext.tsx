@@ -5,6 +5,7 @@ import axios from "axios";
 import { WifiOff } from "lucide-react";
 import api from "@/lib/api";
 import type { User } from "@/types";
+import { cacheGetStale, cacheSet, cacheClearAll, CACHE_TTL, STORES } from "@/lib/cache";
 
 function mapVerificationStatus(user: Record<string, unknown>): User {
   if (user.verification && typeof user.verification === "object" && user.verification !== null) {
@@ -49,20 +50,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("accessToken");
 
     if (token) {
+      // Try cached user profile first for instant app load
+      cacheGetStale<User>(STORES.PROFILE, "me").then((cached) => {
+        if (cached) {
+          setUser(cached.data);
+          setIsLoading(false);
+        }
+      });
+
       api.get("/auth/me", { _noRedirect: true } as any).then((res) => {
         const u = mapVerificationStatus(res.data.user);
         setUser(u);
         setConnectionError(null);
-        localStorage.setItem("user", JSON.stringify(u));
+        // Cache user profile in IndexedDB (not localStorage)
+        cacheSet(STORES.PROFILE, "me", u, CACHE_TTL.PROFILE);
+        // Remove legacy localStorage user data
+        localStorage.removeItem("user");
       }).catch((err) => {
         if (isNetworkError(err)) {
           setConnectionError("server_down");
-          setUser(null);
+          // Keep cached user from IndexedDB if available — offline mode
+          // If no cached user was loaded, set to null
+          setUser((prev) => prev); // keep existing user if loaded from cache
         } else {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
           localStorage.removeItem("trustedDeviceToken");
+          cacheClearAll().catch(() => {});
           if (typeof document !== "undefined") {
             document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           }
@@ -104,7 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: fullUser } = await api.get("/auth/me", { _noRedirect: true } as any);
       const u = mapVerificationStatus(fullUser.user);
       setUser(u);
-      localStorage.setItem("user", JSON.stringify(u));
+      cacheSet(STORES.PROFILE, "me", u, CACHE_TTL.PROFILE);
+      localStorage.removeItem("user");
     } catch { /* ignore */ }
   }, []);
 
@@ -120,7 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: fullUser } = await api.get("/auth/me", { _noRedirect: true } as any);
       const u = mapVerificationStatus(fullUser.user);
       setUser(u);
-      localStorage.setItem("user", JSON.stringify(u));
+      cacheSet(STORES.PROFILE, "me", u, CACHE_TTL.PROFILE);
+      localStorage.removeItem("user");
     } catch { /* ignore */ }
   }, []);
 
@@ -131,8 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clear all local storage auth-related items
     localStorage.removeItem("user");
     localStorage.removeItem("trustedDeviceToken");
-    // Clear any other auth-related keys
-    localStorage.removeItem("user");
+    // Clear IndexedDB cache
+    cacheClearAll().catch(() => {});
     // Clear cookie
     if (typeof document !== "undefined") {
       document.cookie = "accessToken=; path=/; SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -150,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prev) => {
       if (!prev) return null;
       const updated = { ...prev, ...data };
-      localStorage.setItem("user", JSON.stringify(updated));
+      cacheSet(STORES.PROFILE, "me", updated, CACHE_TTL.PROFILE);
       return updated;
     });
   }, []);

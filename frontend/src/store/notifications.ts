@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Notification } from "@/types";
 import { notificationService } from "@/services/notifications";
+import { cacheGetStale, cacheSet, CACHE_TTL, STORES } from "@/lib/cache";
 
 interface NotificationState {
   notifications: Notification[];
@@ -29,13 +30,22 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       set({ notifications: [], unreadCount: 0, isLoading: false });
       return;
     }
-    set({ isLoading: true });
+    // Try cached notifications first
+    const cached = await cacheGetStale<Notification[]>(STORES.NOTIFICATIONS, "all");
+    if (cached) {
+      const unread = cached.data.filter((n) => !n.read).length;
+      set({ notifications: cached.data, unreadCount: unread, isLoading: false });
+    } else {
+      set({ isLoading: true });
+    }
+    // Fetch fresh data
     try {
       const { data } = await notificationService.getAll();
       const list = extractArray(data);
       const unread = list.filter((n: Notification) => !n.read).length;
       set({ notifications: list, unreadCount: unread, isLoading: false });
-    } catch { set({ isLoading: false }); }
+      cacheSet(STORES.NOTIFICATIONS, "all", list, CACHE_TTL.NOTIFICATIONS);
+    } catch { if (!cached) set({ isLoading: false }); }
   },
   fetchUnreadCount: async () => {
     if (!hasAuthToken()) {

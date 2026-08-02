@@ -48,12 +48,7 @@ function isClient(): boolean {
 }
 
 function getCachedUser(): { id?: string | null; language?: string | null } | null {
-  if (!isClient()) return null;
-  try {
-    const raw = localStorage.getItem("user");
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch { return null; }
+  return null;
 }
 
 function storageKey(userId?: string | null) {

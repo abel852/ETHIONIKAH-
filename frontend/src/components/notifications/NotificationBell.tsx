@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Bell, Check, X } from "lucide-react";
 import { useNotificationStore } from "@/store/notifications";
+import { useAuth } from "@/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 
 const typeIcons: Record<string, string> = {
@@ -20,6 +21,7 @@ const typeIcons: Record<string, string> = {
 
 export default function NotificationBell() {
   const { notifications, unreadCount, fetchNotifications, fetchUnreadCount, markAsRead, markAllAsRead } = useNotificationStore();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -27,11 +29,8 @@ export default function NotificationBell() {
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
   useEffect(() => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      setIsAdmin(user.role === "admin");
-    } catch { /* ignore */ }
-  }, []);
+    setIsAdmin(user?.role === "admin");
+  }, [user]);
 
   useEffect(() => {
     fetchUnreadCount();

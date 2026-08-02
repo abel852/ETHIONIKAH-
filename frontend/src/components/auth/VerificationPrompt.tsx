@@ -55,8 +55,6 @@ export function VerificationPrompt() {
       const { data } = await api.get("/auth/me", { _noRedirect: true } as any);
       if (data.user?.isEmailVerified) {
         setSuccess("Email verified successfully!");
-        const updated = { ...user, isEmailVerified: true };
-        localStorage.setItem("user", JSON.stringify(updated));
         window.location.reload();
       } else {
         setError("Your email is not verified yet. Please click the link in your email.");

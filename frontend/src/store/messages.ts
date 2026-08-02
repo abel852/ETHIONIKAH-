@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import type { Message } from "@/types";
 import { messageService } from "@/services/messages";
+import { cacheGetStale, cacheSet, cacheSetByConversation, cacheGetByConversation, cacheClear, CACHE_TTL, STORES } from "@/lib/cache";
+
+const MAX_CACHED_MESSAGES = 50;
 
 interface Conversation {
   id: string;
@@ -55,6 +58,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   blockedUsers: [],
   hasMoreMessages: true,
   fetchConversations: async () => {
+    // 1. Try cached conversations first for instant display
+    const cached = await cacheGetStale<Conversation[]>(STORES.CONVERSATIONS, "all");
+    if (cached) {
+      set({ conversations: cached.data });
+    }
+    // 2. Fetch fresh data in background
     try {
       const { data } = await messageService.getConversations();
       const raw = data.conversations || [];
@@ -74,18 +83,28 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         compatibilityReason: c.compatibilityReason || undefined,
       }));
       set({ conversations: mapped });
-    } catch { set({ error: "Failed to load conversations" }); }
+      cacheSet(STORES.CONVERSATIONS, "all", mapped, CACHE_TTL.CONVERSATIONS);
+    } catch { if (!cached) set({ error: "Failed to load conversations" }); }
   },
   fetchMessages: async (conversationId) => {
     const currentId = get().activeConversation;
     if (currentId !== conversationId) return;
-    set({ isLoading: true, error: null, hasMoreMessages: true });
+    // 1. Try cached messages for instant display
+    const cached = await cacheGetByConversation<{ messages: Message[]; matchReason: string | null }>(STORES.MESSAGES, conversationId);
+    if (cached) {
+      set({ messages: cached.data.messages, matchReason: cached.data.matchReason, isLoading: false, hasMoreMessages: cached.data.messages.length >= MAX_CACHED_MESSAGES });
+    } else {
+      set({ isLoading: true, error: null, hasMoreMessages: true });
+    }
+    // 2. Fetch fresh data
     try {
       const { data } = await messageService.getMessages(conversationId, undefined, 50);
       if (get().activeConversation !== conversationId) return;
       const msgs = data.messages || [];
       set({ messages: msgs, matchReason: data.matchReason || null, isLoading: false, hasMoreMessages: msgs.length >= 50 });
-    } catch { set({ error: "Failed to load messages", isLoading: false }); }
+      // Cache latest 50 messages for this conversation
+      cacheSetByConversation(STORES.MESSAGES, conversationId, { messages: msgs.slice(-MAX_CACHED_MESSAGES), matchReason: data.matchReason || null }, CACHE_TTL.MESSAGES);
+    } catch { if (!cached) set({ error: "Failed to load messages", isLoading: false }); }
   },
   sendMessage: async (conversationId, content, replyToId) => {
     try {
@@ -118,6 +137,8 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   deleteConversation: async (otherUserId, deleteFor = "me") => {
     try {
       await messageService.deleteConversation(otherUserId, deleteFor);
+      // Clear cached messages for this conversation
+      cacheClear(STORES.MESSAGES).catch(() => {});
       set((s) => ({
         messages: [],
         conversations: s.conversations.filter((c) => c.id !== otherUserId),
