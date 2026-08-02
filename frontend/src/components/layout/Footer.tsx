@@ -44,7 +44,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <Image src="/images/logo.svg" alt="Ethio Nikah" width={48} height={48} className="rounded-xl border-2 border-accent ring-2 ring-charcoal-900" />
+              <Image src="/app.png" alt="Ethio Nikah" width={48} height={48} className="rounded-xl border-2 border-accent ring-2 ring-charcoal-900" />
               <span className="font-cursive font-bold text-2xl [-webkit-text-stroke:0.5px_#D4AF37]">
                 Ethio <span className="text-accent [-webkit-text-stroke:0.5px_#111]">Nikah</span>
               </span>

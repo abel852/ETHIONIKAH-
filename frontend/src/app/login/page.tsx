@@ -223,7 +223,7 @@ export default function LoginPage() {
         {/* Premium black navigation bar */}
         <div className="relative z-10 bg-charcoal-900 px-4 py-3 flex items-center justify-between shadow-md">
           <Link href="/" className="inline-flex items-center gap-2">
-            <Image src="/images/logo.svg" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
+            <Image src="/app.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
             <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
           </Link>
           <div className="flex items-center gap-0.5">
@@ -243,7 +243,7 @@ export default function LoginPage() {
             <div className="text-center mb-6 animate-hero-fade">
               <div className="relative inline-block mb-4">
                 <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full" />
-                <Image src="/images/logo.svg" alt="Ethio Nikah" width={72} height={72} className="relative rounded-2xl border-2 border-accent ring-2 ring-white/20 shadow-glow mx-auto" />
+                <Image src="/app.png" alt="Ethio Nikah" width={72} height={72} className="relative rounded-2xl border-2 border-accent ring-2 ring-white/20 shadow-glow mx-auto" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-display font-bold text-charcoal-900 dark:text-white mb-1">{t('auth.twoFactor')}</h1>
               <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">{useBackupCode ? t('auth.enterRecoveryCode') : t('auth.enterAuthCode')}</p>
@@ -356,7 +356,7 @@ export default function LoginPage() {
       {/* Premium black navigation bar */}
       <div className="relative z-10 bg-charcoal-900 px-4 py-3 flex items-center justify-between shadow-md">
         <Link href="/" className="inline-flex items-center gap-2">
-          <Image src="/images/logo.svg" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
+          <Image src="/app.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
           <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
         </Link>
         <div className="flex items-center gap-0.5">
@@ -407,7 +407,7 @@ export default function LoginPage() {
           <div className="text-center mb-6 animate-hero-fade">
             <div className="relative inline-block mb-4">
               <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full" />
-              <Image src="/images/logo.svg" alt="Ethio Nikah" width={72} height={72} className="relative rounded-2xl border-2 border-accent ring-2 ring-white/20 shadow-glow mx-auto" />
+              <Image src="/app.png" alt="Ethio Nikah" width={72} height={72} className="relative rounded-2xl border-2 border-accent ring-2 ring-white/20 shadow-glow mx-auto" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-charcoal-900 dark:text-white mb-1">{t('auth.welcomeBack')}</h1>
             <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">{t('auth.signInToContinue')}</p>

@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     description: "Find your righteous spouse in a safe, Sharia-compliant environment. Premium matchmaking for the Muslim community in Ethiopia.",
     images: [
       {
-        url: "/images/logo.svg",
+        url: "/app.png",
         width: 512,
         height: 512,
         alt: "Ethio Nikah Logo",
@@ -69,15 +69,15 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Ethio Nikah - Islamic Matchmaking Platform",
     description: "Find your righteous spouse in a safe, Sharia-compliant environment. Premium matchmaking for the Muslim community in Ethiopia.",
-    images: ["/images/logo.svg"],
+    images: ["/app.png"],
   },
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/app.png", sizes: "512x512", type: "image/png" },
       { url: "/favicon.ico", sizes: "any" },
     ],
     apple: [
-      { url: "/apple-icon.svg", sizes: "180x180", type: "image/svg+xml" },
+      { url: "/app.png", sizes: "180x180", type: "image/png" },
     ],
   },
   manifest: "/manifest.webmanifest",
