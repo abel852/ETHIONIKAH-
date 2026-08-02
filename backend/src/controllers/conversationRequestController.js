@@ -172,6 +172,51 @@ const respondToConversationRequest = async (req, res) => {
       return res.status(400).json({ error: "This request has already been responded to" });
     }
 
+    // --- Exclusive Partnership enforcement ---
+    // Block accepting if EITHER the receiver or the requester is in an active
+    // exclusive partnership with someone else. Old pending requests cannot
+    // sneak through after exclusivity starts.
+    if (status === "accepted") {
+      const [receiverPartnership, requesterPartnership] = await Promise.all([
+        prisma.exclusivePartnership.findFirst({
+          where: {
+            OR: [
+              { userAId: receiverId, status: "active" },
+              { userBId: receiverId, status: "active" },
+            ],
+          },
+          select: { userAId: true, userBId: true },
+        }),
+        prisma.exclusivePartnership.findFirst({
+          where: {
+            OR: [
+              { userAId: request.requesterId, status: "active" },
+              { userBId: request.requesterId, status: "active" },
+            ],
+          },
+          select: { userAId: true, userBId: true },
+        }),
+      ]);
+
+      if (receiverPartnership) {
+        const receiverPartnerId = receiverPartnership.userAId === receiverId
+          ? receiverPartnership.userBId
+          : receiverPartnership.userAId;
+        if (request.requesterId !== receiverPartnerId) {
+          return res.status(403).json({ error: "You are in an active exclusive partnership. You cannot accept conversation requests from anyone except your partner." });
+        }
+      }
+
+      if (requesterPartnership) {
+        const requesterPartnerId = requesterPartnership.userAId === request.requesterId
+          ? requesterPartnership.userBId
+          : requesterPartnership.userAId;
+        if (receiverId !== requesterPartnerId) {
+          return res.status(403).json({ error: "This user is now in an active exclusive partnership and cannot start new conversations." });
+        }
+      }
+    }
+
     const updated = await prisma.conversationRequest.update({
       where: { id: requestId },
       data: { status, respondedAt: new Date() },
