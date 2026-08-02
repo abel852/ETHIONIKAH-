@@ -217,6 +217,15 @@ const getProfileById = async (req, res) => {
       return res.status(404).json({ error: "Profile not found" });
     }
 
+    // Strip Wali details — only expose hasWali (yes/no) to other users
+    const isOwner = req.user && req.user.userId === profile.userId;
+    if (!isOwner) {
+      delete profile.waliName;
+      delete profile.waliPhone;
+      delete profile.waliRelation;
+      delete profile.waliEmail;
+    }
+
     // Record profile view for visitor tracking
     if (req.user && req.user.userId !== profile.userId) {
       await recordProfileView(req.user.userId, profile.userId);
@@ -261,6 +270,15 @@ const getProfileByUserId = async (req, res) => {
     profile.user.membershipPlan = profile.user.subscriptions?.length > 0 ? profile.user.subscriptions[0].planType : null;
     profile.user.isPremium = !!profile.user.membershipPlan;
     delete profile.user.subscriptions;
+
+    // Strip Wali details — only expose hasWali (yes/no) to other users
+    const isOwner = req.user && req.user.userId === userId;
+    if (!isOwner) {
+      delete profile.waliName;
+      delete profile.waliPhone;
+      delete profile.waliRelation;
+      delete profile.waliEmail;
+    }
 
     // Record profile view for visitor tracking
     if (req.user && req.user.userId !== userId) {

@@ -111,6 +111,17 @@ const computeAge = (dob) => {
   return age;
 };
 
+// Strip Wali details from profile — only expose hasWali (yes/no) to other users
+const WALI_DETAIL_FIELDS = ["waliName", "waliPhone", "waliRelation", "waliEmail"];
+function sanitizeProfileWali(profile) {
+  if (!profile) return profile;
+  const sanitized = { ...profile };
+  for (const field of WALI_DETAIL_FIELDS) {
+    delete sanitized[field];
+  }
+  return sanitized;
+}
+
 const levelScore = (a, b, levels) => {
   if (!a || !b) return 0;
   const ia = levels.indexOf(a);
@@ -735,6 +746,7 @@ const getRecommendedMatches = async (req, res) => {
     const scoredMatches = potentialMatches.map((match) => {
       const compatibility = computeCompatibilityScore(user, match);
       const { passwordHash, email, phone, ...safe } = match;
+      if (safe.profile) safe.profile = sanitizeProfileWali(safe.profile);
       const plan = match.subscriptions?.length > 0 ? match.subscriptions[0].planType : null;
       return {
         ...safe,
@@ -861,6 +873,7 @@ const searchProfiles = async (req, res) => {
     });
 
     const profilesWithoutPassword = profiles.map(({ passwordHash, email, phone, ...profile }) => {
+      if (profile.profile) profile.profile = sanitizeProfileWali(profile.profile);
       const plan = profile.subscriptions?.length > 0 ? profile.subscriptions[0].planType : null;
       delete profile.subscriptions;
       return {
@@ -1048,7 +1061,7 @@ const getMyMatches = async (req, res) => {
             firstName: true,
             lastName: true,
             gender: true,
-            profile: true,
+            profile: { select: { photos: true, city: true, country: true, occupation: true, bio: true, hasWali: true } },
           },
         },
         matchedUser: {
@@ -1057,7 +1070,7 @@ const getMyMatches = async (req, res) => {
             firstName: true,
             lastName: true,
             gender: true,
-            profile: true,
+            profile: { select: { photos: true, city: true, country: true, occupation: true, bio: true, hasWali: true } },
           },
         },
       },
@@ -1117,7 +1130,7 @@ const getFavorites = async (req, res) => {
             lastName: true,
             gender: true,
             isVerified: true,
-            profile: true,
+            profile: { select: { photos: true, city: true, country: true, occupation: true, bio: true, hasWali: true } },
             subscriptions: { where: { status: "active", endDate: { gte: new Date() } }, select: { planType: true }, take: 1 },
           },
         },
