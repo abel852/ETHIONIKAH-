@@ -34,6 +34,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const removeMessage = useMessageStore((s) => s.removeMessage);
   const updateMessage = useMessageStore((s) => s.updateMessage);
   const setMessageRead = useMessageStore((s) => s.setMessageRead);
+  const setMessageReaction = useMessageStore((s) => s.setMessageReaction);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
 
   // Refs to keep latest store functions without triggering effect re-runs
@@ -41,11 +42,13 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const removeMessageRef = useRef(removeMessage);
   const updateMessageRef = useRef(updateMessage);
   const setMessageReadRef = useRef(setMessageRead);
+  const setMessageReactionRef = useRef(setMessageReaction);
   const fetchUnreadCountRef = useRef(fetchUnreadCount);
   addMessageRef.current = addMessage;
   removeMessageRef.current = removeMessage;
   updateMessageRef.current = updateMessage;
   setMessageReadRef.current = setMessageRead;
+  setMessageReactionRef.current = setMessageReaction;
   fetchUnreadCountRef.current = fetchUnreadCount;
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
@@ -168,6 +171,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     socket.on("message_edited", (message) => {
       updateMessageRef.current(message);
+    });
+
+    socket.on("message_reaction", ({ messageId, reaction, reactionBy }) => {
+      setMessageReactionRef.current(messageId, reaction, reactionBy);
     });
 
     socket.on("typing", ({ conversationId, isTyping }) => {

@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const prisma = require("../config/database");
 
 const onlineUsers = new Map();
 
@@ -76,9 +77,28 @@ async function setupSocket(io) {
     onlineUsers.set(userId, socket.id);
     socket.join(`user:${userId}`);
 
-    // Broadcast online to all connected users
+    // Broadcast online status only to users who have conversations with this user
     if (wasOffline) {
-      io.emit("user_status", { userId, isOnline: true });
+      prisma.message.findMany({
+        where: {
+          OR: [
+            { senderId: userId },
+            { receiverId: userId },
+          ],
+        },
+        select: { senderId: true, receiverId: true },
+        distinct: ["senderId", "receiverId"],
+        take: 200,
+      }).then((msgs) => {
+        const partnerIds = new Set();
+        for (const m of msgs) {
+          if (m.senderId !== userId) partnerIds.add(m.senderId);
+          if (m.receiverId !== userId) partnerIds.add(m.receiverId);
+        }
+        partnerIds.forEach((pid) => {
+          io.to(`user:${pid}`).emit("user_status", { userId, isOnline: true });
+        });
+      }).catch(() => {});
     }
 
     // Typing events
@@ -94,7 +114,27 @@ async function setupSocket(io) {
       totalConnections = Math.max(0, totalConnections - 1);
       if (onlineUsers.get(userId) === socket.id) {
         onlineUsers.delete(userId);
-        io.emit("user_status", { userId, isOnline: false });
+        // Notify only conversation partners, not all users
+        prisma.message.findMany({
+          where: {
+            OR: [
+              { senderId: userId },
+              { receiverId: userId },
+            ],
+          },
+          select: { senderId: true, receiverId: true },
+          distinct: ["senderId", "receiverId"],
+          take: 200,
+        }).then((msgs) => {
+          const partnerIds = new Set();
+          for (const m of msgs) {
+            if (m.senderId !== userId) partnerIds.add(m.senderId);
+            if (m.receiverId !== userId) partnerIds.add(m.receiverId);
+          }
+          partnerIds.forEach((pid) => {
+            io.to(`user:${pid}`).emit("user_status", { userId, isOnline: false });
+          });
+        }).catch(() => {});
       }
     });
 

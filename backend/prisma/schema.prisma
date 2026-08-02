@@ -210,6 +210,9 @@ model Message {
   deletedForReceiver  Boolean   @default(false) @map("deleted_for_receiver")
   deletedForSender    Boolean   @default(false) @map("deleted_for_sender")
   replyToId           String?   @map("reply_to_id") @db.Uuid
+  reaction             String?   @map("reaction")
+  reactionBy           String?   @map("reaction_by") @db.Uuid
+  reactionAt           DateTime? @map("reaction_at")
   receiver             User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
   replyTo              Message?  @relation("messagesTomessages", fields: [replyToId], references: [id])
   replyMessages        Message[] @relation("messagesTomessages")

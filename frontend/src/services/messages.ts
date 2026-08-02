@@ -2,7 +2,10 @@ import api from "@/lib/api";
 
 export const messageService = {
   getConversations: () => api.get("/messages/conversations"),
-  getMessages: (conversationId: string) => api.get(`/messages/conversation/${conversationId}`),
+  getMessages: (conversationId: string, before?: string, limit?: number) =>
+    api.get(`/messages/conversation/${conversationId}`, {
+      params: { ...(before ? { before } : {}), ...(limit ? { limit } : {}) },
+    }),
   sendMessage: (conversationId: string, content: string, replyToId?: string | null) =>
     api.post("/messages", { receiverId: conversationId, content, replyToId: replyToId || undefined }, { _noToast: true } as any),
   sendImage: (receiverId: string, file: File, caption?: string, onProgress?: (pct: number) => void) => {
@@ -34,6 +37,8 @@ export const messageService = {
   markAsRead: (messageId: string) => api.put(`/messages/${messageId}/read`),
   editMessage: (messageId: string, content: string) =>
     api.put(`/messages/${messageId}/edit`, { content }, { _noToast: true } as any),
+  reactToMessage: (messageId: string, reaction: string) =>
+    api.put(`/messages/${messageId}/react`, { reaction }, { _noToast: true } as any),
   deleteMessage: (messageId: string, deleteFor: "me" | "both" = "me") =>
     api.delete(`/messages/${messageId}`, { data: { deleteFor } }),
   blockUser: (blockedUserId: string) => api.post("/messages/block", { blockedUserId }),

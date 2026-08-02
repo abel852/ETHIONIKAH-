@@ -29,14 +29,27 @@ function emitMessageEdited(message, userIds) {
   });
 }
 
+function emitMessageReaction(messageId, reaction, reactionBy, userIds) {
+  if (!io) return;
+  userIds.forEach((uid) => {
+    io.to(`user:${uid}`).emit("message_reaction", { messageId, reaction, reactionBy });
+  });
+}
+
 function emitTyping(conversationId, userId, isTyping) {
   if (!io) return;
   io.to(`user:${userId}`).emit("typing", { conversationId, isTyping });
 }
 
-function emitOnlineStatus(userId, isOnline) {
+function emitOnlineStatus(userId, isOnline, interestedUserIds) {
   if (!io) return;
-  io.emit("user_status", { userId, isOnline });
+  if (interestedUserIds && interestedUserIds.length > 0) {
+    interestedUserIds.forEach((uid) => {
+      io.to(`user:${uid}`).emit("user_status", { userId, isOnline });
+    });
+  } else {
+    io.to(`user:${userId}`).emit("user_status", { userId, isOnline });
+  }
 }
 
 function emitNotification(userId, notification) {
@@ -54,4 +67,4 @@ function emitVerificationStatus(userId, verification) {
   io.to(`user:${userId}`).emit("verification_status_changed", verification);
 }
 
-module.exports = { setSocket, emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited, emitTyping, emitOnlineStatus, emitNotification, emitPaymentStatus, emitVerificationStatus };
+module.exports = { setSocket, emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited, emitMessageReaction, emitTyping, emitOnlineStatus, emitNotification, emitPaymentStatus, emitVerificationStatus };

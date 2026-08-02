@@ -1,15 +1,17 @@
-"use client";
-
-import { motion } from "framer-motion";
-
 export default function Template({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+    <div
+      style={{
+        animation: "pageIn 0.25s ease-out",
+      }}
     >
       {children}
-    </motion.div>
+      <style>{`
+        @keyframes pageIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
   );
 }

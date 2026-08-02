@@ -1,5 +1,5 @@
 const prisma = require("../config/database");
-const { emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited } = require("../utils/messageSocket");
+const { emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited, emitMessageReaction } = require("../utils/messageSocket");
 const { ensureContactCredits } = require("./membershipPlanController");
 const { uploadMulterFile, isR2Enabled } = require("../config/r2");
 
@@ -451,7 +451,7 @@ const getConversations = async (req, res) => {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 500, // Limit to recent 500 messages for conversation list
+      take: 200, // Limit to recent 200 messages for conversation list
     });
 
     const conversations = {};
@@ -1002,6 +1002,40 @@ const getActiveChatPartners = async (req, res) => {
   }
 };
 
+const reactToMessage = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { messageId } = req.params;
+    const { reaction } = req.body;
+
+    const VALID_REACTIONS = ["❤️", "😂", "👍", "👎", "😢", "🤲"];
+    if (!VALID_REACTIONS.includes(reaction)) {
+      return res.status(400).json({ error: "Invalid reaction" });
+    }
+
+    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+    if (message.senderId !== userId && message.receiverId !== userId) {
+      return res.status(403).json({ error: "You are not part of this conversation" });
+    }
+
+    const updated = await prisma.message.update({
+      where: { id: messageId },
+      data: { reaction, reactionBy: userId, reactionAt: new Date() },
+    });
+
+    const otherUserId = message.senderId === userId ? message.receiverId : message.senderId;
+    emitMessageReaction(messageId, reaction, userId, [userId, otherUserId]);
+
+    res.json({ message: "Reaction added", reaction, messageId });
+  } catch (error) {
+    console.error("React to message error:", error);
+    res.status(500).json({ error: "Failed to react to message" });
+  }
+};
+
 module.exports = {
   sendMessage,
   sendImage,
@@ -1016,4 +1050,5 @@ module.exports = {
   blockUser,
   unblockUser,
   deleteConversation,
+  reactToMessage,
 };

@@ -39,6 +39,9 @@ interface MessageState {
   removeMessage: (messageId: string) => void;
   updateMessage: (message: Message) => void;
   setMessageRead: (messageId: string) => void;
+  setMessageReaction: (messageId: string, reaction: string, reactionBy: string) => void;
+  loadOlderMessages: (conversationId: string) => Promise<boolean>;
+  hasMoreMessages: boolean;
   markAsRead: (conversationId: string) => Promise<void>;
 }
 
@@ -50,6 +53,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   error: null,
   matchReason: null,
   blockedUsers: [],
+  hasMoreMessages: true,
   fetchConversations: async () => {
     try {
       const { data } = await messageService.getConversations();
@@ -75,11 +79,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   fetchMessages: async (conversationId) => {
     const currentId = get().activeConversation;
     if (currentId !== conversationId) return;
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, hasMoreMessages: true });
     try {
-      const { data } = await messageService.getMessages(conversationId);
+      const { data } = await messageService.getMessages(conversationId, undefined, 50);
       if (get().activeConversation !== conversationId) return;
-      set({ messages: data.messages || [], matchReason: data.matchReason || null, isLoading: false });
+      const msgs = data.messages || [];
+      set({ messages: msgs, matchReason: data.matchReason || null, isLoading: false, hasMoreMessages: msgs.length >= 50 });
     } catch { set({ error: "Failed to load messages", isLoading: false }); }
   },
   sendMessage: async (conversationId, content, replyToId) => {
@@ -160,6 +165,31 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     set((s) => ({
       messages: s.messages.map((m) => m.id === messageId ? { ...m, readAt: new Date().toISOString(), isRead: true } as any : m),
     })),
+  setMessageReaction: (messageId, reaction, reactionBy) =>
+    set((s) => ({
+      messages: s.messages.map((m) => m.id === messageId ? { ...m, reaction, reactionBy } as any : m),
+    })),
+  loadOlderMessages: async (conversationId) => {
+    const state = get();
+    if (!state.hasMoreMessages || state.messages.length === 0) return false;
+    const oldest = state.messages[0];
+    if (!oldest?.createdAt) return false;
+    try {
+      const { data } = await messageService.getMessages(conversationId, oldest.createdAt, 50);
+      const olderMsgs = data.messages || [];
+      if (olderMsgs.length === 0) {
+        set({ hasMoreMessages: false });
+        return false;
+      }
+      set((s) => ({
+        messages: [...olderMsgs, ...s.messages],
+        hasMoreMessages: olderMsgs.length >= 50,
+      }));
+      return true;
+    } catch {
+      return false;
+    }
+  },
   markAsRead: async (conversationId) => {
     try {
       await messageService.markAsRead(conversationId);

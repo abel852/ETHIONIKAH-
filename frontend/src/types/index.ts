@@ -124,6 +124,9 @@ export interface Message {
   isBlocked?: boolean;
   deletedForSender?: boolean;
   deletedForReceiver?: boolean;
+  reaction?: string | null;
+  reactionBy?: string | null;
+  reactionAt?: string | null;
 }
 
 export interface Conversation {

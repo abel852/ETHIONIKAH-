@@ -13,6 +13,7 @@ import { conversationRequestService } from "@/services/conversationRequest";
 import { exclusivePartnershipService } from "@/services/exclusivePartnership";
 import { waliService } from "@/services/wali";
 import { authService } from "@/services/auth";
+import { messageService } from "@/services/messages";
 import type { Message } from "@/types";
 
 function MessagesContent() {
@@ -107,6 +108,7 @@ function MessagesContent() {
   const [reactionMsgId, setReactionMsgId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number; openUpward: boolean } | null>(null);
   const [failedMsgIds, setFailedMsgIds] = useState<Set<string>>(new Set());
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [pinnedMsgId, setPinnedMsgId] = useState<string | null>(null);
   const messagesScrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -673,7 +675,7 @@ function MessagesContent() {
     messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
 
-  // Handle scroll to detect if we should show scroll-to-bottom button
+  // Handle scroll to detect if we should show scroll-to-bottom button and load older messages
   const handleMessagesScroll = useCallback(() => {
     const container = messagesScrollRef.current;
     if (!container) return;
@@ -681,7 +683,6 @@ function MessagesContent() {
     const isAway = distFromBottom > 200;
     setShowScrollToBottom(isAway);
     if (isAway) {
-      // Count unread messages below current scroll position
       let count = 0;
       for (const msg of messages) {
         if (msg.senderId !== myId && !msg.readAt) count++;
@@ -690,7 +691,22 @@ function MessagesContent() {
     } else {
       setUnreadScrollCount(0);
     }
-  }, [messages, myId]);
+    // Infinite scroll: load older messages when scrolled to top
+    if (container.scrollTop < 50 && !loadingOlder && store.hasMoreMessages && activeConversation) {
+      setLoadingOlder(true);
+      const prevHeight = container.scrollHeight;
+      store.loadOlderMessages(activeConversation).then(() => {
+        setLoadingOlder(false);
+        // Maintain scroll position after prepending older messages
+        requestAnimationFrame(() => {
+          if (messagesScrollRef.current) {
+            const newHeight = messagesScrollRef.current.scrollHeight;
+            messagesScrollRef.current.scrollTop = newHeight - prevHeight;
+          }
+        });
+      });
+    }
+  }, [messages, myId, loadingOlder, store, activeConversation]);
 
   // Auto-grow textarea
   const autoGrowTextarea = useCallback(() => {
@@ -1222,6 +1238,12 @@ function MessagesContent() {
 
                 {/* Messages */}
                 <div ref={messagesScrollRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 p-3 lg:p-4 space-y-1.5 lg:space-y-2 z-10 scroll-smooth">
+                  {loadingOlder && (
+                    <div className="flex items-center justify-center py-2 text-xs text-[#8B8B8B]">
+                      <div className="w-4 h-4 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin mr-2" />
+                      Loading older messages...
+                    </div>
+                  )}
                   {isLoading && messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-sm text-[#8B8B8B]">Loading messages...</div>
                   ) : messages.length === 0 ? (
@@ -1336,7 +1358,18 @@ function MessagesContent() {
                               {REACTIONS.map((emoji) => (
                                 <button
                                   key={emoji}
-                                  onClick={() => { setReactionMsgId(null); setMenuMsgId(null); }}
+                                  onClick={async () => {
+                                    setReactionMsgId(null);
+                                    setMenuMsgId(null);
+                                    try {
+                                      await messageService.reactToMessage(msg.id, emoji);
+                                      useMessageStore.getState().setMessageReaction(msg.id, emoji, myId || "");
+                                    } catch {
+                                      setToastError(true);
+                                      setToast("Failed to react");
+                                      setTimeout(() => { setToast(null); setToastError(false); }, 3000);
+                                    }
+                                  }}
                                   className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#2D2D2D] hover:scale-125 transition-all text-base"
                                 >
                                   {emoji}
@@ -1488,6 +1521,14 @@ function MessagesContent() {
                                   )
                                 ) : null;
                               })()}
+                              {/* Reaction display */}
+                              {msg.reaction && (
+                                <div className={`px-3 pb-1 ${isOwn ? "text-right" : "text-left"}`}>
+                                  <span className="inline-block text-base bg-[#1A1A24] rounded-full px-1.5 py-0.5 border border-[#2D2D2D]">
+                                    {msg.reaction}
+                                  </span>
+                                </div>
+                              )}
                               {/* Failed message actions */}
                               {isFailed ? (
                                 <div className="flex items-center gap-2 px-4 pb-2">
