@@ -152,6 +152,26 @@ async function validateSender(senderId, receiverId) {
     }
   } catch (_e) {}
 
+  // Exclusive Partnership check: if sender is in an active partnership,
+  // they can only message their partner — no one else.
+  const activePartnership = await prisma.exclusivePartnership.findFirst({
+    where: {
+      OR: [
+        { userAId: senderId, status: "active" },
+        { userBId: senderId, status: "active" },
+      ],
+    },
+    select: { userAId: true, userBId: true },
+  });
+  if (activePartnership) {
+    const partnerId = activePartnership.userAId === senderId
+      ? activePartnership.userBId
+      : activePartnership.userAId;
+    if (receiverId !== partnerId) {
+      return { ok: false, status: 403, error: "You are in an active exclusive partnership. You can only message your partner." };
+    }
+  }
+
   return { ok: true };
 }
 
