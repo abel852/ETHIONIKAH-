@@ -98,6 +98,7 @@ model User {
   partnershipRequestsSent      ExclusivePartnershipRequest[] @relation("PartnershipRequester")
   partnershipRequestsReceived  ExclusivePartnershipRequest[] @relation("PartnershipReceiver")
   waliInvitationsCreated       WaliInvitation[]              @relation("WaliCreatedBy")
+  wali                         Wali?
   pushSubscriptions            PushSubscription[]
 
   @@index([isActive, isVerified, deletedAt])
@@ -750,6 +751,20 @@ model ExclusivePartnershipRequest {
   @@index([requesterId, createdAt])
   @@index([receiverId, status])
   @@map("exclusive_partnership_requests")
+}
+
+model Wali {
+  id           String   @id @default(uuid()) @db.Uuid
+  femaleUserId String   @unique @map("female_user_id") @db.Uuid
+  name         String
+  relationship String
+  email        String
+  phone        String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  femaleUser   User     @relation(fields: [femaleUserId], references: [id], onDelete: Cascade)
+
+  @@map("walis")
 }
 
 model WaliInvitation {
