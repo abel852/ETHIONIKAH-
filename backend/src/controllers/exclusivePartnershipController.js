@@ -41,15 +41,33 @@ const requestExclusivePartnership = async (req, res) => {
       return res.status(403).json({ error: "One of you already has an active exclusive partnership." });
     }
 
-    // Check for existing pending request between these two users
+    // Expire all previous pending requests sent BY the requester
+    await prisma.exclusivePartnershipRequest.updateMany({
+      where: { requesterId, status: "pending" },
+      data: { status: "expired", respondedAt: new Date() },
+    });
+    // Expire all previous pending requests received BY the requester
+    await prisma.exclusivePartnershipRequest.updateMany({
+      where: { receiverId: requesterId, status: "pending" },
+      data: { status: "expired", respondedAt: new Date() },
+    });
+    // Expire all pending requests sent BY the receiver (they are about to get a new one)
+    await prisma.exclusivePartnershipRequest.updateMany({
+      where: { requesterId: receiverId, status: "pending" },
+      data: { status: "expired", respondedAt: new Date() },
+    });
+    // Expire all pending requests received BY the receiver
+    await prisma.exclusivePartnershipRequest.updateMany({
+      where: { receiverId, status: "pending" },
+      data: { status: "expired", respondedAt: new Date() },
+    });
+
+    // Check for existing request between these two users
     const existing = await prisma.exclusivePartnershipRequest.findUnique({
       where: { requesterId_receiverId: { requesterId, receiverId } },
     });
     if (existing && existing.status === "accepted") {
       return res.json({ message: "Partnership already established", request: existing });
-    }
-    if (existing && existing.status === "pending") {
-      return res.status(409).json({ error: "A partnership request is already pending.", request: existing });
     }
 
     const request = await prisma.exclusivePartnershipRequest.upsert({
@@ -117,7 +135,22 @@ const respondToPartnershipRequest = async (req, res) => {
       const userAId = request.requesterId;
       const userBId = request.receiverId;
 
-      // Check if a partnership already exists (edge case)
+      // Double-check neither user has an active partnership (safety check)
+      const activePartnership = await prisma.exclusivePartnership.findFirst({
+        where: {
+          OR: [
+            { userAId, status: "active" },
+            { userBId: userAId, status: "active" },
+            { userAId: userBId, status: "active" },
+            { userBId, status: "active" },
+          ],
+        },
+      });
+      if (activePartnership) {
+        return res.status(403).json({ error: "One of you already has an active exclusive partnership." });
+      }
+
+      // Check if a partnership already exists between these two (edge case)
       const existing = await prisma.exclusivePartnership.findUnique({
         where: { userAId_userBId: { userAId, userBId } },
       });
