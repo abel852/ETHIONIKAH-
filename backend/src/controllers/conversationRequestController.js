@@ -71,6 +71,45 @@ const createConversationRequest = async (req, res) => {
       return res.status(403).json({ error: "You cannot start a conversation with this user." });
     }
 
+    // --- Exclusive Partnership enforcement ---
+    // If the requester is in an active exclusive partnership, they must have
+    // an approved ConversationPermission from their partner for this target user.
+    const activePartnership = await prisma.exclusivePartnership.findFirst({
+      where: {
+        OR: [
+          { userAId: requesterId, status: "active" },
+          { userBId: requesterId, status: "active" },
+        ],
+      },
+      select: { id: true, userAId: true, userBId: true },
+    });
+    if (activePartnership) {
+      const partnerId = activePartnership.userAId === requesterId
+        ? activePartnership.userBId
+        : activePartnership.userAId;
+
+      // Allow if the target user IS the partner (they can always talk to each other)
+      if (receiverId !== partnerId) {
+        const permission = await prisma.conversationPermission.findUnique({
+          where: {
+            requesterId_partnerId_targetUserId: {
+              requesterId,
+              partnerId,
+              targetUserId: receiverId,
+            },
+          },
+          select: { status: true },
+        });
+        if (!permission || permission.status !== "approved") {
+          return res.status(403).json({
+            error: "You are in an exclusive partnership. You must request and receive approval from your partner before starting a new conversation with this user.",
+            code: "PARTNERSHIP_PERMISSION_REQUIRED",
+            partnerId,
+          });
+        }
+      }
+    }
+
     // Stage 2: Membership / Credit validation
     const validation = await checkMembershipOrCredits(requesterId);
     if (!validation.ok) {
