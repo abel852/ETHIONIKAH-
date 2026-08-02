@@ -210,17 +210,6 @@ exports.deleteUser = async (req, res) => {
       });
       const otherUserId = activePartnership.userAId === userId ? activePartnership.userBId : activePartnership.userAId;
 
-      // Expire all pending ConversationPermission requests between these two partners
-      await prisma.conversationPermission.updateMany({
-        where: {
-          OR: [
-            { requesterId: userId, partnerId: otherUserId, status: "pending" },
-            { requesterId: otherUserId, partnerId: userId, status: "pending" },
-          ],
-        },
-        data: { status: "expired", respondedAt: new Date() },
-      });
-
       createNotification({ userId: otherUserId, type: "exclusive_partnership_ended", title: "Exclusive Marriage Process Ended", body: "The exclusive marriage process has been ended because your partner is no longer available." }).catch(() => {});
 
       // Auto-revoke any active or pending Wali invitation
@@ -345,17 +334,6 @@ exports.restrictUserBan = async (req, res) => {
           data: { status: "ended", endedAt: new Date() },
         });
         const otherUserId = activePartnership.userAId === req.params.id ? activePartnership.userBId : activePartnership.userAId;
-
-        // Expire all pending ConversationPermission requests between these two partners
-        await prisma.conversationPermission.updateMany({
-          where: {
-            OR: [
-              { requesterId: req.params.id, partnerId: otherUserId, status: "pending" },
-              { requesterId: otherUserId, partnerId: req.params.id, status: "pending" },
-            ],
-          },
-          data: { status: "expired", respondedAt: new Date() },
-        });
 
         createNotification({ userId: otherUserId, type: "exclusive_partnership_ended", title: "Exclusive Marriage Process Ended", body: "The exclusive marriage process has been ended because your partner is no longer available." }).catch(() => {});
 

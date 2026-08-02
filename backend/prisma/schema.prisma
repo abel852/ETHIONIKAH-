@@ -87,9 +87,6 @@ model User {
   blockedUsers               BlockedUser[]       @relation("BlockedUsers")
   profileViews               ProfileView[]       @relation("ProfileViewer")
   profileViewedBy            ProfileView[]       @relation("ProfileViewed")
-  permissionRequestsMade     ConversationPermission[] @relation("PermissionRequester")
-  permissionRequestsReceived ConversationPermission[] @relation("PermissionPartner")
-  permissionTargets          ConversationPermission[] @relation("PermissionTarget")
   bookPurchases              BookPurchase[]
   conversationRequestsSent     ConversationRequest[]   @relation("ConversationRequester")
   conversationRequestsReceived ConversationRequest[]   @relation("ConversationReceiver")
@@ -645,24 +642,6 @@ model BlockedUser {
 
   @@unique([blockerId, blockedId])
   @@map("blocked_users")
-}
-
-model ConversationPermission {
-  id              String   @id @default(uuid()) @db.Uuid
-  requesterId     String   @map("requester_id") @db.Uuid
-  partnerId       String   @map("partner_id") @db.Uuid
-  targetUserId    String   @map("target_user_id") @db.Uuid
-  status          String   @default("pending") // pending | approved | denied
-  message         String?
-  createdAt       DateTime @default(now()) @map("created_at")
-  respondedAt     DateTime? @map("responded_at")
-  requester       User     @relation("PermissionRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  partner         User     @relation("PermissionPartner", fields: [partnerId], references: [id], onDelete: Cascade)
-  targetUser      User     @relation("PermissionTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
-
-  @@unique([requesterId, partnerId, targetUserId])
-  @@index([partnerId, status])
-  @@map("conversation_permissions")
 }
 
 model Book {

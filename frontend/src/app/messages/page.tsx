@@ -9,7 +9,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useSocket } from "@/context/SocketContext";
 import { useI18n } from "@/context/I18nContext";
 import { mediaUrl, formatLastSeen } from "@/lib/utils";
-import { conversationPermissionService } from "@/services/conversationPermission";
 import { conversationRequestService } from "@/services/conversationRequest";
 import { exclusivePartnershipService } from "@/services/exclusivePartnership";
 import { waliService } from "@/services/wali";
@@ -61,12 +60,6 @@ function MessagesContent() {
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportReason, setReportReason] = useState("inappropriate");
   const [reportDescription, setReportDescription] = useState("");
-  const [permissionDialog, setPermissionDialog] = useState<{ targetUserId: string; targetName: string } | null>(null);
-  const [permissionPartnerId, setPermissionPartnerId] = useState<string | null>(null);
-  const [permissionSubmitting, setPermissionSubmitting] = useState(false);
-  const [chatPermRequests, setChatPermRequests] = useState<any[]>([]);
-  const [chatPermLoading, setChatPermLoading] = useState<string | null>(null);
-  const [sentPermStatus, setSentPermStatus] = useState<any[]>([]);
   const [incomingConvRequests, setIncomingConvRequests] = useState<any[]>([]);
   const [partnership, setPartnership] = useState<any>(null);
   const [myPartnership, setMyPartnership] = useState<any>(null);
@@ -165,16 +158,6 @@ function MessagesContent() {
         if (savedDraft) setTimeout(() => autoGrowTextarea(), 50);
       } catch { setNewMessage(""); }
       fetchMessages(activeConversation);
-      // Fetch pending permission requests where this chat partner is the partner (incoming)
-      conversationPermissionService.getReceivedPermissions("pending").then(({ data }) => {
-        const relevant = (data.permissions || []).filter((p: any) => p.requesterId === activeConversation);
-        setChatPermRequests(relevant);
-      }).catch(() => setChatPermRequests([]));
-      // Fetch sent permission requests to this partner (outgoing status)
-      conversationPermissionService.getSentPermissions().then(({ data }) => {
-        const relevant = (data.permissions || []).filter((p: any) => p.partnerId === activeConversation);
-        setSentPermStatus(relevant);
-      }).catch(() => setSentPermStatus([]));
       // Fetch incoming conversation requests from this user
       conversationRequestService.getReceived("pending").then(({ data }) => {
         const relevant = (data.requests || []).filter((r: any) => r.requesterId === activeConversation);
@@ -194,8 +177,6 @@ function MessagesContent() {
         }
       }).catch(() => { setPartnershipStatus(null); setPartnership(null); setWaliStatus(null); });
     } else {
-      setChatPermRequests([]);
-      setSentPermStatus([]);
       setIncomingConvRequests([]);
       setPartnership(null);
       setPartnershipStatus(null);
@@ -491,17 +472,6 @@ function MessagesContent() {
       markMessageFailed(tempId);
       playMessageSound("error");
       if (errMsg) {
-        if (errMsg.includes("Exclusive Marriage Process") || errMsg.includes("exclusive partner")) {
-          if (myPartnership) {
-            const partnerId = myPartnership.userAId === myId ? myPartnership.userBId : myPartnership.userAId;
-            setPermissionPartnerId(partnerId);
-            setPermissionDialog({
-              targetUserId: activeConversation,
-              targetName: activeConv?.name || urlName || t('messages.userFallback'),
-            });
-            return;
-          }
-        }
         setToastError(true);
         setToast(errMsg);
         setTimeout(() => { setToast(null); setToastError(false); }, 5000);
@@ -1020,7 +990,7 @@ function MessagesContent() {
                   <div className="shrink-0 z-20 px-2 lg:px-3 pt-2">
                     <div className="flex items-stretch h-[48px] lg:h-[50px] rounded-[18px] bg-[#1A1A24] border border-[#2D2D2D]/60 overflow-hidden">
                       {/* Section 1: Shield — expandable for approval details */}
-                      {(chatPermRequests.length > 0 || sentPermStatus.length > 0 || incomingConvRequests.length > 0 || blockedUsers.includes(activeConversation)) ? (
+                      {(incomingConvRequests.length > 0 || blockedUsers.includes(activeConversation)) ? (
                         <button
                           onClick={() => { setShowShieldDetails(!showShieldDetails); setShowWaliDetails(false); }}
                           className="flex items-center gap-1.5 px-3 lg:px-4 hover:bg-[#222222] transition-colors shrink-0"
@@ -1170,52 +1140,6 @@ function MessagesContent() {
                               }}
                               className="px-2 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-medium hover:bg-red-600 shrink-0"
                             >Decline</button>
-                          </div>
-                        ))}
-                        {/* Incoming permission requests */}
-                        {chatPermRequests.map((perm) => (
-                          <div key={perm.id} className="flex items-center gap-2">
-                            <Shield className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                            <span className="text-xs text-[#C8C8C8] truncate flex-1">{perm.requester?.firstName} → {perm.targetUser?.firstName}</span>
-                            <button
-                              onClick={async () => {
-                                setChatPermLoading(perm.id);
-                                try {
-                                  await conversationPermissionService.respondToPermission(perm.id, "approved");
-                                  setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
-                                  setToastError(false); setToast("Permission granted."); setTimeout(() => setToast(null), 4000);
-                                } catch { setToastError(true); setToast("Failed."); setTimeout(() => { setToast(null); setToastError(false); }, 4000); }
-                                finally { setChatPermLoading(null); }
-                              }}
-                              disabled={chatPermLoading === perm.id}
-                              className="px-2 py-0.5 rounded-md bg-green-500 text-white text-[10px] font-medium hover:bg-green-600 disabled:opacity-50 shrink-0"
-                            >Accept</button>
-                            <button
-                              onClick={async () => {
-                                setChatPermLoading(perm.id);
-                                try {
-                                  await conversationPermissionService.respondToPermission(perm.id, "denied");
-                                  setChatPermRequests(prev => prev.filter(p => p.id !== perm.id));
-                                  setToastError(false); setToast("Permission denied."); setTimeout(() => setToast(null), 4000);
-                                } catch { setToastError(true); setToast("Failed."); setTimeout(() => { setToast(null); setToastError(false); }, 4000); }
-                                finally { setChatPermLoading(null); }
-                              }}
-                              disabled={chatPermLoading === perm.id}
-                              className="px-2 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-medium hover:bg-red-600 disabled:opacity-50 shrink-0"
-                            >Reject</button>
-                          </div>
-                        ))}
-                        {/* Sent permission status */}
-                        {sentPermStatus.map((perm) => (
-                          <div key={perm.id} className="flex items-center gap-2">
-                            {perm.status === "approved" ? <Check className="w-3.5 h-3.5 text-green-400 shrink-0" /> :
-                             perm.status === "denied" ? <X className="w-3.5 h-3.5 text-red-400 shrink-0" /> :
-                             <Shield className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />}
-                            <span className="text-xs text-[#C8C8C8] truncate flex-1">
-                              {perm.status === "pending" ? `Pending: ${perm.targetUser?.firstName}` :
-                               perm.status === "approved" ? `Approved: ${perm.targetUser?.firstName}` :
-                               `Denied: ${perm.targetUser?.firstName}`}
-                            </span>
                           </div>
                         ))}
                         {/* Match reason */}
@@ -1896,59 +1820,6 @@ function MessagesContent() {
                 className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
                 {reportSubmitting ? t('messages.submitting') : t('messages.submitReport')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Permission Request Dialog */}
-      {permissionDialog && permissionPartnerId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPermissionDialog(null)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative w-full max-w-sm bg-[#222222] rounded-2xl shadow-2xl border border-[#2D2D2D] p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="text-center mb-4">
-              <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center mx-auto mb-3">
-                <Shield className="w-6 h-6 text-[#D4AF37]" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">Permission Required</h3>
-              <p className="text-sm text-[#8B8B8B]">
-                You are in an Exclusive Marriage Process. To start talking to <span className="font-semibold text-[#D4AF37]">{permissionDialog.targetName}</span>, you need permission from your exclusive partner{myPartnership ? ` (${myPartnership.userAId === myId ? myPartnership.userB?.firstName : myPartnership.userA?.firstName})` : ""}.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <button
-                onClick={async () => {
-                  setPermissionSubmitting(true);
-                  try {
-                    await conversationPermissionService.requestPermission(
-                      permissionPartnerId,
-                      permissionDialog.targetUserId,
-                      "I'd like to start a conversation with someone new."
-                    );
-                    setToastError(false);
-                    setToast("Permission request sent! You'll be notified when your partner responds.");
-                    setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                    setPermissionDialog(null);
-                  } catch (err: any) {
-                    const msg = err?.response?.data?.error || "Failed to send permission request";
-                    setToastError(true);
-                    setToast(msg);
-                    setTimeout(() => { setToast(null); setToastError(false); }, 5000);
-                  } finally {
-                    setPermissionSubmitting(false);
-                  }
-                }}
-                disabled={permissionSubmitting}
-                className="w-full px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-[#D4AF37] to-[#F2D675] text-black rounded-xl hover:from-[#F2D675] hover:to-[#D4AF37] disabled:opacity-50 transition-all"
-              >
-                {permissionSubmitting ? "Sending..." : "Request Permission from Partner"}
-              </button>
-              <button
-                onClick={() => setPermissionDialog(null)}
-                className="w-full px-4 py-2.5 text-sm font-medium text-[#C8C8C8] hover:bg-[#2D2D2D] rounded-xl transition-colors"
-              >
-                Cancel
               </button>
             </div>
           </div>

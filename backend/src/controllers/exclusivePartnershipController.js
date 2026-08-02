@@ -414,17 +414,6 @@ const endPartnership = async (req, res) => {
 
     const otherUserId = partnership.userAId === userId ? partnership.userBId : partnership.userAId;
 
-    // Expire all pending ConversationPermission requests between these two partners
-    await prisma.conversationPermission.updateMany({
-      where: {
-        OR: [
-          { requesterId: userId, partnerId: otherUserId, status: "pending" },
-          { requesterId: otherUserId, partnerId: userId, status: "pending" },
-        ],
-      },
-      data: { status: "expired", respondedAt: new Date() },
-    });
-
     // Notify the other partner
     const user = await prisma.user.findUnique({
       where: { id: userId },
