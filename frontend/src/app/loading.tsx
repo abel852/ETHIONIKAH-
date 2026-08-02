@@ -22,9 +22,9 @@ export default function Loading() {
           {/* Logo SVG */}
           <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-2xl shadow-[#D4AF37]/20 ring-1 ring-[#D4AF37]/20">
             <img
-              src="/app.png"
+              src="/application.png"
               alt="Ethio Nikah"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
         </div>
