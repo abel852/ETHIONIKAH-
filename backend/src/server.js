@@ -303,6 +303,14 @@ try {
   console.log("[CONV-EXPIRY] Conversation request expiry not initialized:", e.message);
 }
 
+// Initialize partnership request expiry cron job
+try {
+  const { initPartnershipRequestExpiryCron } = require("./utils/partnershipRequestExpiry");
+  initPartnershipRequestExpiryCron();
+} catch (e) {
+  console.log("[PARTNERSHIP-EXPIRY] Partnership request expiry not initialized:", e.message);
+}
+
 // ============================================================
 // Graceful shutdown — handle PM2 restart / SIGTERM / SIGINT
 // Closes all connections cleanly, prevents dropped requests
