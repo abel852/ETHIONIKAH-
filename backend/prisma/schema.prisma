@@ -54,6 +54,8 @@ model User {
   language                   String              @default("en") @db.VarChar(255)
   emailNotifications         Boolean             @default(true) @map("email_notifications")
   deletedAt                  DateTime?           @map("deleted_at")
+  isDeleted                  Boolean             @default(false) @map("is_deleted")
+  deletedBy                  String?             @map("deleted_by") @db.Uuid
   dataDeletionRequestedAt    DateTime?           @map("data_deletion_requested_at")
   permissions                AdminPermission[]
   affiliateReferred          AffiliateReferral[] @relation("Referred")

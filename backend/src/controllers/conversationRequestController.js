@@ -51,12 +51,12 @@ const createConversationRequest = async (req, res) => {
       return res.status(400).json({ error: "You cannot start a conversation with yourself" });
     }
 
-    // Verify receiver exists and is verified
+    // Verify receiver exists, is verified, and not deleted
     const receiver = await prisma.user.findUnique({
       where: { id: receiverId },
-      select: { id: true, isVerified: true, isActive: true },
+      select: { id: true, isVerified: true, isActive: true, isDeleted: true },
     });
-    if (!receiver || !receiver.isActive) {
+    if (!receiver || !receiver.isActive || receiver.isDeleted) {
       return res.status(404).json({ error: "User not found" });
     }
     if (!receiver.isVerified) {

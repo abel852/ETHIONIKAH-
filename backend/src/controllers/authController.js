@@ -229,7 +229,7 @@ const login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    if (user.deletedAt) {
+    if (user.deletedAt || user.isDeleted) {
       const canRestore = new Date() - new Date(user.deletedAt) < 30 * 24 * 60 * 60 * 1000;
       return res.status(403).json({
         error: canRestore
@@ -332,6 +332,18 @@ const loginWithPhone = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    if (user.deletedAt || user.isDeleted) {
+      const canRestore = new Date() - new Date(user.deletedAt) < 30 * 24 * 60 * 60 * 1000;
+      return res.status(403).json({
+        error: canRestore
+          ? "Your account has been deleted. Contact support within 30 days if you wish to restore it."
+          : "Your account has been permanently deleted and cannot be restored.",
+        code: "ACCOUNT_DELETED",
+        deletedAt: user.deletedAt,
+        canRestore,
+      });
+    }
+
     // Check progressive lockout before password check
     const lockoutInfo = await checkLockout(user.email);
     if (lockoutInfo) {
@@ -417,14 +429,14 @@ const refreshToken = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, role: true, adminRole: true, isActive: true, tokenVersion: true, deletedAt: true },
+      select: { id: true, role: true, adminRole: true, isActive: true, tokenVersion: true, deletedAt: true, isDeleted: true },
     });
 
     if (!user) {
       return res.status(401).json({ error: "Invalid token" });
     }
 
-    if (user.deletedAt) {
+    if (user.deletedAt || user.isDeleted) {
       return res.status(403).json({ error: "Account has been deleted", code: "ACCOUNT_DELETED" });
     }
 
@@ -795,7 +807,7 @@ const lookupByUsername = async (req, res) => {
         },
       },
     });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user || user.isDeleted) return res.status(404).json({ error: "User not found" });
     res.json({ user });
   } catch (error) {
     console.error("Lookup by username error:", error);
@@ -808,7 +820,7 @@ const deleteMe = async (req, res) => {
     const userId = req.user.userId;
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: "User not found" });
-    if (user.deletedAt) {
+    if (user.deletedAt || user.isDeleted) {
       return res.status(400).json({ error: "Account is already deleted" });
     }
 
@@ -816,6 +828,7 @@ const deleteMe = async (req, res) => {
       where: { id: userId },
       data: {
         deletedAt: new Date(),
+        isDeleted: true,
         dataDeletionRequestedAt: new Date(),
         isActive: false,
         tokenVersion: { increment: 1 },

@@ -1000,9 +1000,9 @@ const getActiveChatPartners = async (req, res) => {
       return res.json({ partners: [], count: 0 });
     }
 
-    // Step 4: Get partner details — exclude admin users
+    // Step 4: Get partner details — exclude admin users and soft-deleted users
     const partners = await prisma.user.findMany({
-      where: { id: { in: partnerIds }, role: { not: "admin" } },
+      where: { id: { in: partnerIds }, role: { not: "admin" }, isDeleted: false },
       select: {
         id: true,
         firstName: true,

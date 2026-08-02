@@ -171,10 +171,10 @@ const respondToPartnershipRequest = async (req, res) => {
 
         // --- Re-check that both users are still active (prevents race condition) ---
         const [requester, receiver] = await Promise.all([
-          tx.user.findUnique({ where: { id: userAId }, select: { id: true, isActive: true } }),
-          tx.user.findUnique({ where: { id: userBId }, select: { id: true, isActive: true } }),
+          tx.user.findUnique({ where: { id: userAId }, select: { id: true, isActive: true, isDeleted: true } }),
+          tx.user.findUnique({ where: { id: userBId }, select: { id: true, isActive: true, isDeleted: true } }),
         ]);
-        if (!requester || !receiver || !requester.isActive || !receiver.isActive) {
+        if (!requester || !receiver || !requester.isActive || !receiver.isActive || requester.isDeleted || receiver.isDeleted) {
           // Expire the pending request since one user is no longer active
           await tx.exclusivePartnershipRequest.update({
             where: { id: requestId },

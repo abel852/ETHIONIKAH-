@@ -147,10 +147,76 @@ exports.activateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    await prisma.user.delete({ where: { id: req.params.id } });
-    await logAudit({ adminId: req.user.userId, action: "delete_user", resource: "user", resourceId: req.params.id });
-    res.json({ message: "User deleted" });
-  } catch (error) { res.status(500).json({ error: "Failed to delete user" }); }
+    const userId = req.params.id;
+    const adminId = req.user.userId;
+
+    // Soft-delete the user
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        deletedBy: adminId,
+        isActive: false,
+      },
+    });
+    try { require("../middleware/auth").invalidateAuthCache(userId); } catch {}
+
+    // Expire all pending partnership requests SENT BY the deleted user
+    const sentRequests = await prisma.exclusivePartnershipRequest.findMany({
+      where: { requesterId: userId, status: "pending" },
+      select: { id: true, receiverId: true },
+    });
+    if (sentRequests.length > 0) {
+      await prisma.exclusivePartnershipRequest.updateMany({
+        where: { id: { in: sentRequests.map((r) => r.id) } },
+        data: { status: "expired", respondedAt: new Date() },
+      });
+      for (const r of sentRequests) {
+        createNotification({ userId: r.receiverId, type: "exclusive_partnership_expired", title: "Partnership Request Expired", body: "A partnership request sent to you has expired." }).catch(() => {});
+      }
+    }
+
+    // Expire all pending partnership requests RECEIVED BY the deleted user
+    const receivedRequests = await prisma.exclusivePartnershipRequest.findMany({
+      where: { receiverId: userId, status: "pending" },
+      select: { id: true, requesterId: true },
+    });
+    if (receivedRequests.length > 0) {
+      await prisma.exclusivePartnershipRequest.updateMany({
+        where: { id: { in: receivedRequests.map((r) => r.id) } },
+        data: { status: "expired", respondedAt: new Date() },
+      });
+      for (const r of receivedRequests) {
+        createNotification({ userId: r.requesterId, type: "exclusive_partnership_expired", title: "Partnership Request Expired", body: "Your partnership request has expired because the recipient is no longer available." }).catch(() => {});
+      }
+    }
+
+    // End any active exclusive partnership
+    const activePartnership = await prisma.exclusivePartnership.findFirst({
+      where: {
+        OR: [
+          { userAId: userId, status: "active" },
+          { userBId: userId, status: "active" },
+        ],
+      },
+      select: { id: true, userAId: true, userBId: true },
+    });
+    if (activePartnership) {
+      await prisma.exclusivePartnership.update({
+        where: { id: activePartnership.id },
+        data: { status: "ended", endedAt: new Date() },
+      });
+      const otherUserId = activePartnership.userAId === userId ? activePartnership.userBId : activePartnership.userAId;
+      createNotification({ userId: otherUserId, type: "exclusive_partnership_ended", title: "Exclusive Marriage Process Ended", body: "The exclusive marriage process has been ended because your partner is no longer available." }).catch(() => {});
+    }
+
+    await logAudit({ adminId, action: "delete_user", resource: "user", resourceId: userId, details: { method: "soft_delete" } });
+    res.json({ message: "User soft-deleted — all historical records preserved" });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
 };
 
 exports.verifyUser = async (req, res) => {

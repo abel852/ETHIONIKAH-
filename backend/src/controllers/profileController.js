@@ -158,13 +158,14 @@ const getProfileById = async (req, res) => {
             dateOfBirth: true,
             isVerified: true,
             createdAt: true,
+            isDeleted: true,
           },
         },
         spousePreference: true,
       },
     });
 
-    if (!profile) {
+    if (!profile || profile.user.isDeleted) {
       return res.status(404).json({ error: "Profile not found" });
     }
 
@@ -197,6 +198,7 @@ const getProfileByUserId = async (req, res) => {
             dateOfBirth: true,
             isVerified: true,
             createdAt: true,
+            isDeleted: true,
             subscriptions: { where: { status: "active", endDate: { gte: new Date() } }, select: { planType: true, status: true }, take: 1 },
           },
         },
@@ -204,7 +206,7 @@ const getProfileByUserId = async (req, res) => {
       },
     });
 
-    if (!profile) {
+    if (!profile || profile.user.isDeleted) {
       return res.status(404).json({ error: "Profile not found" });
     }
 

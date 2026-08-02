@@ -53,7 +53,7 @@ const authenticate = async (req, res, next) => {
     // Try Redis cache first — avoids DB query on most requests
     const cached = await getCachedAuthData(userId);
     if (cached) {
-      if (cached.deletedAt) {
+      if (cached.isDeleted || cached.deletedAt) {
         const canRestore = new Date() - new Date(cached.deletedAt) < 30 * 24 * 60 * 60 * 1000;
         return res.status(403).json({
           error: canRestore
@@ -76,7 +76,7 @@ const authenticate = async (req, res, next) => {
     // Cache miss — query DB and cache result
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { tokenVersion: true, isActive: true, deletedAt: true, role: true, adminRole: true },
+      select: { tokenVersion: true, isActive: true, deletedAt: true, isDeleted: true, role: true, adminRole: true },
     });
 
     if (!dbUser) return res.status(401).json({ error: "Account not found" });
@@ -86,11 +86,12 @@ const authenticate = async (req, res, next) => {
       tokenVersion: dbUser.tokenVersion,
       isActive: dbUser.isActive,
       deletedAt: dbUser.deletedAt,
+      isDeleted: dbUser.isDeleted,
       role: dbUser.role,
       adminRole: dbUser.adminRole,
     });
 
-    if (dbUser.deletedAt) {
+    if (dbUser.isDeleted || dbUser.deletedAt) {
       const canRestore = new Date() - new Date(dbUser.deletedAt) < 30 * 24 * 60 * 60 * 1000;
       return res.status(403).json({
         error: canRestore

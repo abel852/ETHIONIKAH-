@@ -709,6 +709,7 @@ const getRecommendedMatches = async (req, res) => {
       where: {
         gender: oppositeGender,
         isActive: true,
+        isDeleted: false,
         profile: { isNot: null },
         id: { not: userId },
       },
@@ -798,6 +799,7 @@ const searchProfiles = async (req, res) => {
     const where = {
       gender: oppositeGender,
       isActive: true,
+      isDeleted: false,
       profile: { isNot: null },
       id: { not: userId },
     };
@@ -1219,6 +1221,7 @@ const getSuggestedMatches = async (req, res) => {
     const where = {
       gender: oppositeGender,
       isActive: true,
+      isDeleted: false,
       id: { notIn: [userId, ...excludeIds] },
       profile: { isNot: null },
     };
