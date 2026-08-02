@@ -409,6 +409,23 @@ const endPartnership = async (req, res) => {
       data: { status: "ended", endedAt: new Date() },
     });
 
+    // Safety: end any other active partnerships between the same two users
+    const otherActive = await prisma.exclusivePartnership.findMany({
+      where: {
+        OR: [
+          { userAId: partnership.userAId, userBId: partnership.userBId, status: "active" },
+          { userAId: partnership.userBId, userBId: partnership.userAId, status: "active" },
+        ],
+      },
+      select: { id: true },
+    });
+    if (otherActive.length > 0) {
+      await prisma.exclusivePartnership.updateMany({
+        where: { id: { in: otherActive.map(p => p.id) }, status: "active" },
+        data: { status: "ended", endedAt: new Date() },
+      });
+    }
+
     // Auto-revoke any active or pending Wali invitation
     await autoRevokeWaliInvitation(partnershipId, "partnership_ended", userId);
 
