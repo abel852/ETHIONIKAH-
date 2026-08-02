@@ -169,6 +169,20 @@ const respondToPartnershipRequest = async (req, res) => {
         const userAId = request.requesterId;
         const userBId = request.receiverId;
 
+        // --- Re-check that both users are still active (prevents race condition) ---
+        const [requester, receiver] = await Promise.all([
+          tx.user.findUnique({ where: { id: userAId }, select: { id: true, isActive: true } }),
+          tx.user.findUnique({ where: { id: userBId }, select: { id: true, isActive: true } }),
+        ]);
+        if (!requester || !receiver || !requester.isActive || !receiver.isActive) {
+          // Expire the pending request since one user is no longer active
+          await tx.exclusivePartnershipRequest.update({
+            where: { id: requestId },
+            data: { status: "expired", respondedAt: new Date() },
+          });
+          throw { code: 403, message: "This partnership request can no longer be accepted because one of the users is no longer active." };
+        }
+
         // Revalidate: neither user has an active partnership
         const activePartnership = await tx.exclusivePartnership.findFirst({
           where: {
