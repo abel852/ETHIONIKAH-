@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { logAudit } = require("../utils/auditLogger");
+const { autoRevokeWaliInvitation } = require("../utils/waliRevoke");
 const { createNotification } = require("../utils/notification");
 const { emitNewMessage } = require("../utils/messageSocket");
 const { invalidateWeightsCache } = require("./matchController");
@@ -221,6 +222,9 @@ exports.deleteUser = async (req, res) => {
       });
 
       createNotification({ userId: otherUserId, type: "exclusive_partnership_ended", title: "Exclusive Marriage Process Ended", body: "The exclusive marriage process has been ended because your partner is no longer available." }).catch(() => {});
+
+      // Auto-revoke any active or pending Wali invitation
+      await autoRevokeWaliInvitation(activePartnership.id, "user_soft_deleted", adminId);
     }
 
     await logAudit({ adminId, action: "delete_user", resource: "user", resourceId: userId, details: { method: "soft_delete" } });
@@ -354,6 +358,9 @@ exports.restrictUserBan = async (req, res) => {
         });
 
         createNotification({ userId: otherUserId, type: "exclusive_partnership_ended", title: "Exclusive Marriage Process Ended", body: "The exclusive marriage process has been ended because your partner is no longer available." }).catch(() => {});
+
+        // Auto-revoke any active or pending Wali invitation
+        await autoRevokeWaliInvitation(activePartnership.id, "user_banned", req.user.userId);
       }
     }
     // TEMPORARY BAN: no partnership changes — messaging and partnership actions

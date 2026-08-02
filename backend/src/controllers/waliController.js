@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const prisma = require("../config/database");
 const { sendEmail, emailTemplate } = require("../utils/email");
 const { createNotification } = require("../utils/notification");
+const { logAudit } = require("../utils/auditLogger");
 
 const EXPIRY_DAYS = parseInt(process.env.WALI_INVITATION_EXPIRY_DAYS || "30", 10);
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
@@ -123,6 +124,8 @@ const inviteWali = async (req, res) => {
     });
 
     res.json({ message: "Wali invitation sent for partner approval", invitation: { id: invitation.id, waliId: wali.id, waliName: wali.name, relationship: wali.relationship, waliEmail: wali.email, status: "pending_approval", expiresAt } });
+
+    await logAudit({ adminId: userId, action: "wali_invitation_requested", resource: "wali_invitation", resourceId: invitation.id, details: { partnershipId, waliId: wali.id, waliName: wali.name } });
   } catch (error) {
     console.error("Invite Wali error:", error);
     res.status(500).json({ error: "Failed to send Wali invitation" });
@@ -218,6 +221,8 @@ const approveWali = async (req, res) => {
     }
 
     res.json({ message: "Wali invitation approved and email sent" });
+
+    await logAudit({ adminId: userId, action: "wali_invitation_approved", resource: "wali_invitation", resourceId: invitation.id, details: { partnershipId, waliName: invitation.wali.name } });
   } catch (error) {
     console.error("Approve Wali error:", error?.message || error);
     res.status(500).json({ error: "Failed to approve Wali invitation: " + (error?.message || "Unknown error") });
@@ -279,6 +284,8 @@ const declineWali = async (req, res) => {
     });
 
     res.json({ message: "Wali invitation declined" });
+
+    await logAudit({ adminId: userId, action: "wali_invitation_declined", resource: "wali_invitation", resourceId: invitation.id, details: { partnershipId, waliName: invitation.wali.name } });
   } catch (error) {
     console.error("Decline Wali error:", error);
     res.status(500).json({ error: "Failed to decline Wali invitation" });
@@ -328,6 +335,8 @@ const revokeWali = async (req, res) => {
     });
 
     res.json({ message: "Wali access revoked successfully" });
+
+    await logAudit({ adminId: userId, action: "wali_invitation_revoked", resource: "wali_invitation", resourceId: partnershipId, details: { partnershipId, revokedBy: userId } });
   } catch (error) {
     console.error("Revoke Wali error:", error);
     res.status(500).json({ error: "Failed to revoke Wali access" });
@@ -423,6 +432,11 @@ const verifyWaliToken = async (req, res) => {
 
     // Check if expired
     if (invitation.expiresAt < new Date()) {
+      await prisma.waliInvitation.update({
+        where: { id: invitation.id },
+        data: { status: "expired" },
+      }).catch(() => {});
+      await logAudit({ adminId: invitation.createdById, action: "wali_invitation_expired", resource: "wali_invitation", resourceId: invitation.id, details: { partnershipId: invitation.partnershipId } });
       return res.status(403).json({ error: "This invitation has expired." });
     }
 
@@ -436,6 +450,8 @@ const verifyWaliToken = async (req, res) => {
       where: { id: invitation.id },
       data: { lastAccessedAt: new Date() },
     });
+
+    await logAudit({ adminId: invitation.createdById, action: "wali_token_accessed", resource: "wali_invitation", resourceId: invitation.id, details: { partnershipId: invitation.partnershipId } });
 
     // Return partnership info (no sensitive data)
     res.json({
@@ -494,6 +510,10 @@ const getWaliMessages = async (req, res) => {
     }
 
     if (invitation.expiresAt < new Date()) {
+      await prisma.waliInvitation.update({
+        where: { id: invitation.id },
+        data: { status: "expired" },
+      }).catch(() => {});
       return res.status(403).json({ error: "This invitation has expired." });
     }
 

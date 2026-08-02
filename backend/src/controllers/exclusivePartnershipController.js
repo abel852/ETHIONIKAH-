@@ -1,4 +1,5 @@
 const prisma = require("../config/database");
+const { autoRevokeWaliInvitation } = require("../utils/waliRevoke");
 
 const COOLDOWN_DAYS = 7;
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
@@ -407,6 +408,9 @@ const endPartnership = async (req, res) => {
       where: { id: partnershipId },
       data: { status: "ended", endedAt: new Date() },
     });
+
+    // Auto-revoke any active or pending Wali invitation
+    await autoRevokeWaliInvitation(partnershipId, "partnership_ended", userId);
 
     const otherUserId = partnership.userAId === userId ? partnership.userBId : partnership.userAId;
 
