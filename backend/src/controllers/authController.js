@@ -140,7 +140,7 @@ const register = async (req, res) => {
           data: {
             femaleUserId: user.id,
             name: waliName,
-            relationship: waliRelation || "",
+            relationship: waliRelation || "OTHER",
             email: waliEmail || "",
             phone: waliPhone || "",
           },

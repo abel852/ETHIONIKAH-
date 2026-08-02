@@ -31,7 +31,7 @@ const updateProfileSchema = z.object({
   hasWali: z.string().max(100).optional(),
   waliName: z.string().max(100).optional(),
   waliPhone: z.string().max(100).optional(),
-  waliRelation: z.string().max(100).optional(),
+  waliRelation: z.enum(["FATHER", "GRANDFATHER", "BROTHER", "UNCLE", "LEGAL_GUARDIAN", "OTHER"]).optional(),
   waliEmail: z.string().max(255).optional(),
   employmentStatus: z.string().max(100).optional(),
   monthlyIncomeRange: z.string().max(100).optional(),

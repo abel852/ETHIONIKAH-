@@ -6,6 +6,19 @@ const { createNotification } = require("../utils/notification");
 const EXPIRY_DAYS = parseInt(process.env.WALI_INVITATION_EXPIRY_DAYS || "30", 10);
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
+const RELATIONSHIP_LABELS = {
+  FATHER: "Father",
+  GRANDFATHER: "Grandfather",
+  BROTHER: "Brother",
+  UNCLE: "Uncle",
+  LEGAL_GUARDIAN: "Legal Guardian",
+  OTHER: "Other",
+};
+
+function formatRelationship(rel) {
+  return RELATIONSHIP_LABELS[rel] || rel;
+}
+
 function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -106,7 +119,7 @@ const inviteWali = async (req, res) => {
       userId: otherUserId,
       type: "wali_invitation_pending",
       title: "Wali Invitation Needs Approval",
-      body: `${inviter?.firstName} ${inviter?.lastName} wants to invite ${wali.name} (${wali.relationship}) as a Wali to observe your conversation. Please approve or decline.`,
+      body: `${inviter?.firstName} ${inviter?.lastName} wants to invite ${wali.name} (${formatRelationship(wali.relationship)}) as a Wali to observe your conversation. Please approve or decline.`,
     });
 
     res.json({ message: "Wali invitation sent for partner approval", invitation: { id: invitation.id, waliId: wali.id, waliName: wali.name, relationship: wali.relationship, waliEmail: wali.email, status: "pending_approval", expiresAt } });
@@ -174,7 +187,7 @@ const approveWali = async (req, res) => {
         "Wali Invitation — Ethio Nikah",
         `<p>Assalamu Alaikum,</p>
          <p>You have been invited to observe the marriage conversation between two individuals on Ethio Nikah.</p>
-         <p><strong>${invitation.wali.name}</strong> (${invitation.wali.relationship}) has been invited as a Wali (guardian) to oversee the conversation.</p>
+         <p><strong>${invitation.wali.name}</strong> (${formatRelationship(invitation.wali.relationship)}) has been invited as a Wali (guardian) to oversee the conversation.</p>
          <p>Click the secure link below to view the conversation:</p>
          <p style="margin:24px 0;">
            <a href="${waliLink}" style="display:inline-block;background:linear-gradient(135deg,#D4AF37,#B8860B);color:#0c0a1a;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:15px;">View Conversation</a>
@@ -198,7 +211,7 @@ const approveWali = async (req, res) => {
         userId: invitation.createdById,
         type: "wali_invitation_approved",
         title: "Wali Invitation Approved",
-        body: `Your partner has approved the Wali invitation for ${invitation.wali.name} (${invitation.wali.relationship}). The email has been sent.`,
+        body: `Your partner has approved the Wali invitation for ${invitation.wali.name} (${formatRelationship(invitation.wali.relationship)}). The email has been sent.`,
       });
     } catch (notifErr) {
       console.error("Wali approval notification failed:", notifErr);
@@ -262,7 +275,7 @@ const declineWali = async (req, res) => {
       userId: invitation.createdById,
       type: "wali_invitation_declined",
       title: "Wali Invitation Declined",
-      body: `Your partner has declined the Wali invitation for ${invitation.wali.name} (${invitation.wali.relationship}).`,
+      body: `Your partner has declined the Wali invitation for ${invitation.wali.name} (${formatRelationship(invitation.wali.relationship)}).`,
     });
 
     res.json({ message: "Wali invitation declined" });
@@ -427,7 +440,7 @@ const verifyWaliToken = async (req, res) => {
     // Return partnership info (no sensitive data)
     res.json({
       waliName: invitation.wali.name,
-      relationship: invitation.wali.relationship,
+      relationship: formatRelationship(invitation.wali.relationship),
       partnership: {
         status: invitation.partnership.status,
         createdAt: invitation.partnership.createdAt,

@@ -48,7 +48,7 @@ const registerSchema = z.object({
   hasWali: optionalString(20),
   waliName: optionalString(100),
   waliPhone: optionalString(20),
-  waliRelation: optionalString(50),
+  waliRelation: z.enum(["FATHER", "GRANDFATHER", "BROTHER", "UNCLE", "LEGAL_GUARDIAN", "OTHER"]).optional(),
   waliEmail: optionalString(255),
   maritalStatus: optionalString(50),
   hasChildren: optionalString(20),

@@ -754,15 +754,15 @@ model ExclusivePartnershipRequest {
 }
 
 model Wali {
-  id           String   @id @default(uuid()) @db.Uuid
-  femaleUserId String   @unique @map("female_user_id") @db.Uuid
+  id           String           @id @default(uuid()) @db.Uuid
+  femaleUserId String           @unique @map("female_user_id") @db.Uuid
   name         String
-  relationship String
+  relationship WaliRelationship
   email        String
   phone        String
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  femaleUser   User     @relation(fields: [femaleUserId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  femaleUser   User             @relation(fields: [femaleUserId], references: [id], onDelete: Cascade)
   invitations  WaliInvitation[]
 
   @@map("walis")
@@ -791,6 +791,15 @@ model WaliInvitation {
 enum Gender {
   male
   female
+}
+
+enum WaliRelationship {
+  FATHER
+  GRANDFATHER
+  BROTHER
+  UNCLE
+  LEGAL_GUARDIAN
+  OTHER
 }
 
 enum Role {

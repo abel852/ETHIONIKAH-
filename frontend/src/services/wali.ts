@@ -4,8 +4,8 @@ import axios from "axios";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export const waliService = {
-  invite: (partnershipId: string, waliName: string, relationship: string, waliEmail: string) =>
-    api.post("/wali/invite", { partnershipId, waliName, relationship, waliEmail }),
+  invite: (partnershipId: string) =>
+    api.post("/wali/invite", { partnershipId }),
   approve: (partnershipId: string) =>
     api.post("/wali/approve", { partnershipId }),
   decline: (partnershipId: string) =>

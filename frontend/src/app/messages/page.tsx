@@ -1125,7 +1125,7 @@ function MessagesContent() {
                       >
                         <UserCheck className={`w-4 h-4 shrink-0 ${waliStatus?.status === "active" ? "text-[#D4AF37]" : "text-[#8B8B8B]"}`} />
                         <span className="text-xs font-medium text-[#D1D5DB] hidden sm:inline truncate max-w-[100px]">
-                          {waliStatus?.status === "active" ? `Wali: ${waliStatus.waliName} (Active)` :
+                          {waliStatus?.status === "active" ? `Wali: ${waliStatus.wali?.name} (Active)` :
                            waliStatus?.status === "pending_approval" ? "Wali: Pending" :
                            partnership?.status === "active" ? "Wali: None" : "Wali: —"}
                         </span>
@@ -1236,7 +1236,7 @@ function MessagesContent() {
                             {waliStatus?.status === "active" ? (
                               <div className="flex items-center gap-2">
                                 <UserCheck className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                                <span className="text-xs text-[#D1D5DB]">{waliStatus.waliName} ({waliStatus.relationship})</span>
+                                <span className="text-xs text-[#D1D5DB]">{waliStatus.wali?.name} ({waliStatus.wali?.relationship})</span>
                                 <button
                                   onClick={() => setShowRevokeWaliConfirm(true)}
                                   className="ml-auto text-[10px] text-red-400 hover:text-red-500 font-medium shrink-0"
@@ -1246,12 +1246,12 @@ function MessagesContent() {
                               waliStatus.createdById === myId ? (
                                 <div className="flex items-center gap-2">
                                   <UserCheck className="w-3.5 h-3.5 text-[#8B8B8B] shrink-0" />
-                                  <span className="text-xs text-[#8B8B8B]">{waliStatus.waliName} — awaiting partner approval</span>
+                                  <span className="text-xs text-[#8B8B8B]">{waliStatus.wali?.name} — awaiting partner approval</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
                                   <UserCheck className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
-                                  <span className="text-xs text-[#C8C8C8] truncate flex-1">{waliStatus.waliName} — approve?</span>
+                                  <span className="text-xs text-[#C8C8C8] truncate flex-1">{waliStatus.wali?.name} — approve?</span>
                                   <button
                                     onClick={async () => {
                                       try {
@@ -1280,7 +1280,7 @@ function MessagesContent() {
                               )
                             ) : (
                               <button
-                                onClick={() => { setWaliDialogStep(1); setWaliName(""); setWaliRelationship(""); setWaliEmail(""); setPasswordError(""); setConfirmPassword(""); setShowWaliDialog(true); }}
+                                onClick={() => { setPasswordError(""); setConfirmPassword(""); setShowWaliDialog(true); }}
                                 className="flex items-center gap-2 text-xs text-[#D4AF37] hover:text-[#F2D675] font-medium transition-colors w-full"
                               >
                                 <UserCheck className="w-3.5 h-3.5 shrink-0" />
@@ -2198,131 +2198,65 @@ function MessagesContent() {
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Invite Wali</h3>
               <p className="text-sm text-[#8B8B8B]">
-                Invite a Wali (guardian) to observe your conversation in read-only mode. The Wali will receive a secure link via email — no account needed.
+                This will invite the registered Wali (guardian) to observe your conversation in read-only mode. The Wali will receive a secure link via email after your partner approves.
               </p>
             </div>
             <div className="space-y-3">
-              {/* Step 1: Wali details */}
-              {waliDialogStep === 1 && (
-                <>
-                  <div>
-                    <label className="text-xs text-[#8B8B8B] mb-1 block">Wali Full Name</label>
-                    <Input
-                      value={waliName}
-                      onChange={(e: any) => setWaliName(e.target.value)}
-                      placeholder="e.g. Abu Ahmed"
-                      className="bg-[#181818] border-[#2D2D2D] text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#8B8B8B] mb-1 block">Relationship</label>
-                    <Input
-                      value={waliRelationship}
-                      onChange={(e: any) => setWaliRelationship(e.target.value)}
-                      placeholder="e.g. Father, Brother, Uncle"
-                      className="bg-[#181818] border-[#2D2D2D] text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#8B8B8B] mb-1 block">Email Address</label>
-                    <Input
-                      type="email"
-                      value={waliEmail}
-                      onChange={(e: any) => setWaliEmail(e.target.value)}
-                      placeholder="wali@example.com"
-                      className="bg-[#181818] border-[#2D2D2D] text-white"
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (!waliName.trim() || !waliRelationship.trim() || !waliEmail.trim()) {
-                        setToastError(true);
-                        setToast("All fields are required.");
-                        setTimeout(() => { setToast(null); setToastError(false); }, 4000);
-                        return;
-                      }
-                      setPasswordError("");
-                      setWaliDialogStep(2);
-                    }}
-                    className="w-full px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-[#D4AF37] to-[#F2D675] text-black rounded-xl hover:from-[#F2D675] hover:to-[#D4AF37] transition-all"
-                  >
-                    Next
-                  </button>
-                  <button
-                    onClick={() => { setShowWaliDialog(false); setWaliName(""); setWaliRelationship(""); setWaliEmail(""); }}
-                    className="w-full px-4 py-2.5 text-sm font-medium text-[#C8C8C8] hover:bg-[#2D2D2D] rounded-xl transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-
-              {/* Step 2: Password confirmation */}
-              {waliDialogStep === 2 && (
-                <>
-                  <div className="bg-[#181818] rounded-lg p-3 space-y-1">
-                    <p className="text-xs text-[#8B8B8B]">Wali: <span className="text-white font-medium">{waliName}</span></p>
-                    <p className="text-xs text-[#8B8B8B]">Relationship: <span className="text-white font-medium">{waliRelationship}</span></p>
-                    <p className="text-xs text-[#8B8B8B]">Email: <span className="text-white font-medium">{waliEmail}</span></p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#8B8B8B] mb-1 flex items-center gap-1.5">
-                      <Lock className="w-3 h-3" /> Enter your password to confirm
-                    </label>
-                    <Input
-                      type="password"
-                      autoComplete="new-password"
-                      value={confirmPassword}
-                      onChange={(e: any) => { setConfirmPassword(e.target.value); setPasswordError(""); }}
-                      placeholder="Your password"
-                      className="bg-[#181818] border-[#2D2D2D] text-white"
-                      autoFocus
-                    />
-                    {passwordError && <p className="text-xs text-red-400 mt-1">{passwordError}</p>}
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (!confirmPassword.trim()) { setPasswordError("Password is required"); return; }
-                      setPasswordVerifying(true);
-                      try {
-                        await authService.verifyPassword(confirmPassword);
-                        setWaliSubmitting(true);
-                        await waliService.invite(partnership.id, waliName, waliRelationship, waliEmail);
-                        setToastError(false);
-                        setToast("Wali invitation sent! Waiting for your partner's approval before the email is sent.");
-                        setTimeout(() => { setToast(null); setToastError(false); }, 5000);
-                        setShowWaliDialog(false);
-                        setWaliDialogStep(1);
-                        setWaliName(""); setWaliRelationship(""); setWaliEmail(""); setConfirmPassword("");
-                        waliService.getStatus(partnership.id).then(({ data }) => {
-                          setWaliStatus(data.invitation);
-                        }).catch(() => {});
-                      } catch (err: any) {
-                        if (err?.response?.status === 401) {
-                          setPasswordError("Invalid password");
-                        } else {
-                          setToastError(true);
-                          setToast(err?.response?.data?.error || "Failed to send Wali invitation");
-                          setTimeout(() => { setToast(null); setToastError(false); }, 5000);
-                        }
-                      } finally {
-                        setPasswordVerifying(false);
-                        setWaliSubmitting(false);
-                      }
-                    }}
-                    disabled={waliSubmitting || passwordVerifying}
-                    className="w-full px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-[#D4AF37] to-[#F2D675] text-black rounded-xl hover:from-[#F2D675] hover:to-[#D4AF37] disabled:opacity-50 transition-all"
-                  >
-                    {waliSubmitting || passwordVerifying ? "Verifying..." : "Send Invitation"}
-                  </button>
-                  <button
-                    onClick={() => { setWaliDialogStep(1); setPasswordError(""); setConfirmPassword(""); }}
-                    className="w-full px-4 py-2.5 text-sm font-medium text-[#C8C8C8] hover:bg-[#2D2D2D] rounded-xl transition-colors"
-                  >
-                    Back
-                  </button>
-                </>
-              )}
+              <div>
+                <label className="text-xs text-[#8B8B8B] mb-1 flex items-center gap-1.5">
+                  <Lock className="w-3 h-3" /> Enter your password to confirm
+                </label>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e: any) => { setConfirmPassword(e.target.value); setPasswordError(""); }}
+                  placeholder="Your password"
+                  className="bg-[#181818] border-[#2D2D2D] text-white"
+                  autoFocus
+                />
+                {passwordError && <p className="text-xs text-red-400 mt-1">{passwordError}</p>}
+              </div>
+              <button
+                onClick={async () => {
+                  if (!confirmPassword.trim()) { setPasswordError("Password is required"); return; }
+                  setPasswordVerifying(true);
+                  try {
+                    await authService.verifyPassword(confirmPassword);
+                    setWaliSubmitting(true);
+                    await waliService.invite(partnership.id);
+                    setToastError(false);
+                    setToast("Wali invitation sent! Waiting for your partner's approval before the email is sent.");
+                    setTimeout(() => { setToast(null); setToastError(false); }, 5000);
+                    setShowWaliDialog(false);
+                    setConfirmPassword("");
+                    waliService.getStatus(partnership.id).then(({ data }) => {
+                      setWaliStatus(data.invitation);
+                    }).catch(() => {});
+                  } catch (err: any) {
+                    if (err?.response?.status === 401) {
+                      setPasswordError("Invalid password");
+                    } else {
+                      setToastError(true);
+                      setToast(err?.response?.data?.error || "Failed to send Wali invitation");
+                      setTimeout(() => { setToast(null); setToastError(false); }, 5000);
+                    }
+                  } finally {
+                    setPasswordVerifying(false);
+                    setWaliSubmitting(false);
+                  }
+                }}
+                disabled={waliSubmitting || passwordVerifying}
+                className="w-full px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-[#D4AF37] to-[#F2D675] text-black rounded-xl hover:from-[#F2D675] hover:to-[#D4AF37] disabled:opacity-50 transition-all"
+              >
+                {waliSubmitting || passwordVerifying ? "Verifying..." : "Send Invitation"}
+              </button>
+              <button
+                onClick={() => { setShowWaliDialog(false); setConfirmPassword(""); setPasswordError(""); }}
+                className="w-full px-4 py-2.5 text-sm font-medium text-[#C8C8C8] hover:bg-[#2D2D2D] rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

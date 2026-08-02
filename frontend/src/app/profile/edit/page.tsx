@@ -419,7 +419,15 @@ export default function EditProfilePage() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-charcoal-500 dark:text-charcoal-400 mb-1.5 uppercase tracking-wide">Wali Relationship</label>
-                  <Input name="waliRelation" value={formData.waliRelation || ""} onChange={handleChange} placeholder="e.g. Father, Brother, Uncle" />
+                  <select name="waliRelation" value={formData.waliRelation || ""} onChange={handleChange} className="w-full px-3 sm:px-4 py-3 bg-white dark:bg-charcoal-800 border border-[#E9E9E9] dark:border-charcoal-700 rounded-xl premium-select focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15 text-sm sm:text-base">
+                    <option value="">Select</option>
+                    <option value="FATHER">Father</option>
+                    <option value="GRANDFATHER">Grandfather</option>
+                    <option value="BROTHER">Brother</option>
+                    <option value="UNCLE">Uncle</option>
+                    <option value="LEGAL_GUARDIAN">Legal Guardian</option>
+                    <option value="OTHER">Other</option>
+                  </select>
                 </div>
               </>
             )}

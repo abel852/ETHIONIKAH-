@@ -120,7 +120,7 @@ const createOrUpdateProfile = async (req, res) => {
         // Create or update Wali record
         const waliData = {
           name: cleanData.waliName,
-          relationship: cleanData.waliRelation || "",
+          relationship: cleanData.waliRelation || "OTHER",
           email: cleanData.waliEmail || "",
           phone: cleanData.waliPhone || "",
         };

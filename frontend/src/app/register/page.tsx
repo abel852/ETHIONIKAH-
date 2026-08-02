@@ -1721,11 +1721,12 @@ function BasicInfoStep({ formData, updateFormData, nextStep, prevStep, validate 
                 <label className="signup-label">{t("register.step2.waliRelation")}</label>
                 <select name="waliRelation" value={localData.waliRelation || ""} onChange={handleChange} className={sc}>
                   <option value="">{t("common.select")}</option>
-                  <option value="father">{t("register.step2.waliFather")}</option>
-                  <option value="brother">{t("register.step2.waliBrother")}</option>
-                  <option value="uncle">{t("register.step2.waliUncle")}</option>
-                  <option value="grandfather">{t("register.step2.waliGrandfather")}</option>
-                  <option value="other">{t("register.step2.waliOther")}</option>
+                  <option value="FATHER">{t("register.step2.waliFather")}</option>
+                  <option value="GRANDFATHER">{t("register.step2.waliGrandfather")}</option>
+                  <option value="BROTHER">{t("register.step2.waliBrother")}</option>
+                  <option value="UNCLE">{t("register.step2.waliUncle")}</option>
+                  <option value="LEGAL_GUARDIAN">Legal Guardian</option>
+                  <option value="OTHER">{t("register.step2.waliOther")}</option>
                 </select>
               </div>
             </div>
