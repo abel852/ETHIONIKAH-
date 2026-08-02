@@ -82,9 +82,6 @@ const inviteWali = async (req, res) => {
         partnershipId,
         createdById: userId,
         waliId: wali.id,
-        waliName: wali.name,
-        relationship: wali.relationship,
-        waliEmail: wali.email,
         secureTokenHash: "pending",
         expiresAt,
         status: "pending_approval",
@@ -92,9 +89,6 @@ const inviteWali = async (req, res) => {
       update: {
         createdById: userId,
         waliId: wali.id,
-        waliName: wali.name,
-        relationship: wali.relationship,
-        waliEmail: wali.email,
         secureTokenHash: "pending",
         expiresAt,
         status: "pending_approval",
@@ -115,7 +109,7 @@ const inviteWali = async (req, res) => {
       body: `${inviter?.firstName} ${inviter?.lastName} wants to invite ${wali.name} (${wali.relationship}) as a Wali to observe your conversation. Please approve or decline.`,
     });
 
-    res.json({ message: "Wali invitation sent for partner approval", invitation: { id: invitation.id, waliName: wali.name, relationship: wali.relationship, waliEmail: wali.email, status: "pending_approval", expiresAt } });
+    res.json({ message: "Wali invitation sent for partner approval", invitation: { id: invitation.id, waliId: wali.id, waliName: wali.name, relationship: wali.relationship, waliEmail: wali.email, status: "pending_approval", expiresAt } });
   } catch (error) {
     console.error("Invite Wali error:", error);
     res.status(500).json({ error: "Failed to send Wali invitation" });
@@ -148,6 +142,7 @@ const approveWali = async (req, res) => {
 
     const invitation = await prisma.waliInvitation.findUnique({
       where: { partnershipId },
+      include: { wali: true },
     });
 
     if (!invitation) {
@@ -179,7 +174,7 @@ const approveWali = async (req, res) => {
         "Wali Invitation — Ethio Nikah",
         `<p>Assalamu Alaikum,</p>
          <p>You have been invited to observe the marriage conversation between two individuals on Ethio Nikah.</p>
-         <p><strong>${invitation.waliName}</strong> (${invitation.relationship}) has been invited as a Wali (guardian) to oversee the conversation.</p>
+         <p><strong>${invitation.wali.name}</strong> (${invitation.wali.relationship}) has been invited as a Wali (guardian) to oversee the conversation.</p>
          <p>Click the secure link below to view the conversation:</p>
          <p style="margin:24px 0;">
            <a href="${waliLink}" style="display:inline-block;background:linear-gradient(135deg,#D4AF37,#B8860B);color:#0c0a1a;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:15px;">View Conversation</a>
@@ -188,7 +183,7 @@ const approveWali = async (req, res) => {
       );
 
       await sendEmail({
-        to: invitation.waliEmail,
+        to: invitation.wali.email,
         subject: "Wali Invitation — View Marriage Conversation on Ethio Nikah",
         text: `You have been invited to observe a marriage conversation on Ethio Nikah. Click this secure link to view: ${waliLink}`,
         html,
@@ -203,7 +198,7 @@ const approveWali = async (req, res) => {
         userId: invitation.createdById,
         type: "wali_invitation_approved",
         title: "Wali Invitation Approved",
-        body: `Your partner has approved the Wali invitation for ${invitation.waliName} (${invitation.relationship}). The email has been sent.`,
+        body: `Your partner has approved the Wali invitation for ${invitation.wali.name} (${invitation.wali.relationship}). The email has been sent.`,
       });
     } catch (notifErr) {
       console.error("Wali approval notification failed:", notifErr);
@@ -242,6 +237,7 @@ const declineWali = async (req, res) => {
 
     const invitation = await prisma.waliInvitation.findUnique({
       where: { partnershipId },
+      include: { wali: true },
     });
 
     if (!invitation) {
@@ -266,7 +262,7 @@ const declineWali = async (req, res) => {
       userId: invitation.createdById,
       type: "wali_invitation_declined",
       title: "Wali Invitation Declined",
-      body: `Your partner has declined the Wali invitation for ${invitation.waliName} (${invitation.relationship}).`,
+      body: `Your partner has declined the Wali invitation for ${invitation.wali.name} (${invitation.wali.relationship}).`,
     });
 
     res.json({ message: "Wali invitation declined" });
@@ -347,7 +343,16 @@ const getWaliStatus = async (req, res) => {
 
     const invitation = await prisma.waliInvitation.findUnique({
       where: { partnershipId },
-      select: { id: true, waliName: true, relationship: true, waliEmail: true, status: true, expiresAt: true, createdAt: true, revokedAt: true, lastAccessedAt: true, createdById: true },
+      select: {
+        id: true,
+        status: true,
+        expiresAt: true,
+        createdAt: true,
+        revokedAt: true,
+        lastAccessedAt: true,
+        createdById: true,
+        wali: { select: { id: true, name: true, relationship: true, email: true, phone: true } },
+      },
     });
 
     res.json({ invitation });
@@ -374,6 +379,7 @@ const verifyWaliToken = async (req, res) => {
     const invitation = await prisma.waliInvitation.findFirst({
       where: { secureTokenHash },
       include: {
+        wali: { select: { name: true, relationship: true } },
         partnership: {
           include: {
             userA: {
@@ -420,8 +426,8 @@ const verifyWaliToken = async (req, res) => {
 
     // Return partnership info (no sensitive data)
     res.json({
-      waliName: invitation.waliName,
-      relationship: invitation.relationship,
+      waliName: invitation.wali.name,
+      relationship: invitation.wali.relationship,
       partnership: {
         status: invitation.partnership.status,
         createdAt: invitation.partnership.createdAt,
