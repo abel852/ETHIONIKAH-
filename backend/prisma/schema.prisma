@@ -752,7 +752,7 @@ model WaliInvitation {
   id              String    @id @default(uuid()) @db.Uuid
   partnershipId   String    @map("partnership_id") @db.Uuid
   createdById     String    @map("created_by_id") @db.Uuid
-  waliId          String    @map("wali_id") @db.Uuid
+  waliId          String?   @map("wali_id") @db.Uuid
   secureTokenHash String    @map("secure_token_hash")
   status          String    @default("pending_approval") // pending_approval | active | revoked | expired | declined
   expiresAt       DateTime  @map("expires_at")
@@ -761,7 +761,7 @@ model WaliInvitation {
   lastAccessedAt  DateTime? @map("last_accessed_at")
   partnership     ExclusivePartnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
   createdBy       User      @relation("WaliCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  wali            Wali      @relation(fields: [waliId], references: [id], onDelete: Cascade)
+  wali            Wali?     @relation(fields: [waliId], references: [id], onDelete: Cascade)
 
   @@unique([partnershipId])
   @@index([secureTokenHash])
