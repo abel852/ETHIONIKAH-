@@ -72,8 +72,8 @@ const createConversationRequest = async (req, res) => {
     }
 
     // --- Exclusive Partnership enforcement ---
-    // If the requester is in an active exclusive partnership, they must have
-    // an approved ConversationPermission from their partner for this target user.
+    // If the requester is in an active exclusive partnership, they can only
+    // start conversations with their partner. No new conversations with anyone else.
     const activePartnership = await prisma.exclusivePartnership.findFirst({
       where: {
         OR: [
@@ -88,25 +88,12 @@ const createConversationRequest = async (req, res) => {
         ? activePartnership.userBId
         : activePartnership.userAId;
 
-      // Allow if the target user IS the partner (they can always talk to each other)
       if (receiverId !== partnerId) {
-        const permission = await prisma.conversationPermission.findUnique({
-          where: {
-            requesterId_partnerId_targetUserId: {
-              requesterId,
-              partnerId,
-              targetUserId: receiverId,
-            },
-          },
-          select: { status: true },
+        return res.status(403).json({
+          error: "You are in an active exclusive partnership. You cannot start new conversations with anyone except your partner.",
+          code: "PARTNERSHIP_ACTIVE",
+          partnerId,
         });
-        if (!permission || permission.status !== "approved") {
-          return res.status(403).json({
-            error: "You are in an exclusive partnership. You must request and receive approval from your partner before starting a new conversation with this user.",
-            code: "PARTNERSHIP_PERMISSION_REQUIRED",
-            partnerId,
-          });
-        }
       }
     }
 
