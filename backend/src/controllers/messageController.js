@@ -229,52 +229,13 @@ async function checkAndDeductCredit(senderId, isNew) {
 }
 
 /**
- * Enforce conversation rules based on ExclusivePartnership (not message history).
- * - If sender has an ACTIVE ExclusivePartnership with someone else (not the receiver),
- *   they must have approved ConversationPermission from that partner to message this receiver.
- * - No message-based partner detection.
- * - No match bypass, no platinum bypass.
+ * Enforce conversation rules based on ExclusivePartnership.
+ * - If sender has an ACTIVE ExclusivePartnership, they can only message their partner.
+ * - No exceptions, no permission bypass.
  * Returns { allowed: true } or { allowed: false, error, status }.
  */
 async function checkOneConversationRule(senderId, receiverId) {
   try {
-    // Check for denied permission — blocks both directions
-    const deniedPermission = await prisma.conversationPermission.findFirst({
-      where: {
-        status: "denied",
-        OR: [
-          { requesterId: senderId, targetUserId: receiverId },
-          { requesterId: receiverId, targetUserId: senderId },
-        ],
-      },
-    });
-    if (deniedPermission) {
-      return {
-        allowed: false,
-        status: 403,
-        error: "You cannot message this user because the conversation permission was denied by your exclusive partner.",
-      };
-    }
-
-    // Check if sender has ANY pending permission request
-    const anyPendingPermission = await prisma.conversationPermission.findFirst({
-      where: {
-        requesterId: senderId,
-        status: "pending",
-      },
-    });
-    if (anyPendingPermission) {
-      // Only allowed to message the partner they requested permission from
-      if (receiverId !== anyPendingPermission.partnerId) {
-        return {
-          allowed: false,
-          status: 403,
-          error: "You have a pending permission request. You can only message your exclusive partner until they approve or deny your request to talk to someone new.",
-        };
-      }
-      return { allowed: true };
-    }
-
     // Check if sender has an ACTIVE ExclusivePartnership
     const activePartnership = await prisma.exclusivePartnership.findFirst({
       where: {
@@ -295,23 +256,12 @@ async function checkOneConversationRule(senderId, receiverId) {
         return { allowed: true };
       }
 
-      // Messaging someone else — check for approved permission
-      const approvedPermission = await prisma.conversationPermission.findFirst({
-        where: {
-          requesterId: senderId,
-          targetUserId: receiverId,
-          partnerId,
-          status: "approved",
-        },
-      });
-
-      if (!approvedPermission) {
-        return {
-          allowed: false,
-          status: 403,
-          error: "You are currently in an Exclusive Marriage Process. To start a conversation with someone new, you must request permission from your exclusive partner.",
-        };
-      }
+      // Messaging anyone else — blocked
+      return {
+        allowed: false,
+        status: 403,
+        error: "You are in an active exclusive partnership. You can only message your partner.",
+      };
     }
 
     // No active partnership blocking — allowed
