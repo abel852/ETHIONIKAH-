@@ -326,6 +326,10 @@ const respondToPartnershipRequest = async (req, res) => {
     if (error.code && error.message) {
       return res.status(error.code).json({ error: error.message });
     }
+    // Handle DB-level unique constraint violation (partial unique index on active partnerships)
+    if (error.code === "P2002") {
+      return res.status(403).json({ error: "One of you already has an active exclusive partnership." });
+    }
     console.error("Respond to partnership request error:", error);
     res.status(500).json({ error: "Failed to respond to partnership request" });
   }

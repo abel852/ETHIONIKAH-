@@ -729,6 +729,10 @@ model ExclusivePartnership {
   @@unique([userAId, userBId])
   @@index([userAId, status])
   @@index([userBId, status])
+  // DB-level safeguard: partial unique indexes prevent a user from having
+  // more than one active partnership simultaneously:
+  //   CREATE UNIQUE INDEX idx_one_active_partnership_a ON exclusive_partnerships (user_a_id) WHERE status = 'active'
+  //   CREATE UNIQUE INDEX idx_one_active_partnership_b ON exclusive_partnerships (user_b_id) WHERE status = 'active'
   @@map("exclusive_partnerships")
 }
 
