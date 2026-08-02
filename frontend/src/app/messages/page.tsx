@@ -14,6 +14,7 @@ import { exclusivePartnershipService } from "@/services/exclusivePartnership";
 import { waliService } from "@/services/wali";
 import { authService } from "@/services/auth";
 import { messageService } from "@/services/messages";
+import api from "@/lib/api";
 import type { Message } from "@/types";
 
 function MessagesContent() {
@@ -604,33 +605,25 @@ function MessagesContent() {
     if (!activeConversation || !reportReason) return;
     setReportSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/reports`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            reportedUserId: activeConversation,
-            reason: reportReason,
-            description: reportDescription,
-          }),
-        }
-      );
-      if (!res.ok) throw new Error(t('messages.submitReportError'));
+      await api.post("/reports", {
+        reportedUserId: activeConversation,
+        reason: reportReason,
+        description: reportDescription,
+      });
       setShowReportDialog(false);
       setReportDescription("");
       setReportReason("inappropriate");
-      alert(t('messages.reported'));
+      setToast(t('messages.reported'));
+      setToastError(false);
+      setTimeout(() => setToast(null), 3000);
     } catch {
-      alert(t('messages.reportFailed'));
+      setToast(t('messages.reportFailed'));
+      setToastError(true);
+      setTimeout(() => { setToast(null); setToastError(false); }, 3000);
     } finally {
       setReportSubmitting(false);
     }
-  }, [activeConversation, reportReason, reportDescription]);
+  }, [activeConversation, reportReason, reportDescription, t]);
 
   const activeConv = conversations.find((c) => c.id === activeConversation);
   const showThread = !!activeConversation && urlParamsProcessed;
