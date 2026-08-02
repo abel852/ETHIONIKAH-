@@ -240,7 +240,7 @@ exports.verify2FALogin = async (req, res) => {
 
     if (user.role === "admin") {
       const { logAudit } = require("../utils/auditLogger");
-      logAudit({ adminId: user.id, action: "admin_login", resource: "auth", details: { email: user.email, method: "2fa" } });
+      logAudit({ actorId: user.id, actorType: "ADMIN", action: "admin_login", resource: "auth", details: { email: user.email, method: "2fa" } });
     }
 
     res.json({
@@ -340,7 +340,7 @@ exports.adminReset2FA = async (req, res) => {
     });
 
     const { logAudit } = require("../utils/auditLogger");
-    await logAudit({ adminId: req.user.userId, action: "reset_2fa", resource: "user", resourceId: id, details: { email: user.email } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "reset_2fa", resource: "user", resourceId: id, details: { email: user.email } });
 
     res.json({ message: "2FA reset for user" });
   } catch (error) {

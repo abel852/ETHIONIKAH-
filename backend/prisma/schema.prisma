@@ -487,14 +487,15 @@ model UserRestriction {
 
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
-  adminId    String   @map("admin_id") @db.Uuid
+  actorId    String   @map("admin_id") @db.Uuid
+  actorType  String   @default("ADMIN") @map("actor_type")
   action     String
   resource   String
   resourceId String?  @map("resource_id")
   details    Json?
   ipAddress  String?  @map("ip_address")
   createdAt  DateTime @default(now()) @map("created_at")
-  admin      User     @relation(fields: [adminId], references: [id])
+  actor      User     @relation(fields: [actorId], references: [id])
 
   @@map("audit_logs")
 }

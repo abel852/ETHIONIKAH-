@@ -314,7 +314,7 @@ const login = async (req, res) => {
       const { passwordHash, ...userWithoutPassword } = user;
 
       if (user.role === "admin") {
-        logAudit({ adminId: user.id, action: "admin_login", resource: "auth", details: { email: user.email } });
+        logAudit({ actorId: user.id, actorType: "ADMIN", action: "admin_login", resource: "auth", details: { email: user.email } });
       }
 
       res.json({
@@ -422,7 +422,7 @@ const loginWithPhone = async (req, res) => {
       const { passwordHash, ...userWithoutPassword } = user;
 
       if (user.role === "admin") {
-        logAudit({ adminId: user.id, action: "admin_login", resource: "auth", details: { phone: user.phone } });
+        logAudit({ actorId: user.id, actorType: "ADMIN", action: "admin_login", resource: "auth", details: { phone: user.phone } });
       }
 
       res.json({

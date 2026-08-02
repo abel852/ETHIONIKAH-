@@ -132,7 +132,7 @@ exports.suspendUser = async (req, res) => {
   try {
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
     try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
-    await logAudit({ adminId: req.user.userId, action: "suspend_user", resource: "user", resourceId: req.params.id, details: { reason: req.body.reason } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "suspend_user", resource: "user", resourceId: req.params.id, details: { reason: req.body.reason } });
     res.json({ message: "User suspended" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -141,7 +141,7 @@ exports.activateUser = async (req, res) => {
   try {
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: true } });
     try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
-    await logAudit({ adminId: req.user.userId, action: "activate_user", resource: "user", resourceId: req.params.id });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "activate_user", resource: "user", resourceId: req.params.id });
     res.json({ message: "User activated" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -227,7 +227,7 @@ exports.deleteUser = async (req, res) => {
       await autoRevokeWaliInvitation(activePartnership.id, "user_soft_deleted", adminId);
     }
 
-    await logAudit({ adminId, action: "delete_user", resource: "user", resourceId: userId, details: { method: "soft_delete" } });
+    await logAudit({ actorId, actorType: "ADMIN", action: "delete_user", resource: "user", resourceId: userId, details: { method: "soft_delete" } });
     res.json({ message: "User soft-deleted — all historical records preserved" });
   } catch (error) {
     console.error("Delete user error:", error);
@@ -239,7 +239,7 @@ exports.verifyUser = async (req, res) => {
   try {
     await prisma.user.update({ where: { id: req.params.id }, data: { isVerified: true } });
     await prisma.verification.upsert({ where: { userId: req.params.id }, update: { status: "approved", adminId: req.user.userId, reviewedAt: new Date() }, create: { userId: req.params.id, status: "approved", adminId: req.user.userId, reviewedAt: new Date() } });
-    await logAudit({ adminId: req.user.userId, action: "verify_user", resource: "user", resourceId: req.params.id });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "verify_user", resource: "user", resourceId: req.params.id });
     res.json({ message: "User verified" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -249,7 +249,7 @@ exports.rejectUserVerification = async (req, res) => {
     const { reason } = req.body;
     await prisma.verification.updateMany({ where: { userId: req.params.id, status: "pending" }, data: { status: "rejected", adminId: req.user.userId, adminNote: reason || null, reviewedAt: new Date() } });
     await prisma.user.update({ where: { id: req.params.id }, data: { isVerified: false } });
-    await logAudit({ adminId: req.user.userId, action: "reject_verification", resource: "user", resourceId: req.params.id, details: { reason } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "reject_verification", resource: "user", resourceId: req.params.id, details: { reason } });
     res.json({ message: "Verification rejected" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -267,7 +267,7 @@ exports.resetUserPassword = async (req, res) => {
     const passwordHash = await bcrypt.hash(newPassword, 12);
     await prisma.user.update({ where: { id: req.params.id }, data: { passwordHash, tokenVersion: { increment: 1 } } });
     try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
-    await logAudit({ adminId: req.user.userId, action: "reset_password", resource: "user", resourceId: req.params.id });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "reset_password", resource: "user", resourceId: req.params.id });
     res.json({ message: "Password reset" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -277,7 +277,7 @@ exports.restrictUserChat = async (req, res) => {
     const { duration, reason } = req.body;
     const expiresAt = duration ? new Date(Date.now() + duration * 60 * 1000) : null;
     const restriction = await prisma.userRestriction.create({ data: { userId: req.params.id, type: "chat_restrict", reason, duration, expiresAt, createdBy: req.user.userId } });
-    await logAudit({ adminId: req.user.userId, action: "restrict_chat", resource: "user", resourceId: req.params.id, details: { duration, reason } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "restrict_chat", resource: "user", resourceId: req.params.id, details: { duration, reason } });
     res.json({ restriction, message: "Chat restricted" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -369,7 +369,7 @@ exports.restrictUserBan = async (req, res) => {
     const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric" }) : null;
     const message = expiryDate ? `Your account has been temporarily suspended. You will regain access on ${expiryDate}.` : "Your account has been permanently suspended.";
     createNotification({ userId: req.params.id, type: "account", title: "Account Suspended", body: message }).catch(() => {});
-    await logAudit({ adminId: req.user.userId, action: "ban_user", resource: "user", resourceId: req.params.id, details: { reason, durationInDays } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "ban_user", resource: "user", resourceId: req.params.id, details: { reason, durationInDays } });
     res.json({ message: "User banned", expiresAt });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -380,7 +380,7 @@ exports.unbanUser = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
     await prisma.userRestriction.deleteMany({ where: { userId: req.params.id, type: "ban" } });
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: true } });
-    await logAudit({ adminId: req.user.userId, action: "unban_user", resource: "user", resourceId: req.params.id });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "unban_user", resource: "user", resourceId: req.params.id });
     res.json({ message: "User unbanned" });
   } catch (error) { res.status(500).json({ error: "Failed to unban" }); }
 };
@@ -389,7 +389,7 @@ exports.removeUserRestriction = async (req, res) => {
   try {
     const { type } = req.body;
     await prisma.userRestriction.deleteMany({ where: { userId: req.params.id, type } });
-    await logAudit({ adminId: req.user.userId, action: "remove_restriction", resource: "user", resourceId: req.params.id, details: { type } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "remove_restriction", resource: "user", resourceId: req.params.id, details: { type } });
     res.json({ message: "Restriction removed" });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -569,7 +569,7 @@ exports.getActivities = async (req, res) => {
     const where = {};
     if (type) where.type = type;
     const [activities, total] = await Promise.all([
-      prisma.auditLog.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: "desc" }, include: { admin: { select: { id: true, firstName: true, lastName: true } } } }),
+      prisma.auditLog.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: "desc" }, include: { actor: { select: { id: true, firstName: true, lastName: true } } } }),
       prisma.auditLog.count({ where }),
     ]);
     res.json({ activities, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
@@ -593,7 +593,7 @@ exports.updateSystemSettings = async (req, res) => {
     if (key.startsWith("matchmaking_weight_")) {
       invalidateWeightsCache();
     }
-    await logAudit({ adminId: req.user.userId, action: "update_setting", resource: "system_setting", resourceId: key, details: { key, value, category: cat } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "update_setting", resource: "system_setting", resourceId: key, details: { key, value, category: cat } });
     res.json({ setting });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -610,7 +610,7 @@ exports.getActivityTimeline = async (req, res) => {
       where: { action: "admin_login", createdAt: { gte: todayStart } },
       orderBy: { createdAt: "desc" },
       take: 50,
-      include: { admin: { select: { id: true, firstName: true, lastName: true, email: true } } },
+      include: { actor: { select: { id: true, firstName: true, lastName: true, email: true } } },
     });
 
     // User logins today (lastLoginAt >= today)
@@ -688,9 +688,9 @@ exports.getAuditLogs = async (req, res) => {
     const where = {};
     if (action) where.action = action;
     if (resource) where.resource = resource;
-    if (adminId) where.adminId = adminId;
+    if (adminId) where.actorId = adminId;
     const [logs, total] = await Promise.all([
-      prisma.auditLog.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: "desc" }, include: { admin: { select: { id: true, firstName: true, lastName: true, email: true } } } }),
+      prisma.auditLog.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: "desc" }, include: { actor: { select: { id: true, firstName: true, lastName: true, email: true } } } }),
       prisma.auditLog.count({ where }),
     ]);
     res.json({ logs, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
@@ -718,7 +718,7 @@ exports.updateFeatureToggle = async (req, res) => {
     const { id } = req.params;
     const { enabled } = req.body;
     const toggle = await prisma.featureToggle.update({ where: { id }, data: { enabled } });
-    await logAudit({ adminId: req.user.userId, action: "toggle_feature", resource: "feature_toggle", resourceId: id, details: { key: toggle.key, enabled } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "toggle_feature", resource: "feature_toggle", resourceId: id, details: { key: toggle.key, enabled } });
     res.json({ toggle });
   } catch (error) { res.status(500).json({ error: "Failed to update feature toggle" }); }
 };
@@ -735,7 +735,7 @@ exports.setAdminPermission = async (req, res) => {
   try {
     const { adminId, permission } = req.body;
     const perm = await prisma.adminPermission.create({ data: { adminId, permission } });
-    await logAudit({ adminId: req.user.userId, action: "grant_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "grant_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
     res.json({ permission: perm });
   } catch (error) {
     if (error.code === "P2002") return res.status(400).json({ error: "Permission already exists" });
@@ -747,7 +747,7 @@ exports.removeAdminPermission = async (req, res) => {
   try {
     const { adminId, permission } = req.body;
     await prisma.adminPermission.delete({ where: { adminId_permission: { adminId, permission } } });
-    await logAudit({ adminId: req.user.userId, action: "revoke_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "revoke_permission", resource: "admin_permission", details: { targetAdminId: adminId, permission } });
     res.json({ success: true });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -768,7 +768,7 @@ exports.reviewContentFlag = async (req, res) => {
     const { id } = req.params;
     const { status, adminNote } = req.body;
     const flag = await prisma.contentFlag.update({ where: { id }, data: { status, adminNote, reviewedBy: req.user.userId, reviewedAt: new Date() } });
-    await logAudit({ adminId: req.user.userId, action: `content_${status}`, resource: "content_flag", resourceId: id, details: { targetType: flag.targetType, adminNote } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: `content_${status}`, resource: "content_flag", resourceId: id, details: { targetType: flag.targetType, adminNote } });
     res.json({ flag });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -792,7 +792,7 @@ exports.getPromotions = async (req, res) => {
 exports.createPromotion = async (req, res) => {
   try {
     const promo = await prisma.promotion.create({ data: req.body });
-    await logAudit({ adminId: req.user.userId, action: "create_promotion", resource: "promotion", resourceId: promo.id, details: { code: promo.code } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "create_promotion", resource: "promotion", resourceId: promo.id, details: { code: promo.code } });
     res.json({ promotion: promo });
   } catch (error) {
     if (error.code === "P2002") return res.status(400).json({ error: "Code already exists" });
@@ -820,7 +820,7 @@ exports.updateNotificationTemplate = async (req, res) => {
   try {
     const { id } = req.params;
     const template = await prisma.notificationTemplate.update({ where: { id }, data: req.body });
-    await logAudit({ adminId: req.user.userId, action: "update_template", resource: "notification_template", resourceId: id });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "update_template", resource: "notification_template", resourceId: id });
     res.json({ template });
   } catch (error) { res.status(500).json({ error: "Failed" }); }
 };
@@ -907,7 +907,7 @@ exports.sendUserMessage = async (req, res) => {
     });
     await createNotification({ userId: receiverId, type: "admin_message", title: "New message from admin", body: content });
     emitNewMessage(message, receiverId);
-    await logAudit({ adminId: req.user.userId, action: "send_message", resource: "user", resourceId: receiverId });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "send_message", resource: "user", resourceId: receiverId });
     res.status(201).json({ message });
   } catch (error) {
     console.error("Admin send message error:", error);
@@ -926,7 +926,7 @@ exports.broadcastNotification = async (req, res) => {
     await prisma.notification.createMany({
       data: users.map((u) => ({ userId: u.id, type: "admin_broadcast", title, body })),
     });
-    await logAudit({ adminId: req.user.userId, action: "broadcast_notification", resource: "all_users", details: { gender: gender || "all" } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "broadcast_notification", resource: "all_users", details: { gender: gender || "all" } });
     res.json({ message: `Notification sent to ${users.length} user(s)` });
   } catch (error) {
     console.error("Broadcast error:", error);
@@ -942,7 +942,7 @@ exports.notifyUser = async (req, res) => {
     await prisma.notification.create({
       data: { userId: req.params.id, type: "admin_reminder", title, body },
     });
-    await logAudit({ adminId: req.user.userId, action: "notify_user", resource: "user", resourceId: req.params.id });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "notify_user", resource: "user", resourceId: req.params.id });
     res.json({ message: "Notification sent" });
   } catch (error) {
     console.error("Notify user error:", error);
@@ -1158,7 +1158,7 @@ exports.restoreDeletedUser = async (req, res) => {
 
     try { require("../middleware/auth").invalidateAuthCache(id); } catch {}
 
-    await logAudit({ userId: adminId, action: "USER_RESTORED", targetUserId: id, details: "Admin restored soft-deleted user" });
+    await logAudit({ actorId: adminId, actorType: "ADMIN", action: "USER_RESTORED", resource: "user", resourceId: id, details: { method: "restore" } });
     res.json({ message: "Account restored successfully" });
   } catch (error) {
     console.error("Restore user error:", error);
@@ -1194,7 +1194,7 @@ exports.purgeDeletedUsers = async (req, res) => {
       prisma.user.deleteMany({ where: { id: { in: ids } } }),
     ]);
 
-    await logAudit({ userId: adminId, action: "PURGE_DELETED_USERS", details: `Permanently purged ${ids.length} accounts` });
+    await logAudit({ actorId: adminId, actorType: "ADMIN", action: "PURGE_DELETED_USERS", resource: "user", details: { count: ids.length } });
     res.json({ message: `Permanently purged ${ids.length} accounts`, purged: ids.length });
   } catch (error) {
     console.error("Purge deleted users error:", error);
@@ -1211,7 +1211,7 @@ exports.pinUser = async (req, res) => {
       where: { id },
       data: { adminPinned: true },
     });
-    await logAudit({ adminId: req.user.userId, action: "USER_PINNED", resource: "admin", details: { userId: id } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "USER_PINNED", resource: "user", resourceId: id, details: {} });
     res.json({ message: "User pinned for review" });
   } catch (error) {
     console.error("Pin user error:", error);
@@ -1226,7 +1226,7 @@ exports.unpinUser = async (req, res) => {
       where: { id },
       data: { adminPinned: false },
     });
-    await logAudit({ adminId: req.user.userId, action: "USER_UNPINNED", resource: "admin", details: { userId: id } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "USER_UNPINNED", resource: "user", resourceId: id, details: {} });
     res.json({ message: "User unpinned" });
   } catch (error) {
     console.error("Unpin user error:", error);
@@ -1248,7 +1248,7 @@ exports.unlockUser = async (req, res) => {
         lockoutLevel: 0,
       },
     });
-    await logAudit({ adminId: req.user.userId, action: "USER_UNLOCKED", resource: "admin", details: { userId: id } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "USER_UNLOCKED", resource: "user", resourceId: id, details: {} });
     res.json({ message: "User account unlocked successfully" });
   } catch (error) {
     console.error("Unlock user error:", error);
@@ -1263,7 +1263,7 @@ exports.clearFlag = async (req, res) => {
       where: { id },
       data: { isFlaggedForReview: false },
     });
-    await logAudit({ adminId: req.user.userId, action: "USER_FLAG_CLEARED", resource: "admin", details: { userId: id } });
+    await logAudit({ actorId: req.user.userId, actorType: "ADMIN", action: "USER_FLAG_CLEARED", resource: "user", resourceId: id, details: {} });
     res.json({ message: "Flag cleared" });
   } catch (error) {
     console.error("Clear flag error:", error);

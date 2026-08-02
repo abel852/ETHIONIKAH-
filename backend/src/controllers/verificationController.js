@@ -129,7 +129,7 @@ const approveVerification = async (req, res) => {
 
     emitVerificationStatus(verification.userId, { id: verification.id, status: "approved", userId: verification.userId });
 
-    await logAudit({ adminId, action: "verify_user", resource: "user", resourceId: verification.userId, details: { verificationId: verification.id } });
+    await logAudit({ actorId: adminId, actorType: "ADMIN", action: "verify_user", resource: "user", resourceId: verification.userId, details: { verificationId: verification.id } });
 
     res.json({ message: "Verification approved", verification });
   } catch (error) {
@@ -158,7 +158,7 @@ const rejectVerification = async (req, res) => {
 
     emitVerificationStatus(verification.userId, { id: verification.id, status: "rejected", userId: verification.userId, adminNote });
 
-    await logAudit({ adminId, action: "reject_verification", resource: "user", resourceId: verification.userId, details: { verificationId: verification.id, reason: adminNote } });
+    await logAudit({ actorId: adminId, actorType: "ADMIN", action: "reject_verification", resource: "user", resourceId: verification.userId, details: { verificationId: verification.id, reason: adminNote } });
 
     res.json({ message: "Verification rejected", verification });
   } catch (error) {

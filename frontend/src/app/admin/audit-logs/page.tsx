@@ -82,7 +82,7 @@ export default function AuditLogsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-white/5">
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Admin</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Actor</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Action</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Resource</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Details</th>
@@ -100,8 +100,11 @@ export default function AuditLogsPage() {
               ) : logs.map((log) => (
                 <tr key={log.id} className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-white/5">
                   <td className="px-5 py-3">
-                    <span className="font-medium text-gray-900 dark:text-white">{log.admin?.firstName} {log.admin?.lastName}</span>
-                    <span className="text-xs text-gray-400 ml-2">{log.admin?.email}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{log.actor?.firstName} {log.actor?.lastName}</span>
+                    <span className="text-xs text-gray-400 ml-2">{log.actor?.email}</span>
+                    {log.actorType && log.actorType !== "ADMIN" && (
+                      <span className="ml-2 inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">{log.actorType}</span>
+                    )}
                   </td>
                   <td className="px-5 py-3">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${actionColors[log.action] || "text-gray-600 bg-gray-50 dark:bg-gray-800"}`}>
