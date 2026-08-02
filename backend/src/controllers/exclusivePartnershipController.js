@@ -153,6 +153,19 @@ const respondToPartnershipRequest = async (req, res) => {
       }
 
       if (status === "accepted") {
+        // --- Block check: neither user should have blocked the other ---
+        const blockExists = await tx.blockedUser.findFirst({
+          where: {
+            OR: [
+              { blockerId: request.requesterId, blockedId: receiverId },
+              { blockerId: receiverId, blockedId: request.requesterId },
+            ],
+          },
+        });
+        if (blockExists) {
+          throw { code: 403, message: "You cannot accept a partnership request with this user due to a block." };
+        }
+
         const userAId = request.requesterId;
         const userBId = request.receiverId;
 
