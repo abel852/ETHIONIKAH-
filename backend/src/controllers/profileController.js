@@ -88,6 +88,23 @@ const createOrUpdateProfile = async (req, res) => {
 
       const hasWaliYes = cleanData.hasWali && cleanData.hasWali.toLowerCase() === "yes";
 
+      // Check if there's an active or pending Wali invitation linked to this Wali
+      if (existingWali) {
+        const activeInvitation = await prisma.waliInvitation.findFirst({
+          where: {
+            waliId: existingWali.id,
+            status: { in: ["active", "pending_approval"] },
+          },
+        });
+
+        if (activeInvitation && (hasWaliYes || !hasWaliYes)) {
+          return res.status(403).json({
+            error: "You cannot edit your Wali information while a Wali invitation is active or pending approval. Please revoke the Wali invitation first before making changes.",
+            code: "WALI_INVITATION_ACTIVE",
+          });
+        }
+      }
+
       if (hasWaliYes && cleanData.waliName) {
         // Create or update Wali record
         const waliData = {
