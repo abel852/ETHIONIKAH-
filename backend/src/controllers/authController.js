@@ -11,7 +11,7 @@ const register = async (req, res) => {
   try {
     const {
       email, phone, password, firstName, lastName, gender, dateOfBirth,
-      nationality, country, city, height, weight, appearance, hasWali, waliName, waliPhone, waliRelation, maritalStatus, hasChildren, childrenCount, childrenCustody, childrenStatus,
+      nationality, country, city, height, weight, appearance, hasWali, waliName, waliPhone, waliRelation, waliEmail, maritalStatus, hasChildren, childrenCount, childrenCustody, childrenStatus,
       religiousCommitment, prayerHabits, quranReadingFrequency,
       islamicClassesAttendance, preferredReligiousCommitment,
       islamicTradition, islamicTraditionOther, islamicMatchPreference,
@@ -132,6 +132,23 @@ const register = async (req, res) => {
         isProfileComplete: true,
       },
     });
+
+    // Create Wali record for female users who have a Wali
+    if (gender === "female" && hasWali && hasWali.toLowerCase() === "yes" && waliName) {
+      try {
+        await prisma.wali.create({
+          data: {
+            femaleUserId: user.id,
+            name: waliName,
+            relationship: waliRelation || "",
+            email: waliEmail || "",
+            phone: waliPhone || "",
+          },
+        });
+      } catch (waliErr) {
+        console.error("Wali creation error (non-fatal):", waliErr);
+      }
+    }
 
     if (profile && (preferredAgeMin || preferredAgeMax || preferredMaritalStatus ||
         preferredEducationLevel || preferredLocation || waliInvolvement ||

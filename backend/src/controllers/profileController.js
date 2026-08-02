@@ -17,7 +17,7 @@ const createOrUpdateProfile = async (req, res) => {
     // Only allow fields that exist in the Profile model
     const allowedFields = [
       "nationality", "region", "height", "weight", "appearance",
-      "hasWali", "waliName", "waliPhone", "waliRelation",
+      "hasWali", "waliName", "waliPhone", "waliRelation", "waliEmail",
       "hasChildren", "childrenCount", "childrenCustody", "childrenStatus",
       "religiousCommitment", "prayerHabits", "quranReadingFrequency",
       "islamicClassesAttendance", "islamicTradition", "islamicTraditionOther",
@@ -73,6 +73,45 @@ const createOrUpdateProfile = async (req, res) => {
           ...cleanData,
         },
       });
+    }
+
+    // --- Sync Wali record for female users ---
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { gender: true },
+    });
+
+    if (currentUser && currentUser.gender === "female") {
+      const existingWali = await prisma.wali.findUnique({
+        where: { femaleUserId: userId },
+      });
+
+      const hasWaliYes = cleanData.hasWali && cleanData.hasWali.toLowerCase() === "yes";
+
+      if (hasWaliYes && cleanData.waliName) {
+        // Create or update Wali record
+        const waliData = {
+          name: cleanData.waliName,
+          relationship: cleanData.waliRelation || "",
+          email: cleanData.waliEmail || "",
+          phone: cleanData.waliPhone || "",
+        };
+        if (existingWali) {
+          await prisma.wali.update({
+            where: { femaleUserId: userId },
+            data: waliData,
+          });
+        } else {
+          await prisma.wali.create({
+            data: { femaleUserId: userId, ...waliData },
+          });
+        }
+      } else if (!hasWaliYes && existingWali) {
+        // hasWali is "no" or removed — delete the Wali record
+        await prisma.wali.delete({
+          where: { femaleUserId: userId },
+        });
+      }
     }
 
     const updatedUser = await prisma.user.findUnique({
@@ -134,7 +173,16 @@ const getProfile = async (req, res) => {
       ? { isPremium: true, activePlan: activeSubscription.planType, expiresAt: activeSubscription.endDate }
       : { isPremium: false, activePlan: null, expiresAt: null };
 
-    res.json({ profile: { ...(profile || {}), likesCount, membership } });
+    // Include Wali record for female users
+    let wali = null;
+    if (profile?.user?.gender === "female") {
+      wali = await prisma.wali.findUnique({
+        where: { femaleUserId: userId },
+        select: { id: true, name: true, relationship: true, email: true, phone: true, createdAt: true, updatedAt: true },
+      });
+    }
+
+    res.json({ profile: { ...(profile || {}), likesCount, membership, wali } });
   } catch (error) {
     console.error("Get profile error:", error);
     res.status(500).json({ error: "Failed to fetch profile" });
