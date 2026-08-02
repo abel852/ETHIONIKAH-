@@ -6,6 +6,7 @@ const { throttle } = require("../middleware/rateLimiter");
 
 router.post("/request", authenticate, requireActive, throttle(3, 60000), controller.requestExclusivePartnership);
 router.post("/request/:requestId/respond", authenticate, requireActive, controller.respondToPartnershipRequest);
+router.post("/request/:requestId/cancel", authenticate, requireActive, controller.cancelPartnershipRequest);
 router.post("/:partnershipId/end", authenticate, requireActive, controller.endPartnership);
 router.get("/mine", authenticate, requireActive, controller.getMyPartnership);
 router.get("/requests/received", authenticate, requireActive, controller.getReceivedPartnershipRequests);

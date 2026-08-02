@@ -1,6 +1,17 @@
 const prisma = require("../config/database");
 
-// Stage 6: Request Exclusive Marriage Process
+const COOLDOWN_DAYS = 7;
+const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
+// ============================================================
+// Stage 1: Request Exclusive Marriage Process
+// Rules:
+//   - 7-day cooldown per requester (regardless of outcome)
+//   - Receiver can receive unlimited requests
+//   - Neither user can have an active partnership
+//   - Must have prior conversation
+//   - Old requests kept for history (never deleted)
+// ============================================================
 const requestExclusivePartnership = async (req, res) => {
   try {
     const requesterId = req.user.userId;
@@ -13,20 +24,28 @@ const requestExclusivePartnership = async (req, res) => {
       return res.status(400).json({ error: "You cannot request a partnership with yourself" });
     }
 
-    // Verify both users have an active conversation (messages between them)
-    const priorMessages = await prisma.message.count({
-      where: {
-        OR: [
-          { senderId: requesterId, receiverId: receiverId },
-          { senderId: receiverId, receiverId: requesterId },
-        ],
-      },
+    // --- 7-day cooldown check ---
+    const lastRequest = await prisma.exclusivePartnershipRequest.findFirst({
+      where: { requesterId },
+      orderBy: { createdAt: "desc" },
     });
-    if (priorMessages === 0) {
-      return res.status(403).json({ error: "You can only request an exclusive partnership with someone you are already in a conversation with." });
+    if (lastRequest) {
+      const elapsed = Date.now() - lastRequest.createdAt.getTime();
+      if (elapsed < COOLDOWN_MS) {
+        const remainingMs = COOLDOWN_MS - elapsed;
+        const remainingDays = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
+        const remainingHours = Math.floor((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+        const remainingMinutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+        const cooldownEnds = new Date(lastRequest.createdAt.getTime() + COOLDOWN_MS).toISOString();
+        return res.status(429).json({
+          error: `You can send a new partnership request in ${remainingDays}d ${remainingHours}h ${remainingMinutes}m.`,
+          cooldownEnds,
+          remainingMs,
+        });
+      }
     }
 
-    // Check if either user already has an active partnership
+    // --- Check active partnership for either user ---
     const existingPartnership = await prisma.exclusivePartnership.findFirst({
       where: {
         OR: [
@@ -41,46 +60,30 @@ const requestExclusivePartnership = async (req, res) => {
       return res.status(403).json({ error: "One of you already has an active exclusive partnership." });
     }
 
-    // Expire all previous pending requests sent BY the requester
-    await prisma.exclusivePartnershipRequest.updateMany({
-      where: { requesterId, status: "pending" },
-      data: { status: "expired", respondedAt: new Date() },
+    // --- Verify prior conversation ---
+    const priorMessages = await prisma.message.count({
+      where: {
+        OR: [
+          { senderId: requesterId, receiverId: receiverId },
+          { senderId: receiverId, receiverId: requesterId },
+        ],
+      },
     });
-    // Expire all previous pending requests received BY the requester
-    await prisma.exclusivePartnershipRequest.updateMany({
-      where: { receiverId: requesterId, status: "pending" },
-      data: { status: "expired", respondedAt: new Date() },
-    });
-    // Expire all pending requests sent BY the receiver (they are about to get a new one)
-    await prisma.exclusivePartnershipRequest.updateMany({
-      where: { requesterId: receiverId, status: "pending" },
-      data: { status: "expired", respondedAt: new Date() },
-    });
-    // Expire all pending requests received BY the receiver
-    await prisma.exclusivePartnershipRequest.updateMany({
-      where: { receiverId, status: "pending" },
-      data: { status: "expired", respondedAt: new Date() },
-    });
-
-    // Check for existing request between these two users
-    const existing = await prisma.exclusivePartnershipRequest.findUnique({
-      where: { requesterId_receiverId: { requesterId, receiverId } },
-    });
-    if (existing && existing.status === "accepted") {
-      return res.json({ message: "Partnership already established", request: existing });
+    if (priorMessages === 0) {
+      return res.status(403).json({ error: "You can only request an exclusive partnership with someone you are already in a conversation with." });
     }
 
-    const request = await prisma.exclusivePartnershipRequest.upsert({
-      where: { requesterId_receiverId: { requesterId, receiverId } },
-      update: { status: "pending", message: message || null, respondedAt: null },
-      create: {
+    // --- Create new request (never overwrite old ones) ---
+    const request = await prisma.exclusivePartnershipRequest.create({
+      data: {
         requesterId,
         receiverId,
         message: message || null,
+        status: "pending",
       },
     });
 
-    // Notify the receiver
+    // --- Notify the receiver ---
     const requester = await prisma.user.findUnique({
       where: { id: requesterId },
       select: { firstName: true, lastName: true },
@@ -101,7 +104,15 @@ const requestExclusivePartnership = async (req, res) => {
   }
 };
 
-// Stage 7: Receiver accepts or declines
+// ============================================================
+// Stage 2: Receiver accepts or declines
+// Rules:
+//   - Use transaction to prevent race conditions
+//   - On accept: revalidate no active partnership for either user
+//   - On accept: expire all OTHER pending requests received by the receiver
+//   - On accept: expire all pending requests SENT BY the requester
+//   - On decline: just mark as declined
+// ============================================================
 const respondToPartnershipRequest = async (req, res) => {
   try {
     const receiverId = req.user.userId;
@@ -112,64 +123,89 @@ const respondToPartnershipRequest = async (req, res) => {
       return res.status(400).json({ error: "Status must be 'accepted' or 'declined'" });
     }
 
-    const request = await prisma.exclusivePartnershipRequest.findUnique({
-      where: { id: requestId },
-    });
-    if (!request) {
-      return res.status(404).json({ error: "Partnership request not found" });
-    }
-    if (request.receiverId !== receiverId) {
-      return res.status(403).json({ error: "Only the receiver can respond to this request" });
-    }
-    if (request.status !== "pending") {
-      return res.status(400).json({ error: "This request has already been responded to" });
-    }
-
-    const updated = await prisma.exclusivePartnershipRequest.update({
-      where: { id: requestId },
-      data: { status, respondedAt: new Date() },
-    });
-
-    if (status === "accepted") {
-      // Create the ExclusivePartnership
-      const userAId = request.requesterId;
-      const userBId = request.receiverId;
-
-      // Double-check neither user has an active partnership (safety check)
-      const activePartnership = await prisma.exclusivePartnership.findFirst({
-        where: {
-          OR: [
-            { userAId, status: "active" },
-            { userBId: userAId, status: "active" },
-            { userAId: userBId, status: "active" },
-            { userBId, status: "active" },
-          ],
-        },
+    const result = await prisma.$transaction(async (tx) => {
+      // Lock the request row by finding it first
+      const request = await tx.exclusivePartnershipRequest.findUnique({
+        where: { id: requestId },
       });
-      if (activePartnership) {
-        return res.status(403).json({ error: "One of you already has an active exclusive partnership." });
+      if (!request) {
+        throw { code: 404, message: "Partnership request not found" };
+      }
+      if (request.receiverId !== receiverId) {
+        throw { code: 403, message: "Only the receiver can respond to this request" };
+      }
+      if (request.status !== "pending") {
+        throw { code: 400, message: "This request has already been responded to" };
       }
 
-      // Check if a partnership already exists between these two (edge case)
-      const existing = await prisma.exclusivePartnership.findUnique({
-        where: { userAId_userBId: { userAId, userBId } },
-      });
-      if (existing) {
-        await prisma.exclusivePartnership.update({
-          where: { id: existing.id },
-          data: { status: "active", endedAt: null },
+      if (status === "accepted") {
+        const userAId = request.requesterId;
+        const userBId = request.receiverId;
+
+        // Revalidate: neither user has an active partnership
+        const activePartnership = await tx.exclusivePartnership.findFirst({
+          where: {
+            OR: [
+              { userAId, status: "active" },
+              { userBId: userAId, status: "active" },
+              { userAId: userBId, status: "active" },
+              { userBId, status: "active" },
+            ],
+          },
         });
-      } else {
-        await prisma.exclusivePartnership.create({
-          data: { userAId, userBId, status: "active" },
+        if (activePartnership) {
+          throw { code: 403, message: "One of you already has an active exclusive partnership." };
+        }
+
+        // Create or reactivate partnership
+        const existing = await tx.exclusivePartnership.findUnique({
+          where: { userAId_userBId: { userAId, userBId } },
+        });
+        if (existing) {
+          await tx.exclusivePartnership.update({
+            where: { id: existing.id },
+            data: { status: "active", endedAt: null },
+          });
+        } else {
+          await tx.exclusivePartnership.create({
+            data: { userAId, userBId, status: "active" },
+          });
+        }
+
+        // Expire all OTHER pending requests received by the receiver
+        await tx.exclusivePartnershipRequest.updateMany({
+          where: {
+            receiverId,
+            status: "pending",
+            id: { not: requestId },
+          },
+          data: { status: "expired", respondedAt: new Date() },
+        });
+
+        // Expire all OTHER pending requests sent BY the requester
+        await tx.exclusivePartnershipRequest.updateMany({
+          where: {
+            requesterId: request.requesterId,
+            status: "pending",
+            id: { not: requestId },
+          },
+          data: { status: "expired", respondedAt: new Date() },
         });
       }
-    }
 
-    // Notify the requester
+      // Update this request's status
+      const updated = await tx.exclusivePartnershipRequest.update({
+        where: { id: requestId },
+        data: { status, respondedAt: new Date() },
+      });
+
+      return updated;
+    });
+
+    // Notify the requester (outside transaction)
     await prisma.notification.create({
       data: {
-        userId: request.requesterId,
+        userId: result.requesterId,
         type: "exclusive_partnership_response",
         title: status === "accepted" ? "Partnership Accepted" : "Partnership Declined",
         body:
@@ -179,14 +215,66 @@ const respondToPartnershipRequest = async (req, res) => {
       },
     });
 
-    res.json({ message: `Partnership request ${status}`, request: updated });
+    res.json({ message: "Partnership request " + status, request: result });
   } catch (error) {
+    if (error.code && error.message) {
+      return res.status(error.code).json({ error: error.message });
+    }
     console.error("Respond to partnership request error:", error);
     res.status(500).json({ error: "Failed to respond to partnership request" });
   }
 };
 
-// Stage 9: End Exclusive Partnership
+// ============================================================
+// Stage 3: Cancel a sent request (requester only)
+// Rules:
+//   - Only the requester can cancel
+//   - Only pending requests can be cancelled
+//   - Cooldown still applies (does NOT reset)
+// ============================================================
+const cancelPartnershipRequest = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { requestId } = req.params;
+
+    const request = await prisma.exclusivePartnershipRequest.findUnique({
+      where: { id: requestId },
+    });
+    if (!request) {
+      return res.status(404).json({ error: "Partnership request not found" });
+    }
+    if (request.requesterId !== userId) {
+      return res.status(403).json({ error: "Only the requester can cancel this request" });
+    }
+    if (request.status !== "pending") {
+      return res.status(400).json({ error: "Only pending requests can be cancelled" });
+    }
+
+    const updated = await prisma.exclusivePartnershipRequest.update({
+      where: { id: requestId },
+      data: { status: "cancelled", respondedAt: new Date() },
+    });
+
+    // Notify the receiver
+    await prisma.notification.create({
+      data: {
+        userId: request.receiverId,
+        type: "exclusive_partnership_cancelled",
+        title: "Partnership Request Cancelled",
+        body: "The exclusive marriage process request has been cancelled by the sender.",
+      },
+    });
+
+    res.json({ message: "Partnership request cancelled", request: updated });
+  } catch (error) {
+    console.error("Cancel partnership request error:", error);
+    res.status(500).json({ error: "Failed to cancel partnership request" });
+  }
+};
+
+// ============================================================
+// Stage 4: End Exclusive Partnership
+// ============================================================
 const endPartnership = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -232,7 +320,9 @@ const endPartnership = async (req, res) => {
   }
 };
 
-// Get the current user's active partnership (if any)
+// ============================================================
+// Get current user's active partnership
+// ============================================================
 const getMyPartnership = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -261,14 +351,16 @@ const getMyPartnership = async (req, res) => {
   }
 };
 
-// Get pending partnership requests (received by current user)
+// ============================================================
+// Get received partnership requests
+// ============================================================
 const getReceivedPartnershipRequests = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { status } = req.query;
 
     const where = { receiverId: userId };
-    if (status && ["pending", "accepted", "declined"].includes(status)) {
+    if (status && ["pending", "accepted", "declined", "expired", "cancelled"].includes(status)) {
       where.status = status;
     }
 
@@ -289,14 +381,16 @@ const getReceivedPartnershipRequests = async (req, res) => {
   }
 };
 
-// Get sent partnership requests (by current user)
+// ============================================================
+// Get sent partnership requests
+// ============================================================
 const getSentPartnershipRequests = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { status } = req.query;
 
     const where = { requesterId: userId };
-    if (status && ["pending", "accepted", "declined"].includes(status)) {
+    if (status && ["pending", "accepted", "declined", "expired", "cancelled"].includes(status)) {
       where.status = status;
     }
 
@@ -317,7 +411,9 @@ const getSentPartnershipRequests = async (req, res) => {
   }
 };
 
+// ============================================================
 // Check partnership status between current user and a target user
+// ============================================================
 const checkPartnershipStatus = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -332,14 +428,38 @@ const checkPartnershipStatus = async (req, res) => {
       },
     });
 
-    const sentRequest = await prisma.exclusivePartnershipRequest.findUnique({
-      where: { requesterId_receiverId: { requesterId: userId, receiverId: targetUserId } },
+    // Get the most recent request between these two users (either direction)
+    const sentRequest = await prisma.exclusivePartnershipRequest.findFirst({
+      where: { requesterId: userId, receiverId: targetUserId },
+      orderBy: { createdAt: "desc" },
     });
-    const receivedRequest = await prisma.exclusivePartnershipRequest.findUnique({
-      where: { requesterId_receiverId: { requesterId: targetUserId, receiverId: userId } },
+    const receivedRequest = await prisma.exclusivePartnershipRequest.findFirst({
+      where: { requesterId: targetUserId, receiverId: userId },
+      orderBy: { createdAt: "desc" },
     });
 
-    res.json({ partnership, sentRequest, receivedRequest });
+    // Check cooldown status for the current user
+    const lastSentRequest = await prisma.exclusivePartnershipRequest.findFirst({
+      where: { requesterId: userId },
+      orderBy: { createdAt: "desc" },
+    });
+    let cooldown = null;
+    if (lastSentRequest) {
+      const elapsed = Date.now() - lastSentRequest.createdAt.getTime();
+      if (elapsed < COOLDOWN_MS) {
+        cooldown = {
+          active: true,
+          endsAt: new Date(lastSentRequest.createdAt.getTime() + COOLDOWN_MS).toISOString(),
+          remainingMs: COOLDOWN_MS - elapsed,
+        };
+      } else {
+        cooldown = { active: false };
+      }
+    } else {
+      cooldown = { active: false };
+    }
+
+    res.json({ partnership, sentRequest, receivedRequest, cooldown });
   } catch (error) {
     console.error("Check partnership status error:", error);
     res.status(500).json({ error: "Failed to check partnership status" });
@@ -349,6 +469,7 @@ const checkPartnershipStatus = async (req, res) => {
 module.exports = {
   requestExclusivePartnership,
   respondToPartnershipRequest,
+  cancelPartnershipRequest,
   endPartnership,
   getMyPartnership,
   getReceivedPartnershipRequests,

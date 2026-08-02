@@ -734,14 +734,14 @@ model ExclusivePartnershipRequest {
   id           String    @id @default(uuid()) @db.Uuid
   requesterId  String    @map("requester_id") @db.Uuid
   receiverId   String    @map("receiver_id") @db.Uuid
-  status       String    @default("pending") // pending | accepted | declined
+  status       String    @default("pending") // pending | accepted | declined | expired | cancelled
   message      String?
   createdAt    DateTime  @default(now()) @map("created_at")
   respondedAt  DateTime? @map("responded_at")
   requester    User      @relation("PartnershipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
   receiver     User      @relation("PartnershipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
-  @@unique([requesterId, receiverId])
+  @@index([requesterId, createdAt])
   @@index([receiverId, status])
   @@map("exclusive_partnership_requests")
 }
