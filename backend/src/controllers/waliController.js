@@ -16,20 +16,25 @@ function generateSecureToken() {
 
 // ============================================================
 // Invite Wali — only allowed when ExclusivePartnership is active
-// Creates a pending_approval invitation; the other partner must approve
+// Automatically uses the female partner's registered Wali.
+// No manual entry of Wali details — they come from the Wali table.
 // ============================================================
 const inviteWali = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { partnershipId, waliName, relationship, waliEmail } = req.body;
+    const { partnershipId } = req.body;
 
-    if (!partnershipId || !waliName || !relationship || !waliEmail) {
-      return res.status(400).json({ error: "partnershipId, waliName, relationship, and waliEmail are required" });
+    if (!partnershipId) {
+      return res.status(400).json({ error: "partnershipId is required" });
     }
 
     // Verify the partnership exists, is active, and the user is part of it
     const partnership = await prisma.exclusivePartnership.findUnique({
       where: { id: partnershipId },
+      include: {
+        userA: { select: { id: true, gender: true } },
+        userB: { select: { id: true, gender: true } },
+      },
     });
 
     if (!partnership) {
@@ -42,6 +47,21 @@ const inviteWali = async (req, res) => {
 
     if (partnership.userAId !== userId && partnership.userBId !== userId) {
       return res.status(403).json({ error: "You are not part of this exclusive partnership" });
+    }
+
+    // Identify the female partner
+    const femaleUser = partnership.userA.gender === "female" ? partnership.userA : partnership.userB;
+    if (!femaleUser) {
+      return res.status(400).json({ error: "No female partner found in this partnership. Wali is only applicable for female users." });
+    }
+
+    // Fetch the female's registered Wali
+    const wali = await prisma.wali.findUnique({
+      where: { femaleUserId: femaleUser.id },
+    });
+
+    if (!wali) {
+      return res.status(400).json({ error: "The female partner has not registered a Wali. Please ask her to register a Wali in her profile first." });
     }
 
     // Check if there's already a pending_approval or active invitation
@@ -61,18 +81,20 @@ const inviteWali = async (req, res) => {
       create: {
         partnershipId,
         createdById: userId,
-        waliName,
-        relationship,
-        waliEmail,
+        waliId: wali.id,
+        waliName: wali.name,
+        relationship: wali.relationship,
+        waliEmail: wali.email,
         secureTokenHash: "pending",
         expiresAt,
         status: "pending_approval",
       },
       update: {
         createdById: userId,
-        waliName,
-        relationship,
-        waliEmail,
+        waliId: wali.id,
+        waliName: wali.name,
+        relationship: wali.relationship,
+        waliEmail: wali.email,
         secureTokenHash: "pending",
         expiresAt,
         status: "pending_approval",
@@ -90,10 +112,10 @@ const inviteWali = async (req, res) => {
       userId: otherUserId,
       type: "wali_invitation_pending",
       title: "Wali Invitation Needs Approval",
-      body: `${inviter?.firstName} ${inviter?.lastName} wants to invite ${waliName} (${relationship}) as a Wali to observe your conversation. Please approve or decline.`,
+      body: `${inviter?.firstName} ${inviter?.lastName} wants to invite ${wali.name} (${wali.relationship}) as a Wali to observe your conversation. Please approve or decline.`,
     });
 
-    res.json({ message: "Wali invitation sent for partner approval", invitation: { id: invitation.id, waliName, relationship, waliEmail, status: "pending_approval", expiresAt } });
+    res.json({ message: "Wali invitation sent for partner approval", invitation: { id: invitation.id, waliName: wali.name, relationship: wali.relationship, waliEmail: wali.email, status: "pending_approval", expiresAt } });
   } catch (error) {
     console.error("Invite Wali error:", error);
     res.status(500).json({ error: "Failed to send Wali invitation" });

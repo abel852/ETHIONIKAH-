@@ -763,6 +763,7 @@ model Wali {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   femaleUser   User     @relation(fields: [femaleUserId], references: [id], onDelete: Cascade)
+  invitations  WaliInvitation[]
 
   @@map("walis")
 }
@@ -771,6 +772,7 @@ model WaliInvitation {
   id              String    @id @default(uuid()) @db.Uuid
   partnershipId   String    @map("partnership_id") @db.Uuid
   createdById     String    @map("created_by_id") @db.Uuid
+  waliId          String?   @map("wali_id") @db.Uuid
   waliName        String    @map("wali_name")
   relationship    String
   waliEmail       String    @map("wali_email")
@@ -782,6 +784,7 @@ model WaliInvitation {
   lastAccessedAt  DateTime? @map("last_accessed_at")
   partnership     ExclusivePartnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
   createdBy       User      @relation("WaliCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  wali            Wali?     @relation(fields: [waliId], references: [id], onDelete: SetNull)
 
   @@unique([partnershipId])
   @@index([secureTokenHash])
