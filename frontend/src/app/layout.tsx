@@ -10,6 +10,8 @@ import { ToastProvider, NetworkBanner } from "@/components/common";
 import { TwoFactorPrompt } from "@/components/auth/TwoFactorPrompt";
 import { ThemeInit } from "@/components/ThemeInit";
 import { AppShell } from "@/components/layout/AppShell";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { JSON_LD } from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const nektar = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-nektar", display: "swap" });
@@ -26,6 +28,7 @@ export const viewport = {
 } as const;
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ethionikah.com"),
   title: {
     default: "Ethio Nikah - Islamic Matchmaking Platform",
     template: "%s | Ethio Nikah",
@@ -92,6 +95,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
       </head>
       <body className="font-sans antialiased bg-background text-charcoal-900 dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300">
+        <JsonLd data={[JSON_LD.organization, JSON_LD.website, JSON_LD.webApplication]} />
         <ThemeInit />
         <NetworkBanner />
         <AuthProvider>
