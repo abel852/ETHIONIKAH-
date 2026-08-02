@@ -1058,7 +1058,7 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#121212] px-4">
         <div className="max-w-md w-full text-center">
-          <Image src="/images/logo.png" alt="Ethio Nikah" width={80} height={80} className="mx-auto mb-6 rounded-2xl border-2 border-accent ring-2 ring-[#121212]" />
+          <Image src="/images/logo.svg" alt="Ethio Nikah" width={80} height={80} className="mx-auto mb-6 rounded-2xl border-2 border-accent ring-2 ring-[#121212]" />
           <div className="signup-card p-4 sm:p-6 lg:p-8 min-w-0 overflow-hidden">
             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
@@ -1086,7 +1086,7 @@ export default function RegisterPage() {
         </div>
         <div className="relative z-10 w-full max-w-sm flex flex-col items-center">
           <Link href="/" className="flex items-center gap-3 mb-10">
-            <Image src="/images/logo.png" alt="Ethio Nikah" width={56} height={56} className="rounded-xl border-2 border-accent ring-2 ring-white/20 shadow-xl" />
+            <Image src="/images/logo.svg" alt="Ethio Nikah" width={56} height={56} className="rounded-xl border-2 border-accent ring-2 ring-white/20 shadow-xl" />
             <span className="font-display font-bold text-2xl text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
           </Link>
           {/* Animated image frame — portrait, elegant */}
@@ -1145,7 +1145,7 @@ export default function RegisterPage() {
       {/* Mobile dark header */}
       <div className="lg:hidden px-4 py-4 flex items-center justify-between" style={{ backgroundColor: "#1A1A1A" }}>
         <Link href="/" className="inline-flex items-center gap-2">
-          <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
+          <Image src="/images/logo.svg" alt="Ethio Nikah" width={32} height={32} className="rounded-lg border-2 border-accent ring-1 ring-white/10" />
           <span className="font-display font-bold text-sm text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
         </Link>
         <LangSwitcher dark small />
@@ -1205,7 +1205,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-2xl mx-auto min-w-0">
           <div className="hidden lg:block text-center mb-8">
             <Link href="/" className="hidden lg:inline-flex items-center gap-2 mb-8">
-              <Image src="/images/logo.png" alt="Ethio Nikah" width={44} height={44} className="rounded-xl border-2 border-accent ring-2 ring-[#121212]" />
+              <Image src="/images/logo.svg" alt="Ethio Nikah" width={44} height={44} className="rounded-xl border-2 border-accent ring-2 ring-[#121212]" />
               <span className="font-display font-bold text-xl text-white [-webkit-text-stroke:0.5px_#D4AF37]">Ethio Nikah</span>
             </Link>
             <h1 className="text-2xl font-display font-bold text-white mb-2">{t("register.title")}</h1>

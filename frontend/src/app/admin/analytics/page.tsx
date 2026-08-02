@@ -74,7 +74,7 @@ export default function AdminAnalyticsPage() {
 
       // Logo — load image and place in header
       try {
-        const logoResp = await fetch("/images/logo.png");
+        const logoResp = await fetch("/images/logo.svg");
         const logoBlob = await logoResp.blob();
         const logoReader = new FileReader();
         const logoDataUrl: string = await new Promise((resolve, reject) => {

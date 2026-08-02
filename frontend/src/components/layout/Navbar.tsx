@@ -131,7 +131,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-[110]">
         <div className="flex items-center justify-between h-16 md:h-20">
           <Link href="/" className="flex items-center gap-2 group">
-            <Image src="/images/logo.png" alt="Ethio Nikah" width={48} height={48} className="rounded-xl border-2 border-accent ring-2 ring-charcoal-900 transition-transform duration-300 group-hover:scale-105" />
+            <Image src="/images/logo.svg" alt="Ethio Nikah" width={48} height={48} className="rounded-xl border-2 border-accent ring-2 ring-charcoal-900 transition-transform duration-300 group-hover:scale-105" />
             <span className="font-cursive font-bold text-2xl text-white [-webkit-text-stroke:0.5px_#D4AF37]">
               Ethio <span className="text-accent [-webkit-text-stroke:0.5px_#fff]">Nikah</span>
             </span>
@@ -243,7 +243,7 @@ export default function Navbar() {
               <div className="relative px-6 pt-7 pb-5 text-center">
                 <div className="relative inline-block mb-3">
                   <div className="absolute inset-0 bg-[#D4AF37]/15 blur-xl rounded-full" />
-                  <Image src="/images/logo.png" alt="EthioNikah" width={56} height={56} className="relative rounded-2xl border-2 border-[#D4AF37]/40 ring-1 ring-white/5 shadow-lg mx-auto" />
+                  <Image src="/images/logo.svg" alt="EthioNikah" width={56} height={56} className="relative rounded-2xl border-2 border-[#D4AF37]/40 ring-1 ring-white/5 shadow-lg mx-auto" />
                 </div>
                 <h2 className="font-cursive text-2xl font-bold text-white tracking-wide">
                   Ethio<span className="text-[#D4AF37]">Nikah</span>

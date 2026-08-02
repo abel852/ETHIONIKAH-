@@ -106,7 +106,7 @@ export default function AdminSettingsPage() {
 function GeneralTab({ settings, updateSetting, saving }: { settings: Record<string, any>; updateSetting: (k: string, v: any, c: string) => void; saving: string | null }) {
   const [siteName, setSiteName] = useState(settings.site_name || "Ethio Nikah");
   const [primaryColor, setPrimaryColor] = useState(settings.primary_color || "#D4AF37");
-  const [logoUrl, setLogoUrl] = useState(settings.logo_url || "/images/logo.png");
+  const [logoUrl, setLogoUrl] = useState(settings.logo_url || "/images/logo.svg");
   const [tagline, setTagline] = useState(settings.site_tagline || "");
   const [contactEmail, setContactEmail] = useState(settings.contact_email || "");
   const [contactPhone, setContactPhone] = useState(settings.contact_phone || "");
@@ -114,7 +114,7 @@ function GeneralTab({ settings, updateSetting, saving }: { settings: Record<stri
   useEffect(() => {
     setSiteName(settings.site_name || "Ethio Nikah");
     setPrimaryColor(settings.primary_color || "#D4AF37");
-    setLogoUrl(settings.logo_url || "/images/logo.png");
+    setLogoUrl(settings.logo_url || "/images/logo.svg");
     setTagline(settings.site_tagline || "");
     setContactEmail(settings.contact_email || "");
     setContactPhone(settings.contact_phone || "");

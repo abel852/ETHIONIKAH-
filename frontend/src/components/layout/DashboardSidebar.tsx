@@ -106,7 +106,7 @@ export default function DashboardSidebar() {
       {pathname !== "/messages" && (
       <div className={`lg:hidden fixed ${isBanned ? "top-[40px]" : "top-0"} left-0 right-0 z-50 flex items-center justify-between px-4 h-14 bg-white/95 dark:bg-charcoal-900/95 backdrop-blur-xl border-b border-charcoal-100/50 dark:border-charcoal-800`}>
         <div className="flex items-center gap-2">
-          <Image src="/images/logo.png" alt="Ethio Nikah" width={32} height={32} className="rounded-lg shrink-0 border border-accent" />
+          <Image src="/images/logo.svg" alt="Ethio Nikah" width={32} height={32} className="rounded-lg shrink-0 border border-accent" />
           <span className="font-display font-bold text-base text-charcoal-900 dark:text-white">Ethio Nikah</span>
         </div>
         <div className="flex items-center gap-3">
@@ -254,7 +254,7 @@ export default function DashboardSidebar() {
       <aside className="hidden lg:flex fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-white/95 via-pink-50/30 to-amber-50/30 dark:from-charcoal-900/95 dark:via-charcoal-900/90 dark:to-charcoal-900/95 backdrop-blur-xl border-r border-amber-100/50 dark:border-charcoal-800 z-40 flex-col">
         <div className="flex items-center justify-between p-4 border-b border-charcoal-100/50 dark:border-charcoal-800">
           <div className="flex items-center gap-2">
-            <Image src="/images/logo.png" alt="Ethio Nikah" width={40} height={40} className={`rounded-xl shrink-0 border-2 border-accent ring-2 ring-charcoal-900 ${isBanned ? "grayscale opacity-50" : ""}`} />
+            <Image src="/images/logo.svg" alt="Ethio Nikah" width={40} height={40} className={`rounded-xl shrink-0 border-2 border-accent ring-2 ring-charcoal-900 ${isBanned ? "grayscale opacity-50" : ""}`} />
             <span className="font-display font-bold text-lg text-charcoal-900 dark:text-white [-webkit-text-stroke:0.5px_#D4AF37]">
               Ethio <span className="text-accent [-webkit-text-stroke:0.5px_#111]">Nikah</span>
             </span>

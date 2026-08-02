@@ -19,10 +19,10 @@ export default function Loading() {
           {/* Gold ring spinner */}
           <div className="absolute -inset-4 rounded-full border-2 border-transparent border-t-[#D4AF37] border-r-[#D4AF37]/30 animate-spin" style={{ animationDuration: "1.2s" }} />
 
-          {/* Logo image */}
+          {/* Logo SVG */}
           <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-2xl shadow-[#D4AF37]/20 ring-1 ring-[#D4AF37]/20">
             <img
-              src="/images/logo.png"
+              src="/images/logo.svg"
               alt="Ethio Nikah"
               className="w-full h-full object-cover"
             />
