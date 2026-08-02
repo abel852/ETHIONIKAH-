@@ -24,6 +24,19 @@ const requestExclusivePartnership = async (req, res) => {
       return res.status(400).json({ error: "You cannot request a partnership with yourself" });
     }
 
+    // --- Block check: neither user should have blocked the other ---
+    const blockExists = await prisma.blockedUser.findFirst({
+      where: {
+        OR: [
+          { blockerId: requesterId, blockedId: receiverId },
+          { blockerId: receiverId, blockedId: requesterId },
+        ],
+      },
+    });
+    if (blockExists) {
+      return res.status(403).json({ error: "You cannot request a partnership with this user." });
+    }
+
     // --- 7-day cooldown check ---
     const lastRequest = await prisma.exclusivePartnershipRequest.findFirst({
       where: { requesterId },

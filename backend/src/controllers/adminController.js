@@ -211,6 +211,56 @@ exports.restrictUserBan = async (req, res) => {
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
     try { require("../middleware/auth").invalidateAuthCache(req.params.id); } catch {}
     await prisma.userRestriction.create({ data: { userId: req.params.id, type: "ban", reason, duration, expiresAt, createdBy: req.user.userId } });
+
+    // --- Expire all pending partnership requests SENT BY the banned user ---
+    const sentRequests = await prisma.exclusivePartnershipRequest.findMany({
+      where: { requesterId: req.params.id, status: "pending" },
+      select: { id: true, receiverId: true },
+    });
+    if (sentRequests.length > 0) {
+      await prisma.exclusivePartnershipRequest.updateMany({
+        where: { id: { in: sentRequests.map((r) => r.id) } },
+        data: { status: "expired", respondedAt: new Date() },
+      });
+      for (const r of sentRequests) {
+        createNotification({ userId: r.receiverId, type: "exclusive_partnership_expired", title: "Partnership Request Expired", body: "A partnership request sent to you has expired." }).catch(() => {});
+      }
+    }
+
+    // --- Expire all pending partnership requests RECEIVED BY the banned user ---
+    const receivedRequests = await prisma.exclusivePartnershipRequest.findMany({
+      where: { receiverId: req.params.id, status: "pending" },
+      select: { id: true, requesterId: true },
+    });
+    if (receivedRequests.length > 0) {
+      await prisma.exclusivePartnershipRequest.updateMany({
+        where: { id: { in: receivedRequests.map((r) => r.id) } },
+        data: { status: "expired", respondedAt: new Date() },
+      });
+      for (const r of receivedRequests) {
+        createNotification({ userId: r.requesterId, type: "exclusive_partnership_expired", title: "Partnership Request Expired", body: "Your partnership request has expired because the recipient is no longer available." }).catch(() => {});
+      }
+    }
+
+    // --- End any active exclusive partnership ---
+    const activePartnership = await prisma.exclusivePartnership.findFirst({
+      where: {
+        OR: [
+          { userAId: req.params.id, status: "active" },
+          { userBId: req.params.id, status: "active" },
+        ],
+      },
+      select: { id: true, userAId: true, userBId: true },
+    });
+    if (activePartnership) {
+      await prisma.exclusivePartnership.update({
+        where: { id: activePartnership.id },
+        data: { status: "ended", endedAt: new Date() },
+      });
+      const otherUserId = activePartnership.userAId === req.params.id ? activePartnership.userBId : activePartnership.userAId;
+      createNotification({ userId: otherUserId, type: "exclusive_partnership_ended", title: "Exclusive Marriage Process Ended", body: "The exclusive marriage process has been ended because your partner is no longer available." }).catch(() => {});
+    }
+
     const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric" }) : null;
     const message = expiryDate ? `Your account has been temporarily suspended. You will regain access on ${expiryDate}.` : "Your account has been permanently suspended.";
     createNotification({ userId: req.params.id, type: "account", title: "Account Suspended", body: message }).catch(() => {});
