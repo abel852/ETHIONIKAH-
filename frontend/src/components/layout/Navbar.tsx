@@ -340,16 +340,34 @@ export default function Navbar() {
 
               {/* ── CTA section ── */}
               <div className="relative px-5 pb-6 pt-1">
-                <Link href="/register" className="block" onClick={() => setIsOpen(false)}>
-                  <button className="w-full py-3.5 rounded-2xl text-base font-bold text-[#0F0F12] bg-gradient-to-r from-[#D4AF37] via-[#E5C24A] to-[#B8860B] shadow-[0_8px_24px_rgba(212,175,55,0.25)] hover:shadow-[0_12px_32px_rgba(212,175,55,0.35)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
-                    {t('nav.getStarted')}
-                  </button>
-                </Link>
-                <Link href="/login" className="block mt-2.5" onClick={() => setIsOpen(false)}>
-                  <button className="w-full py-3.5 rounded-2xl text-base font-semibold text-[#D4AF37] border border-[#D4AF37]/25 hover:bg-[#D4AF37]/8 hover:border-[#D4AF37]/40 transition-all duration-300">
-                    {t('nav.signIn')}
-                  </button>
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <Link href="/profile" className="block" onClick={() => setIsOpen(false)}>
+                      <button className="w-full py-3.5 rounded-2xl text-base font-bold text-[#0F0F12] bg-gradient-to-r from-[#D4AF37] via-[#E5C24A] to-[#B8860B] shadow-[0_8px_24px_rgba(212,175,55,0.25)] hover:shadow-[0_12px_32px_rgba(212,175,55,0.35)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
+                        {t('nav.profile')}
+                      </button>
+                    </Link>
+                    <button onClick={() => { logout(); window.location.href = "/"; }} className="w-full mt-2.5 py-3.5 rounded-2xl text-base font-semibold text-red-400 border border-red-400/25 hover:bg-red-400/8 hover:border-red-400/40 transition-all duration-300">
+                      <span className="flex items-center justify-center gap-2">
+                        <LogOut className="w-4 h-4" />
+                        {t('nav.logout')}
+                      </span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/register" className="block" onClick={() => setIsOpen(false)}>
+                      <button className="w-full py-3.5 rounded-2xl text-base font-bold text-[#0F0F12] bg-gradient-to-r from-[#D4AF37] via-[#E5C24A] to-[#B8860B] shadow-[0_8px_24px_rgba(212,175,55,0.25)] hover:shadow-[0_12px_32px_rgba(212,175,55,0.35)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
+                        {t('nav.getStarted')}
+                      </button>
+                    </Link>
+                    <Link href="/login" className="block mt-2.5" onClick={() => setIsOpen(false)}>
+                      <button className="w-full py-3.5 rounded-2xl text-base font-semibold text-[#D4AF37] border border-[#D4AF37]/25 hover:bg-[#D4AF37]/8 hover:border-[#D4AF37]/40 transition-all duration-300">
+                        {t('nav.signIn')}
+                      </button>
+                    </Link>
+                  </>
+                )}
 
                 {/* OR divider */}
                 <div className="flex items-center gap-3 my-4">

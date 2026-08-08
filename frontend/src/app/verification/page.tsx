@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Shield, Upload, CheckCircle, Clock, AlertCircle, Camera, FileText, X, RefreshCw } from "lucide-react";
+import { Shield, Upload, CheckCircle, Clock, AlertCircle, Camera, FileText, X, RefreshCw, LogOut } from "lucide-react";
 import { Button, Badge, IslamicPatternBackground } from "@/components/common";
 import { verificationService } from "@/services/verification";
 import { toast } from "sonner";
 import { useI18n } from "@/context/I18nContext";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 async function detectBlur(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -46,6 +48,8 @@ const BLUR_THRESHOLD = 60;
 
 export default function VerificationPage() {
   const { t } = useI18n();
+  const { logout } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [verification, setVerification] = useState<any>(null);
@@ -97,6 +101,11 @@ export default function VerificationPage() {
     window.addEventListener("verification-status-changed", handler);
     return () => window.removeEventListener("verification-status-changed", handler);
   }, [fetchStatus]);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   const isApproved = vStatus === "approved";
   const isRejected = vStatus === "rejected";
@@ -211,6 +220,12 @@ export default function VerificationPage() {
       <div className="min-h-screen bg-blur-image">
           <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
+            <div className="flex justify-end mb-4">
+              <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-charcoal-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('nav.logout')}</span>
+              </button>
+            </div>
             <div className="bg-charcoal-800 rounded-2xl p-8 animate-pulse">
               <div className="h-6 bg-charcoal-700 rounded-lg w-1/3 mb-4" />
               <div className="h-32 bg-charcoal-700 rounded-xl mb-3" />
@@ -227,6 +242,12 @@ export default function VerificationPage() {
       <div className="min-h-screen bg-blur-image">
           <div className="lg:pl-64 pt-14 lg:pt-0 pb-16 lg:pb-0">
           <main className="p-4 sm:p-6 lg:p-8 pt-4 lg:pt-8 max-w-3xl mx-auto">
+            <div className="flex justify-end mb-4">
+              <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-charcoal-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('nav.logout')}</span>
+              </button>
+            </div>
             <div className="bg-white dark:bg-charcoal-800 rounded-2xl border border-green-200 dark:border-green-500/20 p-8 text-center">
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-500/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
@@ -250,12 +271,19 @@ export default function VerificationPage() {
             <div className="w-12 h-12 rounded-2xl gold-gradient flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-display font-bold text-charcoal-900 dark:text-white">{t('verification.title')}</h1>
               <p className="text-charcoal-500 dark:text-charcoal-400 text-sm">
                 {showUploadForm ? t('verification.subtitleUpload') : t('verification.subtitlePending')}
               </p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-charcoal-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('nav.logout')}</span>
+            </button>
           </div>
 
           {/* Status banners */}
