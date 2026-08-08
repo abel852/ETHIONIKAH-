@@ -5,16 +5,22 @@ const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
   headers: { "Accept": "application/json" },
   withCredentials: true,
+  timeout: 30000, // 30s default — generous for slow connections
 });
 
 // --- Client-side GET cache (short TTL, stale-while-revalidate) ---
 const clientCache = new Map<string, { data: any; ts: number }>();
 const CLIENT_CACHE_TTL = 15000; // 15 seconds
 
+// Override timeout for file uploads (3 min for slow uploads)
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("accessToken");
     if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Longer timeout for uploads
+  if (config.data instanceof FormData) {
+    config.timeout = 180000; // 3 minutes for file uploads
   }
   return config;
 });
@@ -92,11 +98,11 @@ api.interceptors.response.use(
     // Network / connection errors
     if (!error.response) {
       if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
-        toast.error("No internet connection. Check your network.", { id: networkToast.id, duration: 1000 });
+        toast.error("No internet connection. Check your network.", { id: networkToast.id, duration: 4000 });
       } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
-        toast.error("Request timed out. Please try again.", { id: networkToast.id, duration: 1000 });
+        toast.error("Connection timed out. Please try again.", { id: networkToast.id, duration: 4000 });
       } else {
-        toast.error("Network error. Please try again.", { id: networkToast.id, duration: 1000 });
+        toast.error("Network error. Please try again.", { id: networkToast.id, duration: 4000 });
       }
       return Promise.reject(error);
     }
