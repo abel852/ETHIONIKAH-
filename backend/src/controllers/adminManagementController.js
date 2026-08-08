@@ -175,11 +175,8 @@ exports.createAdmin = async (req, res) => {
     const stored = await getVerificationData(email);
     if (!stored?.emailVerified) return res.status(400).json({ error: "Email not verified" });
 
-    // 2FA is mandatory for admin accounts
+    // 2FA is optional during creation — admin can set it up later from security settings
     const has2FA = stored?.googleVerified && stored?.tempGoogleSecret;
-    if (!has2FA) {
-      return res.status(400).json({ error: "Two-factor authentication (2FA) is required for admin accounts. Please set up Google Authenticator before creating an admin." });
-    }
 
     const passwordHash = await bcrypt.hash(password, 12);
     const userData = {
@@ -197,6 +194,7 @@ exports.createAdmin = async (req, res) => {
 
     if (has2FA) {
       userData.googleAuthSecret = stored.tempGoogleSecret;
+      userData.twoFactorEnabled = true;
     }
 
     const user = await prisma.user.create({ data: userData });

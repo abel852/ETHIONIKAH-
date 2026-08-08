@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, Check, X } from "lucide-react";
 import { useNotificationStore } from "@/store/notifications";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import { formatDistanceToNow } from "date-fns";
 
 const typeIcons: Record<string, string> = {
@@ -20,6 +21,7 @@ const typeIcons: Record<string, string> = {
 };
 
 export default function NotificationBell() {
+  const { t } = useI18n();
   const { notifications, unreadCount, fetchNotifications, fetchUnreadCount, markAsRead, markAllAsRead } = useNotificationStore();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -93,12 +95,12 @@ export default function NotificationBell() {
       {open && (
         <div style={dropdownStyle} className="w-[90vw] sm:w-96 max-w-sm bg-white dark:bg-charcoal-800 rounded-2xl shadow-elevated border border-charcoal-100 dark:border-charcoal-700 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-charcoal-100 dark:border-charcoal-700">
-            <h3 className="font-semibold text-sm text-charcoal-900 dark:text-white">Notifications</h3>
+            <h3 className="font-semibold text-sm text-charcoal-900 dark:text-white">{t('profile.notifications')}</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
-                <button onClick={markAllAsRead} className="text-xs text-accent hover:underline" title="Mark all read">
+                <button onClick={markAllAsRead} className="text-xs text-accent hover:underline" title={t('common.markAllRead')}>
                   <Check className="w-3.5 h-3.5 inline mr-0.5" />
-                  Mark all read
+                  {t('common.markAllRead')}
                 </button>
               )}
               <button onClick={() => setOpen(false)} className="p-0.5 rounded hover:bg-charcoal-100 dark:hover:bg-charcoal-700 transition-colors">
@@ -109,7 +111,7 @@ export default function NotificationBell() {
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-sm text-charcoal-400">No notifications yet</div>
+              <div className="p-8 text-center text-sm text-charcoal-400">{t('common.noNotificationsYet')}</div>
             ) : (
               notifications.slice(0, 10).map((n) => (
                 <div

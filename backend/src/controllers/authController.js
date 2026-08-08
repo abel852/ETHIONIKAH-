@@ -497,6 +497,8 @@ const getMe = async (req, res) => {
         isEmailVerified: true,
         isPhoneVerified: true,
         isActive: true,
+        isMarried: true,
+        twoFactorEnabled: true,
         language: true,
         lastLoginAt: true,
         createdAt: true,

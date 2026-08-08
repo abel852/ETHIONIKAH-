@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useI18n, type Lang } from "@/context/I18nContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import { Admin2FAGate } from "@/components/admin/Admin2FAGate";
 import api from "@/lib/api";
 
 const navSections = [
@@ -32,6 +33,7 @@ const navSections = [
       { href: "/admin/verifications", icon: ShieldCheck, labelKey: "admin.nav.verifications", perm: "verifications.view" },
       { href: "/admin/admins", icon: Shield, labelKey: "admin.nav.admins", perm: "admins.view" },
       { href: "/admin/recycle-bin", icon: Trash2, labelKey: "admin.nav.recycleBin", perm: "recycle_bin.view" },
+      { href: "/admin/marriage-success", icon: Heart, labelKey: "admin.nav.marriageSuccess", perm: "verifications.view" },
     ],
   },
   {
@@ -71,6 +73,7 @@ const navSections = [
       { href: "/admin/feature-toggles", icon: Puzzle, labelKey: "admin.nav.featureToggles", perm: "settings.feature_toggles" },
       { href: "/admin/backup", icon: Database, labelKey: "admin.nav.backup", perm: "backup.view" },
       { href: "/admin/books", icon: BookOpen, labelKey: "admin.nav.books", perm: "books.view" },
+      { href: "/admin/manual", icon: FileText, labelKey: "admin.nav.manual", perm: "overview.dashboard" },
     ],
   },
 ];
@@ -97,6 +100,7 @@ const hrefToPerm: Record<string, string> = {
   "/admin/feature-toggles": "settings.feature_toggles",
   "/admin/backup": "backup.view",
   "/admin/books": "books.view",
+  "/admin/marriage-success": "verifications.view",
 };
 
 const allNavItems = navSections.flatMap((s) => s.items);
@@ -604,7 +608,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto pb-24 lg:pb-8 admin-main-scroll">
-          {children}
+          <Admin2FAGate>{children}</Admin2FAGate>
         </main>
       </div>
 

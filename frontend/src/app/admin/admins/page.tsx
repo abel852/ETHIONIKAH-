@@ -261,8 +261,8 @@ export default function AdminsPage() {
                               <Shield className="w-3.5 h-3.5" /> {a._count?.permissions ?? 0} permissions
                             </span>
                             <span className="flex items-center gap-1">
-                              {a.googleAuthSecret ? <Lock className="w-3.5 h-3.5 text-green-500" /> : <Unlock className="w-3.5 h-3.5" />}
-                              {a.googleAuthSecret ? "2FA enabled" : "2FA off"}
+                              {a.twoFactorEnabled ? <Lock className="w-3.5 h-3.5 text-green-500" /> : <Unlock className="w-3.5 h-3.5" />}
+                              {a.twoFactorEnabled ? "2FA enabled" : "2FA off"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">

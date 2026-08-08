@@ -14,6 +14,8 @@ export interface User {
   isActive: boolean;
   isBanned: boolean;
   isPremium: boolean;
+  isMarried?: boolean;
+  twoFactorEnabled?: boolean;
   membershipPlan?: string;
   membershipExpiry?: string;
   verificationStatus: "unverified" | "pending" | "verified" | "rejected";

@@ -4,7 +4,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const paymentController = require("../controllers/paymentController");
-const { authenticate, authorize, requireActive } = require("../middleware/auth");
+const { authenticate, authorize, requireActive, requireAdmin2FA } = require("../middleware/auth");
+const adminAuth = [authenticate, authorize("admin"), requireAdmin2FA];
 
 // Dedicated receipt storage — separate from profile photos
 const receiptDir = path.join(__dirname, "..", "..", "uploads", "receipts");
@@ -33,13 +34,13 @@ const uploadReceipt = multer({
 });
 
 // Admin routes
-router.get("/admin/payments", authenticate, authorize("admin"), paymentController.getAdminPayments);
-router.get("/admin/payments/stats", authenticate, authorize("admin"), paymentController.getPaymentStats);
-router.get("/admin/payments/renewals", authenticate, authorize("admin"), paymentController.getRenewalReminders);
-router.post("/admin/payments/:id/approve", authenticate, authorize("admin"), paymentController.approvePayment);
-router.post("/admin/payments/:id/reject", authenticate, authorize("admin"), paymentController.rejectPayment);
-router.post("/admin/payments/:id/reactivate", authenticate, authorize("admin"), paymentController.reactivatePayment);
-router.get("/admin/verify-transaction/:ref", authenticate, authorize("admin"), paymentController.verifyTransaction);
+router.get("/admin/payments", ...adminAuth, paymentController.getAdminPayments);
+router.get("/admin/payments/stats", ...adminAuth, paymentController.getPaymentStats);
+router.get("/admin/payments/renewals", ...adminAuth, paymentController.getRenewalReminders);
+router.post("/admin/payments/:id/approve", ...adminAuth, paymentController.approvePayment);
+router.post("/admin/payments/:id/reject", ...adminAuth, paymentController.rejectPayment);
+router.post("/admin/payments/:id/reactivate", ...adminAuth, paymentController.reactivatePayment);
+router.get("/admin/verify-transaction/:ref", ...adminAuth, paymentController.verifyTransaction);
 
 // User routes
 router.post("/", authenticate, requireActive, paymentController.createPaymentRequest);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, X, ArrowRight, Lock } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import api from "@/lib/api";
 
 const SNOOZE_KEY = "twofa-prompt-snooze";
@@ -12,6 +13,7 @@ const SNOOZE_DAYS = 7;
 
 export function TwoFactorPrompt() {
   const { user, isAuthenticated } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const [show, setShow] = useState(false);
 
@@ -65,23 +67,23 @@ export function TwoFactorPrompt() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-charcoal-900 dark:text-white">
-                  Your 2-step verification is off
+                  {t('auth.2faOff')}
                 </h3>
                 <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-0.5">
-                  If this is not you, reset and strengthen your password right now. Enable two-step authentication to protect your account.
+                  {t('auth.2faOffDesc')}
                 </p>
                 <div className="flex items-center gap-3 mt-3">
                   <button
                     onClick={handleEnable}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold hover:opacity-90 transition-opacity"
                   >
-                    <Lock className="w-3.5 h-3.5" /> Enable Now
+                    <Lock className="w-3.5 h-3.5" /> {t('auth.enableNow')}
                   </button>
                   <button
                     onClick={handleSnooze}
                     className="text-xs text-charcoal-500 dark:text-charcoal-400 hover:text-charcoal-700 dark:hover:text-charcoal-200 font-medium"
                   >
-                    Remind me later
+                    {t('auth.remindLater')}
                   </button>
                 </div>
               </div>

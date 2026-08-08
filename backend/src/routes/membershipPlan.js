@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/membershipPlanController");
-const { authenticate, authorize } = require("../middleware/auth");
-const auth = [authenticate, authorize("admin")];
+const { authenticate, authorize, requireAdmin2FA } = require("../middleware/auth");
+const auth = [authenticate, authorize("admin"), requireAdmin2FA];
 
 // Membership Plans - Admin CRUD
 router.get("/membership-plans", ...auth, ctrl.getMembershipPlans);

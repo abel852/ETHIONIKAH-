@@ -44,9 +44,9 @@ export function VerificationPrompt() {
       await api.post("/auth/send-email-verification");
       setEmailSent(true);
       setError("");
-      setSuccess("Verification email sent! Check your inbox.");
+      setSuccess(t('auth.verificationEmailSent'));
     } catch (err: any) {
-      setError(err?.response?.data?.error || "Failed to send verification email.");
+      setError(err?.response?.data?.error || t('auth.sendVerificationEmail'));
     }
   };
 
@@ -54,13 +54,13 @@ export function VerificationPrompt() {
     try {
       const { data } = await api.get("/auth/me", { _noRedirect: true } as any);
       if (data.user?.isEmailVerified) {
-        setSuccess("Email verified successfully!");
+        setSuccess(t('auth.emailVerified'));
         window.location.reload();
       } else {
-        setError("Your email is not verified yet. Please click the link in your email.");
+        setError(t('auth.emailNotVerifiedYet'));
       }
     } catch {
-      setError("Could not verify email status.");
+      setError(t('auth.couldNotVerify'));
     }
   };
 
@@ -94,10 +94,10 @@ export function VerificationPrompt() {
                 <Shield className="w-8 h-8 text-accent" />
               </div>
               <h2 className="text-xl font-display font-bold text-charcoal-900 dark:text-white mb-1">
-                Verify Your Email
+                {t('auth.verifyYourEmail')}
               </h2>
               <p className="text-sm text-charcoal-500 dark:text-charcoal-400">
-                Secure your account by verifying your email address
+                {t('auth.verifyEmailDesc')}
               </p>
             </div>
 
@@ -123,13 +123,13 @@ export function VerificationPrompt() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-charcoal-900 dark:text-white">Email Verification</h3>
-                      {emailVerified && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>}
+                      <h3 className="text-sm font-semibold text-charcoal-900 dark:text-white">{t('auth.emailVerification')}</h3>
+                      {emailVerified && <span className="text-xs text-green-600 dark:text-green-400 font-medium">{t('auth.verified')}</span>}
                     </div>
                     <p className="text-xs text-charcoal-500 dark:text-charcoal-400 mt-0.5 mb-3">
                       {emailVerified
-                        ? "Your email has been verified."
-                        : "Click the verification link sent to your email inbox."}
+                        ? t('auth.emailVerified')
+                        : t('auth.clickVerificationLink')}
                     </p>
                     {!emailVerified && (
                       <div className="flex flex-wrap gap-2">
@@ -138,14 +138,14 @@ export function VerificationPrompt() {
                             onClick={handleSendEmailVerification}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-medium hover:bg-accent-dark transition-colors"
                           >
-                            <Mail className="w-3.5 h-3.5" /> Send Verification Email
+                            <Mail className="w-3.5 h-3.5" /> {t('auth.sendVerificationEmail')}
                           </button>
                         ) : (
                           <button
                             onClick={handleVerifyEmail}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition-colors"
                           >
-                            <CheckCircle className="w-3.5 h-3.5" /> I&apos;ve Verified My Email
+                            <CheckCircle className="w-3.5 h-3.5" /> {t('auth.iveVerifiedEmail')}
                           </button>
                         )}
                       </div>
@@ -160,13 +160,13 @@ export function VerificationPrompt() {
                 onClick={handleSkip}
                 className="text-sm text-charcoal-500 dark:text-charcoal-400 hover:text-charcoal-700 dark:hover:text-charcoal-200 transition-colors"
               >
-                Remind me later
+                {t('auth.remindLater')}
               </button>
               <button
                 onClick={() => router.push("/verification")}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-dark transition-colors"
               >
-                Verify Identity <ArrowRight className="w-3.5 h-3.5" />
+                {t('auth.verifyIdentity')} <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </motion.div>

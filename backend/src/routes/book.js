@@ -4,7 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const ctrl = require("../controllers/bookController");
-const { authenticate, authorize, requireActive } = require("../middleware/auth");
+const { authenticate, authorize, requireActive, requireAdmin2FA } = require("../middleware/auth");
 
 // Ensure books upload directory exists
 const booksDir = path.join(__dirname, "..", "..", "uploads", "books");
@@ -30,7 +30,7 @@ const uploadBook = multer({
 });
 
 // Admin routes
-const adminAccess = [authenticate, authorize("admin")];
+const adminAccess = [authenticate, authorize("admin"), requireAdmin2FA];
 router.post("/admin/books", ...adminAccess, uploadBook.single("file"), ctrl.createBook);
 router.get("/admin/books", ...adminAccess, ctrl.listBooks);
 router.put("/admin/books/:id", ...adminAccess, ctrl.updateBook);

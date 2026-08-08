@@ -11,6 +11,8 @@ import { useI18n } from "@/context/I18nContext";
 import { mediaUrl, formatLastSeen } from "@/lib/utils";
 import { conversationRequestService } from "@/services/conversationRequest";
 import { exclusivePartnershipService } from "@/services/exclusivePartnership";
+import { marriageSuccessService } from "@/services/marriageSuccess";
+import { MarriageSuccessDialog } from "@/components/marriage/MarriageSuccessDialog";
 import { waliService } from "@/services/wali";
 import { authService } from "@/services/auth";
 import { messageService } from "@/services/messages";
@@ -71,6 +73,7 @@ function MessagesContent() {
   const [partnershipSubmitting, setPartnershipSubmitting] = useState(false);
   const [showEndPartnershipConfirm, setShowEndPartnershipConfirm] = useState(false);
   const [endPartnershipSubmitting, setEndPartnershipSubmitting] = useState(false);
+  const [showMarriageSuccessDialog, setShowMarriageSuccessDialog] = useState(false);
   const [showWaliDialog, setShowWaliDialog] = useState(false);
   const [waliDialogStep, setWaliDialogStep] = useState<1 | 2>(1);
   const [waliName, setWaliName] = useState("");
@@ -973,6 +976,14 @@ function MessagesContent() {
                     </button>
                     {showHeaderMenu && (
                       <div ref={headerMenuRef} className="absolute right-0 top-full mt-1 z-50 rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[190px] overflow-hidden bg-[#1A1A24]">
+                        {partnership?.status === "active" && !user?.isMarried && (
+                          <>
+                            <button onClick={() => { setShowHeaderMenu(false); setShowMarriageSuccessDialog(true); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/15 transition-colors">
+                              <Heart className="w-4 h-4 shrink-0 fill-[#D4AF37]" /> {t('marriageSuccess.wereGettingMarried')}
+                            </button>
+                            <div className="border-t border-[#2D2D2D] my-1" />
+                          </>
+                        )}
                         <button onClick={() => { setShowHeaderMenu(false); setShowReportDialog(true); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
                           <Flag className="w-4 h-4 shrink-0" /> {t('messages.reportUser')}
                         </button>
@@ -1816,6 +1827,23 @@ function MessagesContent() {
           </a>
         </div>
       </nav>
+
+      {/* Marriage Success Dialog */}
+      <MarriageSuccessDialog
+        open={showMarriageSuccessDialog}
+        onClose={() => setShowMarriageSuccessDialog(false)}
+        partnershipId={partnership?.id || null}
+        partnerName={activeConv?.name || urlName || ""}
+        currentUserId={myId}
+        onStatusChange={() => {
+          if (activeConversation) {
+            exclusivePartnershipService.checkStatus(activeConversation).then(({ data }) => {
+              setPartnershipStatus(data);
+              setPartnership(data.partnership);
+            }).catch(() => {});
+          }
+        }}
+      />
 
       {/* Report Dialog */}
       {showReportDialog && (

@@ -66,10 +66,10 @@ export default function ActivityTimelinePage() {
       {/* Today's Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Registrations Today", value: data?.totalRegistrationsToday ?? 0, icon: UserPlus, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20" },
-          { label: "Users Logged In", value: data?.userLogins.length ?? 0, icon: LogIn, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
-          { label: "Verifications Today", value: data?.totalVerificationsToday ?? 0, icon: ShieldCheck, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/20" },
-          { label: "Admin Logins", value: data?.adminLogins.length ?? 0, icon: Activity, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20" },
+          { label: t('admin.activity.registrationsToday'), value: data?.totalRegistrationsToday ?? 0, icon: UserPlus, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20" },
+          { label: t('admin.activity.usersLoggedIn'), value: data?.userLogins.length ?? 0, icon: LogIn, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20" },
+          { label: t('admin.activity.verificationsToday'), value: data?.totalVerificationsToday ?? 0, icon: ShieldCheck, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/20" },
+          { label: t('admin.activity.adminLogins'), value: data?.adminLogins.length ?? 0, icon: Activity, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-900/20" },
         ].map((c) => (
           <div key={c.label} className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-3">
@@ -86,16 +86,16 @@ export default function ActivityTimelinePage() {
       {/* Tabs */}
       <div className="flex gap-1 mb-6 p-1 rounded-xl bg-gray-100 dark:bg-white/5 w-fit">
         {[
-          { id: "today", label: "Today's Activity", icon: Clock },
-          { id: "registrations", label: "Registrations", icon: UserPlus },
-          { id: "verifications", label: "Verifications", icon: ShieldCheck },
-          { id: "daily", label: "30-Day Stats", icon: BarChart3 },
-        ].map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+          { id: "today", label: t('admin.activity.todaysActivity'), icon: Clock },
+          { id: "registrations", label: t('admin.activity.registrations'), icon: UserPlus },
+          { id: "verifications", label: t('admin.activity.verificationsToday'), icon: ShieldCheck },
+          { id: "daily", label: t('admin.activity.30DayStats'), icon: BarChart3 },
+        ].map((tabItem) => (
+          <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === t.id ? "bg-white dark:bg-[#2e2e42] text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+              tab === tabItem.id ? "bg-white dark:bg-[#2e2e42] text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
             }`}
-          ><t.icon className="w-4 h-4" /> {t.label}</button>
+          ><tabItem.icon className="w-4 h-4" /> {t(`admin.activity.${tabItem.id === "today" ? "todaysActivity" : tabItem.id === "daily" ? "30DayStats" : tabItem.id}`)}</button>
         ))}
       </div>
 
@@ -104,12 +104,12 @@ export default function ActivityTimelinePage() {
           {/* Admin Logins */}
           <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><Activity className="w-4 h-4" /> Admin Logins Today</h3>
-              <span className="text-xs text-gray-500">{data?.adminLogins.length ?? 0} events</span>
+              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><Activity className="w-4 h-4" /> {t('admin.activity.adminLoginsToday')}</h3>
+              <span className="text-xs text-gray-500">{data?.adminLogins.length ?? 0} {t('admin.activity.events')}</span>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-[400px] overflow-y-auto">
               {data?.adminLogins.length === 0 ? (
-                <div className="px-5 py-8 text-center text-gray-400 text-sm">No admin logins today</div>
+                <div className="px-5 py-8 text-center text-gray-400 text-sm">{t('admin.activity.noAdminLogins')}</div>
               ) : data?.adminLogins.map((log, i) => (
                 <div key={log.id || i} className="px-5 py-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 text-xs font-bold shrink-0">
@@ -128,12 +128,12 @@ export default function ActivityTimelinePage() {
           {/* User Logins */}
           <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><LogIn className="w-4 h-4" /> User Logins Today</h3>
-              <span className="text-xs text-gray-500">{data?.userLogins.length ?? 0} users</span>
+              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><LogIn className="w-4 h-4" /> {t('admin.activity.userLoginsToday')}</h3>
+              <span className="text-xs text-gray-500">{data?.userLogins.length ?? 0} {t('admin.activity.users')}</span>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-[400px] overflow-y-auto">
               {data?.userLogins.length === 0 ? (
-                <div className="px-5 py-8 text-center text-gray-400 text-sm">No user logins today</div>
+                <div className="px-5 py-8 text-center text-gray-400 text-sm">{t('admin.activity.noUserLogins')}</div>
               ) : data?.userLogins.slice(0, 30).map((u) => (
                 <div key={u.id} className="px-5 py-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -154,10 +154,10 @@ export default function ActivityTimelinePage() {
       {tab === "registrations" && (
         <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Registrations by Hour Today</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.activity.registrationsByHour')}</h3>
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 text-xs text-blue-600"><div className="w-3 h-3 rounded-sm bg-blue-500" /> Registrations</span>
-              <span className="text-xs text-gray-400">{data?.totalRegistrationsToday ?? 0} total</span>
+              <span className="flex items-center gap-1 text-xs text-blue-600"><div className="w-3 h-3 rounded-sm bg-blue-500" /> {t('admin.activity.registrations')}</span>
+              <span className="text-xs text-gray-400">{data?.totalRegistrationsToday ?? 0} {t('admin.activity.total')}</span>
             </div>
           </div>
           <div className="flex items-end gap-1 h-48">
@@ -178,19 +178,19 @@ export default function ActivityTimelinePage() {
           <div className="mt-4 grid grid-cols-4 gap-3">
             <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-center">
               <p className="text-lg font-bold text-blue-700 dark:text-blue-400">{data?.totalRegistrationsToday ?? 0}</p>
-              <p className="text-xs text-blue-600 dark:text-blue-400">Today</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">{t('admin.activity.today')}</p>
             </div>
             <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-center">
               <p className="text-lg font-bold text-green-700 dark:text-green-400">{data?.totals.users ?? 0}</p>
-              <p className="text-xs text-green-600 dark:text-green-400">Total Users</p>
+              <p className="text-xs text-green-600 dark:text-green-400">{t('admin.activity.totalUsers')}</p>
             </div>
             <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-center">
               <p className="text-lg font-bold text-purple-700 dark:text-purple-400">{data?.totals.verified ?? 0}</p>
-              <p className="text-xs text-purple-600 dark:text-purple-400">Verified</p>
+              <p className="text-xs text-purple-600 dark:text-purple-400">{t('admin.activity.verified')}</p>
             </div>
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-center">
               <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{data?.userLogins.length ?? 0}</p>
-              <p className="text-xs text-amber-600 dark:text-amber-400">Logged In Today</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">{t('admin.activity.loggedInToday')}</p>
             </div>
           </div>
         </div>
@@ -199,9 +199,9 @@ export default function ActivityTimelinePage() {
       {tab === "verifications" && (
         <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Verifications by Hour Today</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.activity.verificationsByHour')}</h3>
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 text-xs text-purple-600"><div className="w-3 h-3 rounded-sm bg-purple-500" /> Reviews</span>
+              <span className="flex items-center gap-1 text-xs text-purple-600"><div className="w-3 h-3 rounded-sm bg-purple-500" /> {t('admin.activity.reviews')}</span>
               <span className="flex items-center gap-1 text-xs text-green-600"><CheckCircle className="w-3 h-3" /> {data?.verifiedToday ?? 0}</span>
               <span className="flex items-center gap-1 text-xs text-red-600"><XCircle className="w-3 h-3" /> {data?.rejectedToday ?? 0}</span>
             </div>
@@ -224,19 +224,19 @@ export default function ActivityTimelinePage() {
           <div className="mt-4 grid grid-cols-4 gap-3">
             <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-center">
               <p className="text-lg font-bold text-purple-700 dark:text-purple-400">{data?.totalVerificationsToday ?? 0}</p>
-              <p className="text-xs text-purple-600 dark:text-purple-400">Total Reviews</p>
+              <p className="text-xs text-purple-600 dark:text-purple-400">{t('admin.activity.totalReviews')}</p>
             </div>
             <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-center">
               <p className="text-lg font-bold text-green-700 dark:text-green-400">{data?.verifiedToday ?? 0}</p>
-              <p className="text-xs text-green-600 dark:text-green-400">Approved</p>
+              <p className="text-xs text-green-600 dark:text-green-400">{t('admin.activity.approved')}</p>
             </div>
             <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-center">
               <p className="text-lg font-bold text-red-700 dark:text-red-400">{data?.rejectedToday ?? 0}</p>
-              <p className="text-xs text-red-600 dark:text-red-400">Rejected</p>
+              <p className="text-xs text-red-600 dark:text-red-400">{t('admin.activity.rejected')}</p>
             </div>
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-center">
               <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{data?.totals.verified ?? 0}</p>
-              <p className="text-xs text-amber-600 dark:text-amber-400">Total Verified</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">{t('admin.activity.totalVerified')}</p>
             </div>
           </div>
         </div>
@@ -245,21 +245,21 @@ export default function ActivityTimelinePage() {
       {tab === "daily" && (
         <div className="bg-white dark:bg-[#222240] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Last 30 Days Overview</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.activity.last30Days')}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-white/5">
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">{t('admin.activity.date')}</th>
                   <th className="text-center px-5 py-3 text-xs font-medium text-gray-500 uppercase">
-                    <span className="flex items-center justify-center gap-1"><UserPlus className="w-3 h-3" /> Registrations</span>
+                    <span className="flex items-center justify-center gap-1"><UserPlus className="w-3 h-3" /> {t('admin.activity.registrations')}</span>
                   </th>
                   <th className="text-center px-5 py-3 text-xs font-medium text-gray-500 uppercase">
-                    <span className="flex items-center justify-center gap-1"><ShieldCheck className="w-3 h-3" /> Verifications</span>
+                    <span className="flex items-center justify-center gap-1"><ShieldCheck className="w-3 h-3" /> {t('admin.activity.verificationsToday')}</span>
                   </th>
                   <th className="text-center px-5 py-3 text-xs font-medium text-gray-500 uppercase">
-                    <span className="flex items-center justify-center gap-1"><LogIn className="w-3 h-3" /> Logins</span>
+                    <span className="flex items-center justify-center gap-1"><LogIn className="w-3 h-3" /> {t('admin.activity.logins')}</span>
                   </th>
                 </tr>
               </thead>
@@ -281,7 +281,7 @@ export default function ActivityTimelinePage() {
                   </tr>
                 ))}
                 {(!data?.dailyStats || data.dailyStats.length === 0) && (
-                  <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">No data available</td></tr>
+                  <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">{t('admin.activity.noData')}</td></tr>
                 )}
               </tbody>
             </table>

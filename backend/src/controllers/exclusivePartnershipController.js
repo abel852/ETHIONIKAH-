@@ -125,7 +125,8 @@ const requestExclusivePartnership = async (req, res) => {
 //   - On accept: revalidate no active partnership for either user
 //   - On accept: expire all OTHER pending requests received by the receiver (B→C, D→C)
 //   - On accept: expire all OTHER pending requests sent BY the requester (A→X, A→Y)
-//   - On accept: expire all pending requests sent BY the receiver (C→X, C→Y)
+//   - On accept: expire all OTHER pending requests sent BY the receiver (C→X, C→Y)
+//   - On accept: expire all OTHER pending requests received BY the requester (X→A, Y→A)
 //   - On decline: just mark as declined
 // ============================================================
 const respondToPartnershipRequest = async (req, res) => {
@@ -238,6 +239,15 @@ const respondToPartnershipRequest = async (req, res) => {
         await tx.exclusivePartnershipRequest.updateMany({
           where: {
             requesterId: receiverId,
+            status: "pending",
+          },
+          data: { status: "expired", respondedAt: new Date() },
+        });
+
+        // Expire all OTHER pending requests received BY the requester (X→A, Y→A)
+        await tx.exclusivePartnershipRequest.updateMany({
+          where: {
+            receiverId: request.requesterId,
             status: "pending",
           },
           data: { status: "expired", respondedAt: new Date() },

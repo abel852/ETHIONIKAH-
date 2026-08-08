@@ -7,7 +7,7 @@ import {
   Languages, ShieldCheck,
   Mail, Smartphone, CheckCircle, Smartphone as SmartphoneIcon,
   Download, Heart, Crown, Send, AlertTriangle, ShieldAlert,
-  MessageSquare, Trash2, Lock,
+  MessageSquare, Trash2, Lock, BookOpen,
 } from "lucide-react";
 import { Button, Badge, Input, Textarea } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
@@ -302,6 +302,78 @@ function HelpContent() {
           <li>Never send money or share banking details with matches.</li>
           <li>Meet in public places and involve your wali or guardian.</li>
           <li>Trust your instincts — report anyone who pressures you.</li>
+        </ul>
+      </CollapsibleDoc>
+    </>
+  );
+}
+
+function UserManualContent() {
+  const { t } = useI18n();
+  return (
+    <>
+      <PanelHeading icon={<BookOpen className="w-5 h-5 text-accent" />} title={t("settings.userManual")} subtitle={t("settings.userManualDesc")} />
+
+      <CollapsibleDoc title={t("manual.gettingStarted")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Create your account</strong> — Sign up with your email and complete your profile with accurate personal information.</li>
+          <li><strong>Verify your identity</strong> — Go to Settings → Verification and upload your national ID plus a selfie to get the verified badge.</li>
+          <li><strong>Set spouse preferences</strong> — Visit the Preferences page to define age range, location, education, and other criteria.</li>
+          <li><strong>Complete your profile</strong> — Add photos, bio, education, occupation, and health info (optional & confidential) to increase match quality.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("manual.discoveringMatches")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Discover</strong> — Browse recommended profiles on the Discover page, filtered by your preferences.</li>
+          <li><strong>Search</strong> — Use the Search page to find members by name, location, or other criteria.</li>
+          <li><strong>Favorites</strong> — Save profiles you like to your Favorites for quick access later.</li>
+          <li><strong>Liked Interest</strong> — Express interest in a profile. If they accept, a conversation request is sent.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("manual.messaging")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Conversation requests</strong> — Before messaging, you must send a conversation request. The other person must accept.</li>
+          <li><strong>Exclusive Partnership</strong> — Once you and a match agree, one of you can request an exclusive partnership from the chat menu (3-dot icon).</li>
+          <li><strong>Wali involvement</strong> — You can invite a wali (guardian) to your conversation from the chat menu. The wali receives an email invitation.</li>
+          <li><strong>Media sharing</strong> — Send photos and files in chats. All media is encrypted and stored securely.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("manual.marriageSuccess")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>We're Married</strong> — When you and your partner decide to marry, open the chat 3-dot menu and select "We're Getting Married".</li>
+          <li><strong>Partner confirmation</strong> — Your partner must confirm the marriage request from their chat.</li>
+          <li><strong>Upload photos</strong> — After confirmation, upload wedding, engagement, and ring photos plus an optional marriage certificate and success story.</li>
+          <li><strong>Admin review</strong> — An admin reviews your submission. Once approved, both accounts are marked as married.</li>
+          <li><strong>Congratulations page</strong> — After approval, visit the Congratulations page to view your photos and manage your account.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("manual.accountManagement")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Archive account</strong> — On the Congratulations page, you can archive your account. This hides your profile and disables matching, but keeps your data.</li>
+          <li><strong>Permanent deletion</strong> — For permanent deletion, verify your password, then enter the 6-digit OTP sent to your phone. This action is irreversible.</li>
+          <li><strong>Standard deletion</strong> — From Settings → Terms & Privacy, you can request account deletion with a 30-day grace period for recovery.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("manual.privacySafety")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Profile visibility</strong> — Only verified members can see your full profile. Unverified users see limited information.</li>
+          <li><strong>Block & report</strong> — Block or report any user from their profile or chat. Reports are reviewed by admins within 24-48 hours.</li>
+          <li><strong>Two-Factor Authentication</strong> — Enable 2FA in Settings → Security for an extra layer of account protection.</li>
+          <li><strong>Never share</strong> — Do not share passwords, banking details, or sensitive personal information with matches.</li>
+        </ul>
+      </CollapsibleDoc>
+
+      <CollapsibleDoc title={t("manual.membership")}>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Free tier</strong> — Browse profiles, send conversation requests, and message accepted matches.</li>
+          <li><strong>Gold membership</strong> — Unlimited likes, advanced search filters, read receipts, and priority support.</li>
+          <li><strong>Platinum membership</strong> — All Gold features plus profile boosts, see who liked you, and verified badge priority.</li>
+          <li><strong>Manage subscription</strong> — Visit the Membership page to upgrade, view plans, or cancel.</li>
         </ul>
       </CollapsibleDoc>
     </>
@@ -805,6 +877,7 @@ export default function SettingsPage() {
     {
       label: t("settings.system"),
       items: [
+        { id: "user-manual", icon: <BookOpen className="w-5 h-5" />, label: t("settings.userManual"), description: t("settings.userManualDesc") },
         { id: "help", icon: <HelpCircle className="w-5 h-5" />, label: t("settings.help"), description: t("settings.helpDesc") },
         { id: "rules", icon: <Scale className="w-5 h-5" />, label: t("settings.rules"), description: t("settings.rulesDesc") },
         { id: "terms", icon: <FileText className="w-5 h-5" />, label: t("settings.terms"), description: t("settings.termsDesc") },
@@ -821,6 +894,7 @@ export default function SettingsPage() {
     verification: <VerificationContent />,
     notifications: <NotificationsContent />,
     "two-factor": <TwoFactorContent />,
+    "user-manual": <UserManualContent />,
     help: <HelpContent />,
     rules: <RulesContent />,
     terms: <TermsContent />,
@@ -892,6 +966,8 @@ export default function SettingsPage() {
                   </div>
                   <SectionHeader title={t("settings.mobileSupport")} />
                   <div className="bg-white dark:bg-charcoal-800 rounded-2xl shadow-card border border-charcoal-100/50 dark:border-charcoal-700 overflow-hidden divide-y divide-charcoal-100/50 dark:divide-charcoal-700/50">
+                    <SettingRow icon={<BookOpen className="w-5 h-5 text-accent" />} label={t("settings.userManualMobile")} description={t("settings.userManualMobileDesc")} onClick={() => setMobileSection("user-manual")} />
+                    <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
                     <SettingRow icon={<HelpCircle className="w-5 h-5 text-accent" />} label={t("settings.helpMobile")} description={t("settings.helpMobileDesc")} onClick={() => setMobileSection("help")} />
                     <div className="mx-4 border-t border-charcoal-100/50 dark:border-charcoal-700/50" />
                     <SettingRow icon={<Scale className="w-5 h-5 text-accent" />} label={t("settings.rulesMobile")} description={t("settings.rulesMobileDesc")} onClick={() => setMobileSection("rules")} />

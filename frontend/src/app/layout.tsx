@@ -97,18 +97,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="font-sans antialiased bg-background text-charcoal-900 dark:bg-charcoal-900 dark:text-charcoal-100 transition-colors duration-300">
         <JsonLd data={[JSON_LD.organization, JSON_LD.website, JSON_LD.webApplication]} />
         <ThemeInit />
-        <NetworkBanner />
         <AuthProvider>
-          <RouteGuard>
-            <I18nProvider>
+          <I18nProvider>
+            <RouteGuard>
+              <NetworkBanner />
               <SocketProvider>
                 <AppShell>
                   {children}
                 </AppShell>
                 <TwoFactorPrompt />
               </SocketProvider>
-            </I18nProvider>
-          </RouteGuard>
+            </RouteGuard>
+          </I18nProvider>
           <ToastProvider />
         </AuthProvider>
       </body>

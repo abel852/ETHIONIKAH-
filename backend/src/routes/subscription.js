@@ -1,15 +1,16 @@
 const express = require("express");
 const router = express.Router();
 const subscriptionController = require("../controllers/subscriptionController");
-const { authenticate, authorize, requireActive } = require("../middleware/auth");
+const { authenticate, authorize, requireActive, requireAdmin2FA } = require("../middleware/auth");
+const adminAuth = [authenticate, authorize("admin"), requireAdmin2FA];
 
 // Admin routes - require admin role
-router.get("/admin/subscriptions", authenticate, authorize("admin"), subscriptionController.getAllSubscriptions);
-router.get("/admin/subscriptions/:id", authenticate, authorize("admin"), subscriptionController.getSubscriptionById);
-router.get("/admin/revenue", authenticate, authorize("admin"), subscriptionController.getRevenueStats);
-router.get("/admin/payments", authenticate, authorize("admin"), subscriptionController.getAllPayments);
-router.put("/admin/subscriptions/:id", authenticate, authorize("admin"), subscriptionController.updateSubscription);
-router.delete("/admin/subscriptions/:id", authenticate, authorize("admin"), subscriptionController.cancelSubscription);
+router.get("/admin/subscriptions", ...adminAuth, subscriptionController.getAllSubscriptions);
+router.get("/admin/subscriptions/:id", ...adminAuth, subscriptionController.getSubscriptionById);
+router.get("/admin/revenue", ...adminAuth, subscriptionController.getRevenueStats);
+router.get("/admin/payments", ...adminAuth, subscriptionController.getAllPayments);
+router.put("/admin/subscriptions/:id", ...adminAuth, subscriptionController.updateSubscription);
+router.delete("/admin/subscriptions/:id", ...adminAuth, subscriptionController.cancelSubscription);
 
 // User routes
 router.get("/my", authenticate, requireActive, subscriptionController.getUserSubscription);

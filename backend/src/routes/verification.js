@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verificationController = require("../controllers/verificationController");
-const { authenticate, authorize, requireActive } = require("../middleware/auth");
+const { authenticate, authorize, requireActive, requireAdmin2FA } = require("../middleware/auth");
 const upload = require("../config/storage");
 const { verifyUpload } = require("../middleware/uploadSecurity");
 
@@ -48,10 +48,12 @@ router.post("/", authenticate, requireActive, upload.fields([
   { name: "selfiePhoto", maxCount: 1 },
 ]), verifyVerificationUploads, verificationController.submitVerification);
 router.get("/me", authenticate, requireActive, verificationController.getVerificationStatus);
-router.post("/mark-viewed", authenticate, authorize("admin"), verificationController.markVerificationViewed);
-router.get("/:id", authenticate, authorize("admin"), verificationController.getVerificationById);
-router.get("/admin/all", authenticate, authorize("admin"), verificationController.getAllVerifications);
-router.post("/:id/approve", authenticate, authorize("admin"), verificationController.approveVerification);
-router.post("/:id/reject", authenticate, authorize("admin"), verificationController.rejectVerification);
+const adminAuth = [authenticate, authorize("admin"), requireAdmin2FA];
+
+router.post("/mark-viewed", ...adminAuth, verificationController.markVerificationViewed);
+router.get("/:id", ...adminAuth, verificationController.getVerificationById);
+router.get("/admin/all", ...adminAuth, verificationController.getAllVerifications);
+router.post("/:id/approve", ...adminAuth, verificationController.approveVerification);
+router.post("/:id/reject", ...adminAuth, verificationController.rejectVerification);
 
 module.exports = router;

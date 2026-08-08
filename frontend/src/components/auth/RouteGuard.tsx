@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useI18n } from "@/context/I18nContext";
 import api from "@/lib/api";
 
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/verify-phone", "/contact-support", "/wali"];
@@ -28,6 +29,7 @@ function isUserOnlyRoute(pathname: string): boolean {
 export function RouteGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, isLoading, logout, connectionError } = useAuth();
+  const { t } = useI18n();
 
   const isPublic = isPublicRoute(pathname);
   const isAdmin = isAdminRoute(pathname);
@@ -91,8 +93,8 @@ export function RouteGuard({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-charcoal-900">
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Access Denied</p>
-          <p className="text-sm text-gray-500 mt-1">Redirecting to login...</p>
+          <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">{t('common.accessDenied')}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('common.redirecting')}</p>
         </div>
       </div>
     );
@@ -103,8 +105,8 @@ export function RouteGuard({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-charcoal-900">
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Access Denied</p>
-          <p className="text-sm text-gray-500 mt-1">Redirecting to login...</p>
+          <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">{t('common.accessDenied')}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('common.redirecting')}</p>
         </div>
       </div>
     );

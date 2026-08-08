@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/adminController");
 const twoFactorCtrl = require("../controllers/twoFactorController");
-const { authenticate, authorize } = require("../middleware/auth");
+const { authenticate, authorize, requireAdmin2FA } = require("../middleware/auth");
 const { cacheResponse } = require("../middleware/cache");
-const auth = [authenticate, authorize("admin")];
+const auth = [authenticate, authorize("admin"), requireAdmin2FA];
 
 // Users
 router.post("/users/mark-viewed", ...auth, ctrl.markUsersViewed);

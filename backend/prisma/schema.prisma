@@ -97,6 +97,11 @@ model User {
   waliInvitationsCreated       WaliInvitation[]              @relation("WaliCreatedBy")
   wali                         Wali?
   pushSubscriptions            PushSubscription[]
+  isMarried                    Boolean             @default(false) @map("is_married")
+  marriedAt                    DateTime?           @map("married_at")
+  marriageSuccessesInitiated   MarriageSuccess[]   @relation("MarriageSuccessInitiator")
+  marriageSuccessesPartner     MarriageSuccess[]   @relation("MarriageSuccessPartner")
+  adminMarriageSuccesses       MarriageSuccess[]   @relation("AdminMarriageSuccess")
 
   @@index([isActive, isVerified, deletedAt])
   @@index([role, isActive])
@@ -709,6 +714,7 @@ model ExclusivePartnership {
   userA      User      @relation("PartnershipUserA", fields: [userAId], references: [id], onDelete: Cascade)
   userB      User      @relation("PartnershipUserB", fields: [userBId], references: [id], onDelete: Cascade)
   waliInvitations WaliInvitation[]
+  marriageSuccesses MarriageSuccess[]
 
   @@unique([userAId, userBId])
   @@index([userAId, status])
@@ -734,6 +740,37 @@ model ExclusivePartnershipRequest {
   @@index([requesterId, createdAt])
   @@index([receiverId, status])
   @@map("exclusive_partnership_requests")
+}
+
+model MarriageSuccess {
+  id                   String    @id @default(uuid()) @db.Uuid
+  partnershipId        String    @map("partnership_id") @db.Uuid
+  initiatorId          String    @map("initiator_id") @db.Uuid
+  partnerId            String    @map("partner_id") @db.Uuid
+  status               String    @default("pending_partner_confirm") // pending_partner_confirm | pending_upload | pending_admin_review | approved | rejected
+  initiatorConfirmed   Boolean   @default(true) @map("initiator_confirmed")
+  partnerConfirmed     Boolean   @default(false) @map("partner_confirmed")
+  weddingPhotos        String[]  @default([]) @map("wedding_photos")
+  engagementPhotos     String[]  @default([]) @map("engagement_photos")
+  ringPhotos           String[]  @default([]) @map("ring_photos")
+  marriageCertificate  String?   @map("marriage_certificate")
+  successStory         String?   @map("success_story")
+  consentToPublish     Boolean   @default(false) @map("consent_to_publish")
+  adminId              String?   @map("admin_id") @db.Uuid
+  adminNote            String?   @map("admin_note")
+  reviewedAt           DateTime? @map("reviewed_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  partnership          ExclusivePartnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  initiator            User                 @relation("MarriageSuccessInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  partner              User                 @relation("MarriageSuccessPartner", fields: [partnerId], references: [id], onDelete: Cascade)
+  admin                User?                @relation("AdminMarriageSuccess", fields: [adminId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([initiatorId])
+  @@index([partnerId])
+  @@map("marriage_successes")
 }
 
 model Wali {
@@ -794,9 +831,9 @@ enum MaritalStatus {
   single
   divorced
   widowed
+  married
   single_never
   single_previous
-  married
 }
 
 enum MatchStatus {
