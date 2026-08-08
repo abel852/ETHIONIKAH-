@@ -243,7 +243,7 @@ exports.listAdmins = async (req, res) => {
 
     const enriched = await Promise.all(admins.map(async (a) => {
       const recentLogs = await prisma.auditLog.findMany({
-        where: { adminId: a.id, createdAt: { gte: thirtyDaysAgo } },
+        where: { actorId: a.id, createdAt: { gte: thirtyDaysAgo } },
         select: { resource: true, resourceId: true, action: true },
       });
 
@@ -345,7 +345,7 @@ exports.deleteAdmin = async (req, res) => {
     }
 
     // Delete related records first (AuditLog has no cascade)
-    await prisma.auditLog.deleteMany({ where: { adminId: id } });
+    await prisma.auditLog.deleteMany({ where: { actorId: id } });
     await prisma.adminPermission.deleteMany({ where: { adminId: id } });
 
     await prisma.user.delete({ where: { id } });

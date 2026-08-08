@@ -4,7 +4,7 @@ const { invalidatePlanCache } = require("../utils/subscriptionHelper");
 async function createAuditLog(adminId, action, resource, resourceId, details, ipAddress) {
   try {
     await prisma.auditLog.create({
-      data: { adminId, action, resource, resourceId, details, ipAddress },
+      data: { actorId: adminId, action, resource, resourceId, details, ipAddress },
     });
   } catch (err) {
     console.error("Audit log failed:", err);
