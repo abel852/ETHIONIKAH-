@@ -245,7 +245,7 @@ function startServer(attempt = 0) {
     // Warn about admins without 2FA enabled
     const prisma = require("./config/database");
     prisma.user.findMany({
-      where: { role: "admin", twoFactorEnabled: false, isActive: true },
+      where: { role: "admin", twoFactorEnabled: false, isActive: true, adminRole: { not: "super_admin" } },
       select: { email: true },
     }).then((admins) => {
       if (admins.length > 0) {
