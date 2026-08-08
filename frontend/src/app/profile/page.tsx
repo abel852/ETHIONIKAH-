@@ -30,7 +30,7 @@ const labelize = (s?: string) => s ? s.replace(/_/g, " ").replace(/\b\w/g, (c) =
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, updateUser, isLoading: authLoading } = useAuth();
+  const { user, updateUser, logout, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notifCount, setNotifCount] = useState(0);
@@ -289,11 +289,21 @@ export default function ProfilePage() {
                           </div>
                         )}
                       </div>
-                      <Link href="/profile/edit">
-                        <Button variant="secondary" size="sm" className="shrink-0 gap-1.5">
-                          <Edit3 className="w-3.5 h-3.5" /> {t('profile.editProfile')}
-                        </Button>
-                      </Link>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link href="/profile/edit">
+                          <Button variant="secondary" size="sm" className="gap-1.5">
+                            <Edit3 className="w-3.5 h-3.5" /> {t('profile.editProfile')}
+                          </Button>
+                        </Link>
+                        <button
+                          onClick={() => { logout(); router.push("/login"); }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-charcoal-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                          title={t('nav.logout')}
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span className="hidden sm:inline">{t('nav.logout')}</span>
+                        </button>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">
                       {user?.dateOfBirth && <Badge variant="gold" size="md">{t('profile.ageYrs', { age: new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear() })}</Badge>}
