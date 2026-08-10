@@ -47,7 +47,11 @@ export function TwoFactorPrompt() {
 
   const handleEnable = () => {
     setShow(false);
-    router.push("/settings?section=two-factor");
+    // Redirect admins to admin settings security tab, regular users to user settings
+    const targetPath = user?.role === "admin" 
+      ? "/admin/settings?tab=security" 
+      : "/settings?section=two-factor";
+    router.push(targetPath);
   };
 
   return (

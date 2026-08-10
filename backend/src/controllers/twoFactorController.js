@@ -84,6 +84,14 @@ exports.confirm2FA = async (req, res) => {
     const codes = generateBackupCodes();
     const hashed = hashBackupCodes(codes);
 
+    // Check if user is super admin — they are exempt from 2FA requirement, so don't invalidate session
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { adminRole: true },
+    });
+
+    const isSuperAdmin = user?.adminRole === "super_admin";
+
     await prisma.user.update({
       where: { id: req.user.userId },
       data: {
@@ -94,14 +102,18 @@ exports.confirm2FA = async (req, res) => {
         twoFactorPermanentlyLocked: false,
         backupCodes: JSON.stringify(hashed),
         usedBackupCodes: JSON.stringify([]),
-        tokenVersion: { increment: 1 },
+        // Only increment tokenVersion for regular admins (required 2FA)
+        // Super admins have optional 2FA, so don't invalidate their session
+        ...(isSuperAdmin ? {} : { tokenVersion: { increment: 1 } }),
       },
     });
 
-    try { require("../middleware/auth").invalidateAuthCache(req.user.userId); } catch {}
+    if (!isSuperAdmin) {
+      try { require("../middleware/auth").invalidateAuthCache(req.user.userId); } catch {}
+    }
 
-    const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { email: true, firstName: true } });
-    send2FAAlert(user, "enabled");
+    const userData = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { email: true, firstName: true } });
+    send2FAAlert(userData, "enabled");
 
     res.json({ message: "Two-factor authentication enabled", backupCodes: codes });
   } catch (error) {

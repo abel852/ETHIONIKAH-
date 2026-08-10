@@ -28,6 +28,15 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
+  // Support deep-linking to specific tab via ?tab=security
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab && TABS.some(t => t.key === tab)) {
+      setActiveTab(tab);
+    }
+  }, []);
+
   useEffect(() => {
     adminService
       .getSystemSettings()
