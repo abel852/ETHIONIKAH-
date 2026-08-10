@@ -20,7 +20,7 @@ function isAdminRoute(pathname: string): boolean {
 const USER_ONLY_ROUTES = [
   "/matches", "/discover", "/search", "/favorites", "/liked-interest",
   "/messages", "/notifications", "/profile", "/preferences",
-  "/verification", "/health-info", "/settings", "/membership",
+  "/verification", "/health-info", "/membership",
 ];
 function isUserOnlyRoute(pathname: string): boolean {
   return USER_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
