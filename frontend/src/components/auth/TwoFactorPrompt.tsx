@@ -23,6 +23,12 @@ export function TwoFactorPrompt() {
       return;
     }
 
+    // Super admins are exempt from 2FA requirement
+    if (user.adminRole === "super_admin") {
+      setShow(false);
+      return;
+    }
+
     // Respect snooze
     const snoozedUntil = localStorage.getItem(SNOOZE_KEY);
     if (snoozedUntil && Date.now() < Number(snoozedUntil)) return;

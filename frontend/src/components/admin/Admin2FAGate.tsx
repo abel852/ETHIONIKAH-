@@ -15,6 +15,12 @@ export function Admin2FAGate({ children }: { children: React.ReactNode }) {
       setChecking(false);
       return;
     }
+    // If adminRole is not loaded yet, wait - don't show gate prematurely
+    if (user.adminRole === undefined || user.adminRole === null) {
+      setChecking(false);
+      return;
+    }
+    // Super admins are exempt from 2FA requirement
     if (user.adminRole === "super_admin") {
       setChecking(false);
       return;
