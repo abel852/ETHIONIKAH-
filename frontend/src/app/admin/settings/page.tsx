@@ -204,7 +204,7 @@ function SecurityTab({ settings, updateSetting, saving }: { settings: Record<str
             </div>
           </div>
           <a
-            href="/admin/security"
+            href="/settings?section=two-factor"
             className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
           >
             {twoFAStatus ? "Manage 2FA" : "Enable 2FA"}
