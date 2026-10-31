@@ -1,7 +1,7 @@
 const prisma = require("../config/database");
 const { decrypt } = require("../utils/encryption");
 const { createNotification } = require("../utils/notification");
-const { getUserFeatures, canBrowseMore, recordProfileView, getUserMembership } = require("../utils/subscriptionHelper");
+const { getUserFeatures, canBrowseMore, recordProfileView, getUserMembership, loadPlanFeatures } = require("../utils/subscriptionHelper");
 
 // ===================== AI MATCHMAKING ALGORITHM =====================
 // 13-category weighted scoring system producing a score out of 100
@@ -736,24 +736,34 @@ const getRecommendedMatches = async (req, res) => {
           select: { planType: true, status: true, endDate: true },
           take: 1,
         },
+        boosts: {
+          where: { status: "active", endsAt: { gte: new Date() } },
+          select: { id: true, endsAt: true },
+          take: 1,
+        },
       },
       take: 100,
     });
 
     // Load dynamic category weights from DB (admin-configurable)
     _activeWeights = await getCategoryWeights();
+    const planFeaturesMap = await loadPlanFeatures();
 
     const scoredMatches = potentialMatches.map((match) => {
       const compatibility = computeCompatibilityScore(user, match);
       const { passwordHash, email, phone, ...safe } = match;
       if (safe.profile) safe.profile = sanitizeProfileWali(safe.profile);
       const plan = match.subscriptions?.length > 0 ? match.subscriptions[0].planType : null;
+      const planFeatures = plan ? (planFeaturesMap[plan] || []) : [];
+      const isBoosted = match.boosts?.length > 0;
+      delete safe.boosts;
       return {
         ...safe,
         membershipPlan: plan,
         isPremium: !!plan,
-        isVip: plan === "platinum",
-        hasPriorityVisibility: plan === "gold" || plan === "platinum",
+        isVip: plan === "platinum" || planFeatures.includes("vip_badge"),
+        isBoosted,
+        hasPriorityVisibility: isBoosted || plan === "gold" || plan === "platinum" || planFeatures.includes("priority_visibility") || planFeatures.includes("featured_placement"),
         compatibilityScore: compatibility.score,
         recommendationLevel: compatibility.recommendationLevel,
         compatibilityCategories: compatibility.categories,
@@ -762,8 +772,10 @@ const getRecommendedMatches = async (req, res) => {
       };
     });
 
-    // Sort: priority visibility first, then by compatibility score
+    // Sort: Boosted first, then priority visibility (Gold/Platinum), then by compatibility score
     scoredMatches.sort((a, b) => {
+      if (a.isBoosted && !b.isBoosted) return -1;
+      if (!a.isBoosted && b.isBoosted) return 1;
       if (a.hasPriorityVisibility && !b.hasPriorityVisibility) return -1;
       if (!a.hasPriorityVisibility && b.hasPriorityVisibility) return 1;
       return b.compatibilityScore - a.compatibilityScore;
@@ -867,26 +879,39 @@ const searchProfiles = async (req, res) => {
           select: { planType: true },
           take: 1,
         },
+        boosts: {
+          where: { status: "active", endsAt: { gte: new Date() } },
+          select: { id: true, endsAt: true },
+          take: 1,
+        },
       },
       take: resultLimit,
       orderBy: { createdAt: "desc" },
     });
 
+    const planFeaturesMap = await loadPlanFeatures();
+
     const profilesWithoutPassword = profiles.map(({ passwordHash, email, phone, ...profile }) => {
       if (profile.profile) profile.profile = sanitizeProfileWali(profile.profile);
       const plan = profile.subscriptions?.length > 0 ? profile.subscriptions[0].planType : null;
+      const planFeatures = plan ? (planFeaturesMap[plan] || []) : [];
+      const isBoosted = profile.boosts?.length > 0;
       delete profile.subscriptions;
+      delete profile.boosts;
       return {
         ...profile,
         membershipPlan: plan,
         isPremium: !!plan,
-        isVip: plan === "platinum",
-        hasPriorityVisibility: plan === "gold" || plan === "platinum",
+        isVip: plan === "platinum" || planFeatures.includes("vip_badge"),
+        isBoosted,
+        hasPriorityVisibility: isBoosted || plan === "gold" || plan === "platinum" || planFeatures.includes("priority_visibility") || planFeatures.includes("featured_placement"),
       };
     });
 
-    // Sort: premium users with priority_visibility first, then by createdAt
+    // Sort: Boosted profiles first, then premium priority visibility, then by createdAt
     profilesWithoutPassword.sort((a, b) => {
+      if (a.isBoosted && !b.isBoosted) return -1;
+      if (!a.isBoosted && b.isBoosted) return 1;
       if (a.hasPriorityVisibility && !b.hasPriorityVisibility) return -1;
       if (!a.hasPriorityVisibility && b.hasPriorityVisibility) return 1;
       return 0;
@@ -1275,10 +1300,13 @@ const getSuggestedMatches = async (req, res) => {
 
     // Load dynamic category weights from DB (admin-configurable)
     _activeWeights = await getCategoryWeights();
+    const planFeaturesMap = await loadPlanFeatures();
 
     // Compute compatibility scores for each suggested match
     const matches = users.map((u) => {
       const compat = computeCompatibilityScore(user, u);
+      const plan = u.subscriptions?.length > 0 ? u.subscriptions[0].planType : null;
+      const planFeatures = plan ? (planFeaturesMap[plan] || []) : [];
       return {
         id: u.id,
         firstName: u.firstName,
@@ -1299,10 +1327,10 @@ const getSuggestedMatches = async (req, res) => {
         smokingHabits: u.profile?.smokingHabits || null,
         childrenStatus: u.profile?.childrenStatus || null,
         isVerified: u.isVerified,
-        membershipPlan: u.subscriptions?.length > 0 ? u.subscriptions[0].planType : null,
-        isPremium: u.subscriptions?.length > 0,
-        isVip: u.subscriptions?.length > 0 && u.subscriptions[0].planType === "platinum",
-        hasPriorityVisibility: u.subscriptions?.length > 0 && (u.subscriptions[0].planType === "gold" || u.subscriptions[0].planType === "platinum"),
+        membershipPlan: plan,
+        isPremium: !!plan,
+        isVip: plan === "platinum" || planFeatures.includes("vip_badge"),
+        hasPriorityVisibility: !!plan && (plan === "gold" || plan === "platinum" || planFeatures.includes("priority_visibility") || planFeatures.includes("featured_placement")),
         compatibilityScore: compat.score,
         recommendationLevel: compat.recommendationLevel,
         strengths: compat.strengths,

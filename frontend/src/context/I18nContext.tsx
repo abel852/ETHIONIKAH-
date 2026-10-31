@@ -41,7 +41,23 @@ interface I18nContextType {
   ready: boolean;
 }
 
-const I18nContext = createContext<I18nContextType | undefined>(undefined);
+const defaultI18nContext: I18nContextType = {
+  lang: "en",
+  setLang: () => {},
+  t: (key: string, vars?: Record<string, string | number>) => {
+    let val = translations["en"]?.[key] || key;
+    if (vars) {
+      for (const [k, v] of Object.entries(vars)) {
+        val = val.replace(`{${k}}`, String(v));
+      }
+    }
+    return val;
+  },
+  dir: "ltr",
+  ready: false,
+};
+
+const I18nContext = createContext<I18nContextType>(defaultI18nContext);
 
 function isClient(): boolean {
   return typeof window !== "undefined";
@@ -169,6 +185,5 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
 export function useI18n() {
   const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error("useI18n must be used within I18nProvider");
-  return ctx;
+  return ctx || defaultI18nContext;
 }

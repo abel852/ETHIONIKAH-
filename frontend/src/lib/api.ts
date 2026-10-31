@@ -27,9 +27,13 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => {
-    // Store successful GET responses in client cache
+    // Store successful GET responses in client cache (skip membership and payments so toggle changes are always immediate)
     if (res.config?.method === "get" && res.status === 200 && !res.config._skipCache) {
-      const key = `${res.config.baseURL}${res.config.url}`;
+      if (res.config.url?.includes("/membership") || res.config.url?.includes("/payments")) {
+        return res;
+      }
+      const paramStr = res.config.params ? JSON.stringify(res.config.params) : "";
+      const key = `${res.config.baseURL}${res.config.url}?${paramStr}`;
       clientCache.set(key, { data: res, ts: Date.now() });
       if (clientCache.size > 100) {
         const oldest = clientCache.keys().next().value;

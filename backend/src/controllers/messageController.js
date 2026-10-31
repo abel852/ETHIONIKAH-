@@ -2,6 +2,7 @@ const prisma = require("../config/database");
 const { emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited, emitMessageReaction } = require("../utils/messageSocket");
 const { ensureContactCredits } = require("./membershipPlanController");
 const { uploadMulterFile, isR2Enabled } = require("../config/r2");
+const { hasFeature } = require("../utils/subscriptionHelper");
 
 // Send push notification for new message (fire-and-forget)
 function sendPushForMessage(message, receiverId) {
@@ -457,12 +458,8 @@ const getConversations = async (req, res) => {
     const conversations = {};
     const otherUserIds = new Set();
 
-    // Check if the requesting user has Platinum membership (can see last seen)
-    const requesterSub = await prisma.subscription.findFirst({
-      where: { userId, status: "active", planType: "platinum", endDate: { gte: new Date() } },
-      select: { planType: true },
-    });
-    const canSeeLastSeen = !!requesterSub;
+    // Check if the requesting user has Platinum membership or last_seen_visibility feature
+    const canSeeLastSeen = await hasFeature(userId, "last_seen_visibility");
 
     // First pass: collect unique other-user IDs and build conversation list
     for (const msg of messages) {

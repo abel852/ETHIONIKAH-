@@ -31,7 +31,18 @@ interface AuthContextType {
   updateUser: (data: Partial<User>) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+  connectionError: null,
+  login: async () => {},
+  register: async () => {},
+  logout: () => {},
+  updateUser: () => {},
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -192,6 +203,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  return ctx || defaultAuthContext;
 }

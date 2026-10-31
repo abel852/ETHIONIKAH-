@@ -1,8 +1,10 @@
 const prisma = require("../config/database");
 const { ensureContactCredits } = require("./membershipPlanController");
+const { getUserFeatures } = require("../utils/subscriptionHelper");
 
 /**
- * Check if user has Gold, Platinum, or at least 1 conversation credit.
+ * Check if user has an active membership with messaging privileges (e.g., unlimited_messaging, no_credit_charges, Gold, Platinum),
+ * or at least 1 conversation credit.
  * Returns { ok: true, usingCredits: boolean } or { ok: false, error }.
  */
 async function checkMembershipOrCredits(userId) {
@@ -10,12 +12,23 @@ async function checkMembershipOrCredits(userId) {
     where: {
       userId,
       status: "active",
-      planType: { in: ["gold", "platinum"] },
       endDate: { gt: new Date() },
     },
     select: { planType: true },
   });
-  if (activeSub) return { ok: true, usingCredits: false };
+  if (activeSub) {
+    if (["gold", "platinum"].includes(activeSub.planType)) {
+      return { ok: true, usingCredits: false };
+    }
+    const features = await getUserFeatures(userId);
+    if (
+      features.includes("unlimited_messaging") ||
+      features.includes("no_credit_charges") ||
+      features.includes("instant_messaging")
+    ) {
+      return { ok: true, usingCredits: false };
+    }
+  }
 
   const creditRecord = await ensureContactCredits(userId);
   if (creditRecord.credits > 0) return { ok: true, usingCredits: true };
@@ -24,7 +37,7 @@ async function checkMembershipOrCredits(userId) {
     ok: false,
     status: 403,
     error:
-      "You need either:\n\u2022 Gold Membership\n\u2022 Platinum Membership\n\u2022 or one Conversation Credit\nto start a conversation.",
+      "You need an active Membership with messaging privileges or at least one Conversation Credit to start a conversation.",
   };
 }
 

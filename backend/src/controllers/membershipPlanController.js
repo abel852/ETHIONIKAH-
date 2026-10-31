@@ -21,6 +21,7 @@ const getMembershipPlans = async (req, res) => {
       where,
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     res.json({ success: true, data: plans });
   } catch (error) {
     console.error("Error fetching membership plans:", error);
@@ -126,6 +127,7 @@ const getCreditPackages = async (req, res) => {
       where,
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     res.json({ success: true, data: packages });
   } catch (error) {
     console.error("Error fetching credit packages:", error);

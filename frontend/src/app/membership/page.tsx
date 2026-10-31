@@ -54,19 +54,20 @@ function formatPeriod(durationDays: number): string {
 
 function dbPlanToPlan(p: any): Plan {
   const meta = PLAN_GRADIENT_MAP[p.key] || { color: "text-charcoal-500", gradient: "from-charcoal-400 to-charcoal-500" };
+  const currency = p.currency === "ETB" ? "Birr" : (p.currency || "Birr");
   return {
     id: p.key,
     key: p.key,
     name: p.name,
     price: p.price,
-    currency: p.currency || "Birr",
+    currency,
     durationDays: p.durationDays,
     period: formatPeriod(p.durationDays),
     icon: PLAN_ICON_MAP[p.key] || MessageSquare,
     color: meta.color,
     gradient: meta.gradient,
     popular: meta.popular,
-    features: p.features.map((f: string) => f.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())),
+    features: (p.features || []).map((f: string) => f.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())),
     planType: p.planType,
   };
 }
@@ -135,14 +136,12 @@ interface PlanTierCardProps {
 function PlanTierCard({ name, icon: Icon, gradient, color, priceLabel, subLabel, highlights, isPopular, isCurrent, isDisabled, isUpgrade, creditPackages, onSelect }: PlanTierCardProps) {
   return (
     <div
-      className={`relative rounded-2xl border p-5 bg-white dark:bg-charcoal-800 transition-all flex flex-col ${
-        isDisabled ? "opacity-60" : "hover:shadow-elevated hover:-translate-y-0.5"
-      } ${
-        isCurrent ? "border-2 border-green-400 ring-2 ring-green-400/20" :
-        isPopular && !isDisabled ? "border-accent ring-2 ring-accent/30" :
-        isUpgrade ? "border-2 border-blue-400 ring-2 ring-blue-400/20" :
-        "border-charcoal-100 dark:border-charcoal-700"
-      }`}
+      className={`relative rounded-2xl border p-5 bg-white dark:bg-charcoal-800 transition-all flex flex-col ${isDisabled ? "opacity-60" : "hover:shadow-elevated hover:-translate-y-0.5"
+        } ${isCurrent ? "border-2 border-green-400 ring-2 ring-green-400/20" :
+          isPopular && !isDisabled ? "border-accent ring-2 ring-accent/30" :
+            isUpgrade ? "border-2 border-blue-400 ring-2 ring-blue-400/20" :
+              "border-charcoal-100 dark:border-charcoal-700"
+        }`}
     >
       {/* Badge */}
       {isPopular && !isDisabled && (
@@ -224,9 +223,11 @@ export default function MembershipPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [wallet, setWallet] = useState<any>(null);
   const [contactCredits, setContactCredits] = useState<any>(null);
+  const [activeBoost, setActiveBoost] = useState<any>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [creditPackages, setCreditPackages] = useState<any[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [activePlanKeys, setActivePlanKeys] = useState<Set<string>>(new Set());
   const [activeMembership, setActiveMembership] = useState<{ isPremium: boolean; activePlan: string | null; expiresAt: string | null }>({ isPremium: false, activePlan: null, expiresAt: null });
 
   const fetchHistory = useCallback(async () => {
@@ -238,6 +239,7 @@ export default function MembershipPage() {
       setPayments(payRes.data.data || []);
       setWallet(walletRes.data.data?.wallet || null);
       setContactCredits(walletRes.data.data?.contactCredits || null);
+      setActiveBoost(walletRes.data.data?.activeBoost || null);
     } catch { /* ignore */ }
   }, []);
 
@@ -252,13 +254,18 @@ export default function MembershipPage() {
 
   const fetchPlansAndMethods = async () => {
     try {
-      const [plansRes, creditsRes, methodsRes] = await Promise.all([
+      const [plansRes, creditsRes, methodsRes] = await Promise.allSettled([
         paymentService.getMembershipPlans(),
         paymentService.getCreditPackages(),
         paymentService.getPaymentMethods(),
       ]);
-      const dbPlans = (plansRes.data.data || []).filter((p: any) => p.key !== "free");
-      const creditPkgPlans = (creditsRes.data.data || []).map((c: any) => ({
+      const allActivePlans: any[] = plansRes.status === "fulfilled" ? plansRes.value.data?.data || [] : [];
+      const activeCredits: any[] = creditsRes.status === "fulfilled" ? creditsRes.value.data?.data || [] : [];
+      const keys = new Set<string>(allActivePlans.map((p: any) => p.key));
+      if (activeCredits.length > 0) keys.add("pay_per_contact");
+      setActivePlanKeys(keys);
+      const dbPlans = allActivePlans.filter((p: any) => p.key !== "free");
+      const creditPkgPlans = activeCredits.map((c: any) => ({
         ...c,
         key: c.key,
         name: c.name,
@@ -269,8 +276,10 @@ export default function MembershipPage() {
         features: [`${c.credits} contact credits`, "Credits never expire", "No commitment"],
       }));
       setPlans([...dbPlans.map(dbPlanToPlan), ...creditPkgPlans.map(dbPlanToPlan)]);
-      setCreditPackages(creditsRes.data.data || []);
-      setPaymentMethods(methodsRes.data.data || []);
+      setCreditPackages(activeCredits);
+      if (methodsRes.status === "fulfilled") {
+        setPaymentMethods(methodsRes.value.data?.data || []);
+      }
     } catch { /* ignore */ }
   };
 
@@ -395,6 +404,23 @@ export default function MembershipPage() {
                   </div>
                 )}
 
+                {/* Active boost banner */}
+                {activeBoost && (
+                  <div className="relative overflow-hidden rounded-2xl p-4 mb-6 text-white shadow-lg bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                        <Zap className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-display font-bold text-sm">7-Day Profile Boost is Active!</p>
+                        <p className="text-xs text-white/90">
+                          Your profile is currently featured and receiving top search ranking {activeBoost.endsAt ? `until ${formatDate(activeBoost.endsAt)}` : "for 7 days"}.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {contactCredits && (
                   <div className="flex items-center justify-center mb-6">
                     <div className="inline-flex items-center gap-4 px-5 py-3 rounded-2xl bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-500/10 dark:to-cyan-500/10 border border-teal-200 dark:border-teal-800/50">
@@ -452,119 +478,219 @@ export default function MembershipPage() {
                 )}
 
                 {/* ─── PLAN TIERS ─── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                  {/* Free */}
-                  <PlanTierCard
-                    name="Free"
-                    icon={ShieldCheck}
-                    gradient="from-charcoal-400 to-charcoal-500"
-                    color="text-charcoal-500"
-                    priceLabel="Birr 0"
-                    subLabel="Forever free"
-                    highlights={["Profile creation", "Photo uploads", "Receive messages", "Browse profiles (limited)"]}
-                    isCurrent={activeMembership.activePlan === "free" || !activeMembership.activePlan}
-                    onSelect={() => toast("You're on the Free plan", { icon: "ℹ️" })}
-                  />
-
-                  {/* Pay-Per-Contact */}
-                  <PlanTierCard
-                    name="Pay-Per-Contact"
-                    icon={WalletIcon}
-                    gradient="from-teal-500 to-cyan-500"
-                    color="text-teal-500"
-                    priceLabel="From Birr 100"
-                    subLabel="Per contact credit"
-                    highlights={["Everything in Free", "Initiate conversations", "Unlock contact info", "Credits never expire"]}
-                    creditPackages={[
-                      { credits: 1, price: "100 Birr" },
-                      { credits: 5, price: "400 Birr" },
-                      { credits: 10, price: "700 Birr" },
-                    ]}
-                    isCurrent={activeMembership.activePlan === "pay_per_contact"}
-                    onSelect={() => {
-                      const pkg = creditPackages[0];
-                      if (pkg) {
-                        handleSelectPlan({
-                          ...pkg, key: pkg.key || "pay_per_contact", name: pkg.name || "Pay-Per-Contact",
-                          currency: "Birr", period: "one-time", icon: WalletIcon, color: "text-teal-500",
-                          gradient: "from-teal-500 to-cyan-500", features: [`${pkg.credits} contact credits`], planType: "credit",
-                        } as Plan);
-                      }
-                    }}
-                  />
-
-                  {/* Gold */}
-                  <PlanTierCard
-                    name="Gold"
-                    icon={Crown}
-                    gradient="from-amber-400 to-yellow-500"
-                    color="text-amber-500"
-                    priceLabel={plans.find(p => p.key === "gold") ? `${plans.find(p => p.key === "gold")!.currency} ${plans.find(p => p.key === "gold")!.price.toLocaleString()}` : "Birr —"}
-                    subLabel={plans.find(p => p.key === "gold")?.period || "per month"}
-                    highlights={["Everything in Pay-Per-Contact", "Unlimited browsing", "Unlimited messaging", "Advanced search filters", "See profile visitors", "See who liked you", "No contact credit charges"]}
-                    isPopular
-                    isCurrent={activeMembership.activePlan === "gold"}
-                    isDisabled={activeMembership.isPremium && (activeMembership.activePlan === "gold" || activeMembership.activePlan === "platinum")}
-                    isUpgrade={activeMembership.isPremium && activeMembership.activePlan === "gold" && false}
-                    onSelect={() => {
-                      const p = plans.find(p => p.key === "gold");
-                      if (p) handleSelectPlan(p);
-                    }}
-                  />
-
-                  {/* Platinum */}
-                  <PlanTierCard
-                    name="Platinum"
-                    icon={Gem}
-                    gradient="from-purple-500 to-fuchsia-500"
-                    color="text-purple-500"
-                    priceLabel={plans.find(p => p.key === "platinum") ? `${plans.find(p => p.key === "platinum")!.currency} ${plans.find(p => p.key === "platinum")!.price.toLocaleString()}` : "Birr —"}
-                    subLabel={plans.find(p => p.key === "platinum")?.period || "per month"}
-                    highlights={["Everything in Gold", "Polygamy chat (no permission needed)", "Last seen visibility", "Featured profile placement", "Highest search ranking", "VIP badge", "Personalized matches", "VIP support", "Early access"]}
-                    isCurrent={activeMembership.activePlan === "platinum"}
-                    isDisabled={activeMembership.activePlan === "platinum"}
-                    onSelect={() => {
-                      const p = plans.find(p => p.key === "platinum");
-                      if (p) handleSelectPlan(p);
-                    }}
-                  />
-                </div>
+                {activePlanKeys.size > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-10">
+                    {activePlanKeys.has("free") && (
+                      <PlanTierCard
+                        name="Free"
+                        icon={ShieldCheck}
+                        gradient="from-charcoal-400 to-charcoal-500"
+                        color="text-charcoal-500"
+                        priceLabel="Birr 0"
+                        subLabel="Forever free"
+                        highlights={["Profile creation", "Photo uploads", "Receive messages", "Browse profiles (limited)"]}
+                        isCurrent={activeMembership.activePlan === "free" || !activeMembership.activePlan}
+                        onSelect={() => toast("You're on the Free plan", { icon: "ℹ️" })}
+                      />
+                    )}
+                    {activePlanKeys.has("pay_per_contact") && (
+                      <PlanTierCard
+                        name="Pay-Per-Contact"
+                        icon={WalletIcon}
+                        gradient="from-teal-500 to-cyan-500"
+                        color="text-teal-500"
+                        priceLabel={creditPackages.length > 0 ? `From ${creditPackages[0].currency === "ETB" ? "Birr" : (creditPackages[0].currency || "Birr")} ${creditPackages[0].price.toLocaleString()}` : "From Birr 100"}
+                        subLabel="Per contact credit"
+                        highlights={["Everything in Free", "Initiate conversations", "Unlock contact info", "Credits never expire"]}
+                        creditPackages={creditPackages.slice(0, 3).map((c) => ({
+                          credits: c.credits,
+                          price: `${c.price} ${c.currency === "ETB" ? "Birr" : (c.currency || "Birr")}`,
+                        }))}
+                        isCurrent={activeMembership.activePlan === "pay_per_contact"}
+                        onSelect={() => {
+                          const pkg = creditPackages[0];
+                          if (pkg) {
+                            handleSelectPlan({
+                              ...pkg,
+                              key: pkg.key || "pay_per_contact",
+                              name: pkg.name || "Pay-Per-Contact",
+                              currency: pkg.currency === "ETB" ? "Birr" : (pkg.currency || "Birr"),
+                              period: "one-time",
+                              icon: WalletIcon,
+                              color: "text-teal-500",
+                              gradient: "from-teal-500 to-cyan-500",
+                              features: [`${pkg.credits} contact credits`],
+                              planType: "credit",
+                            } as Plan);
+                          }
+                        }}
+                      />
+                    )}
+                    {activePlanKeys.has("gold") && (
+                      <PlanTierCard
+                        name="Gold"
+                        icon={Crown}
+                        gradient="from-amber-400 to-yellow-500"
+                        color="text-amber-500"
+                        priceLabel={plans.find(p => p.key === "gold") ? `${plans.find(p => p.key === "gold")!.currency} ${plans.find(p => p.key === "gold")!.price.toLocaleString()}` : "Birr 2,400"}
+                        subLabel={plans.find(p => p.key === "gold")?.period || "per year"}
+                        highlights={plans.find(p => p.key === "gold")?.features?.length ? plans.find(p => p.key === "gold")!.features : ["Everything in Pay-Per-Contact", "Unlimited browsing", "Unlimited messaging", "Advanced search filters", "See profile visitors", "See who liked you", "No contact credit charges"]}
+                        isPopular
+                        isCurrent={activeMembership.activePlan === "gold"}
+                        isDisabled={activeMembership.isPremium && (activeMembership.activePlan === "gold" || activeMembership.activePlan === "platinum")}
+                        isUpgrade={activeMembership.isPremium && activeMembership.activePlan === "gold" && false}
+                        onSelect={() => {
+                          const p = plans.find(p => p.key === "gold");
+                          if (p) handleSelectPlan(p);
+                        }}
+                      />
+                    )}
+                    {activePlanKeys.has("platinum") && (
+                      <PlanTierCard
+                        name="Platinum"
+                        icon={Gem}
+                        gradient="from-purple-500 to-fuchsia-500"
+                        color="text-purple-500"
+                        priceLabel={plans.find(p => p.key === "platinum") ? `${plans.find(p => p.key === "platinum")!.currency} ${plans.find(p => p.key === "platinum")!.price.toLocaleString()}` : "Birr 4,800"}
+                        subLabel={plans.find(p => p.key === "platinum")?.period || "per year"}
+                        highlights={plans.find(p => p.key === "platinum")?.features?.length ? plans.find(p => p.key === "platinum")!.features : ["Everything in Gold", "Polygamy chat (no permission needed)", "Last seen visibility", "Featured profile placement", "Highest search ranking", "VIP badge", "Personalized matches", "VIP support", "Early access"]}
+                        isCurrent={activeMembership.activePlan === "platinum"}
+                        isDisabled={activeMembership.activePlan === "platinum"}
+                        onSelect={() => {
+                          const p = plans.find(p => p.key === "platinum");
+                          if (p) handleSelectPlan(p);
+                        }}
+                      />
+                    )}
+                    {activePlanKeys.has("verification") && (
+                      <PlanTierCard
+                        name={plans.find(p => p.key === "verification")?.name || "Identity Verification"}
+                        icon={ShieldCheck}
+                        gradient="from-green-500 to-emerald-500"
+                        color="text-green-500"
+                        priceLabel={plans.find(p => p.key === "verification") ? `${plans.find(p => p.key === "verification")!.currency} ${plans.find(p => p.key === "verification")!.price.toLocaleString()}` : "Birr 300"}
+                        subLabel={plans.find(p => p.key === "verification")?.period || "one-time"}
+                        highlights={
+                          plans.find(p => p.key === "verification")?.features?.length
+                            ? plans.find(p => p.key === "verification")!.features
+                            : ["Verified badge on profile", "Increased trust & credibility", "Higher search visibility", "Manual document review"]
+                        }
+                        onSelect={() => {
+                          const p = plans.find(p => p.key === "verification") || {
+                            id: "verification",
+                            key: "verification",
+                            name: "Identity Verification",
+                            price: 300,
+                            currency: "Birr",
+                            durationDays: 0,
+                            period: "one-time",
+                            icon: ShieldCheck,
+                            color: "text-green-500",
+                            gradient: "from-green-500 to-emerald-500",
+                            features: ["Verified badge on profile", "Increased trust & credibility", "Higher search visibility", "Manual document review"],
+                            planType: "verification",
+                          };
+                          handleSelectPlan(p as Plan);
+                        }}
+                      />
+                    )}
+                    {activePlanKeys.has("boost") && (
+                      <PlanTierCard
+                        name={plans.find(p => p.key === "boost")?.name || "7-Day Profile Boost"}
+                        icon={Zap}
+                        gradient="from-orange-500 to-red-500"
+                        color="text-orange-500"
+                        priceLabel={plans.find(p => p.key === "boost") ? `${plans.find(p => p.key === "boost")!.currency} ${plans.find(p => p.key === "boost")!.price.toLocaleString()}` : "Birr 100"}
+                        subLabel={activeBoost?.endsAt ? `Active until ${formatDate(activeBoost.endsAt)}` : (plans.find(p => p.key === "boost")?.period || "for 7 days")}
+                        highlights={
+                          plans.find(p => p.key === "boost")?.features?.length
+                            ? plans.find(p => p.key === "boost")!.features
+                            : ["Featured profile placement", "Top search ranking", "Increased exposure to matches"]
+                        }
+                        isCurrent={!!activeBoost}
+                        isDisabled={!!activeBoost}
+                        onSelect={() => {
+                          const p = plans.find(p => p.key === "boost") || {
+                            id: "boost",
+                            key: "boost",
+                            name: "7-Day Profile Boost",
+                            price: 100,
+                            currency: "Birr",
+                            durationDays: 7,
+                            period: "for 7 days",
+                            icon: Zap,
+                            color: "text-orange-500",
+                            gradient: "from-orange-500 to-red-500",
+                            features: ["Featured profile placement", "Top search ranking", "Increased exposure to matches"],
+                            planType: "boost",
+                          };
+                          handleSelectPlan(p as Plan);
+                        }}
+                      />
+                    )}
+                    {plans
+                      .filter((p) => p.planType !== "credit" && !["free", "gold", "platinum", "verification", "boost"].includes(p.key) && activePlanKeys.has(p.key))
+                      .map((p) => (
+                        <PlanTierCard
+                          key={p.key}
+                          name={p.name}
+                          icon={p.icon || ShieldCheck}
+                          gradient={p.gradient || "from-accent to-accent-dark"}
+                          color={p.color || "text-accent"}
+                          priceLabel={`${p.currency} ${p.price.toLocaleString()}`}
+                          subLabel={p.period}
+                          highlights={p.features}
+                          onSelect={() => handleSelectPlan(p)}
+                        />
+                      ))}
+                  </div>
+                )}
 
                 {/* ─── FEATURE COMPARISON TABLE ─── */}
-                <div className="bg-white dark:bg-charcoal-800 rounded-2xl border border-charcoal-100 dark:border-charcoal-700 overflow-hidden shadow-card">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-charcoal-100 dark:border-charcoal-700">
-                          <th className="text-left p-4 font-display font-bold text-charcoal-900 dark:text-white whitespace-nowrap">Feature</th>
-                          <th className="p-4 text-center font-display font-bold text-charcoal-600 dark:text-charcoal-300 whitespace-nowrap">Free</th>
-                          <th className="p-4 text-center font-display font-bold text-teal-600 dark:text-teal-400 whitespace-nowrap">Pay-Per-Contact</th>
-                          <th className="p-4 text-center font-display font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap bg-amber-50/50 dark:bg-amber-500/5">
-                            <span className="inline-flex items-center gap-1.5">
-                              <Crown className="w-4 h-4" /> Gold
-                            </span>
-                          </th>
-                          <th className="p-4 text-center font-display font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5">
-                              <Gem className="w-4 h-4" /> Platinum
-                            </span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-charcoal-50 dark:divide-charcoal-700/50">
-                        {COMPARISON_ROWS.map((row, i) => (
-                          <tr key={i} className="hover:bg-charcoal-50/50 dark:hover:bg-charcoal-700/20 transition-colors">
-                            <td className="p-4 text-charcoal-700 dark:text-charcoal-300 font-medium whitespace-nowrap">{row.feature}</td>
-                            <td className="p-4 text-center">{renderCell(row.free)}</td>
-                            <td className="p-4 text-center">{renderCell(row.ppc)}</td>
-                            <td className="p-4 text-center bg-amber-50/30 dark:bg-amber-500/5">{renderCell(row.gold)}</td>
-                            <td className="p-4 text-center">{renderCell(row.platinum)}</td>
+                {(activePlanKeys.has("free") || activePlanKeys.has("pay_per_contact") || activePlanKeys.has("gold") || activePlanKeys.has("platinum")) && (
+                  <div className="bg-white dark:bg-charcoal-800 rounded-2xl border border-charcoal-100 dark:border-charcoal-700 overflow-hidden shadow-card">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-charcoal-100 dark:border-charcoal-700">
+                            <th className="text-left p-4 font-display font-bold text-charcoal-900 dark:text-white whitespace-nowrap">Feature</th>
+                            {activePlanKeys.has("free") && (
+                              <th className="p-4 text-center font-display font-bold text-charcoal-600 dark:text-charcoal-300 whitespace-nowrap">Free</th>
+                            )}
+                            {activePlanKeys.has("pay_per_contact") && (
+                              <th className="p-4 text-center font-display font-bold text-teal-600 dark:text-teal-400 whitespace-nowrap">Pay-Per-Contact</th>
+                            )}
+                            {activePlanKeys.has("gold") && (
+                              <th className="p-4 text-center font-display font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap bg-amber-50/50 dark:bg-amber-500/5">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Crown className="w-4 h-4" /> Gold
+                                </span>
+                              </th>
+                            )}
+                            {activePlanKeys.has("platinum") && (
+                              <th className="p-4 text-center font-display font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Gem className="w-4 h-4" /> Platinum
+                                </span>
+                              </th>
+                            )}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-charcoal-50 dark:divide-charcoal-700/50">
+                          {COMPARISON_ROWS.map((row, i) => (
+                            <tr key={i} className="hover:bg-charcoal-50/50 dark:hover:bg-charcoal-700/20 transition-colors">
+                              <td className="p-4 text-charcoal-700 dark:text-charcoal-300 font-medium whitespace-nowrap">{row.feature}</td>
+                              {activePlanKeys.has("free") && <td className="p-4 text-center">{renderCell(row.free)}</td>}
+                              {activePlanKeys.has("pay_per_contact") && <td className="p-4 text-center">{renderCell(row.ppc)}</td>}
+                              {activePlanKeys.has("gold") && <td className="p-4 text-center bg-amber-50/30 dark:bg-amber-500/5">{renderCell(row.gold)}</td>}
+                              {activePlanKeys.has("platinum") && <td className="p-4 text-center">{renderCell(row.platinum)}</td>}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Payment history */}
                 {payments.length > 0 && (
@@ -620,9 +746,8 @@ export default function MembershipPage() {
                   {paymentMethods.map((method) => (
                     <div
                       key={method.id}
-                      className={`rounded-2xl border p-4 transition-all cursor-pointer bg-white dark:bg-charcoal-800 border-charcoal-200 dark:border-charcoal-700 ${
-                        selectedMethod?.id === method.id ? "ring-2 ring-accent" : ""
-                      }`}
+                      className={`rounded-2xl border p-4 transition-all cursor-pointer bg-white dark:bg-charcoal-800 border-charcoal-200 dark:border-charcoal-700 ${selectedMethod?.id === method.id ? "ring-2 ring-accent" : ""
+                        }`}
                       onClick={() => setSelectedMethod(method)}
                     >
                       <div className="flex items-center justify-between">

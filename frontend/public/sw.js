@@ -115,6 +115,9 @@ self.addEventListener("fetch", (event) => {
   // Skip Chrome extension requests
   if (url.protocol === "chrome-extension:") return;
 
+  // Development / localhost — never cache, let browser fetch fresh files from Next.js dev server
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return;
+
   // API calls — network-first (never cache API responses in SW)
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(networkFirst(request));

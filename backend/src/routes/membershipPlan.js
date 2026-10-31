@@ -23,9 +23,9 @@ router.put("/payment-methods/:id", ...auth, ctrl.updatePaymentMethod);
 router.delete("/payment-methods/:id", ...auth, ctrl.deletePaymentMethod);
 
 // User-facing routes (public for browsing plans, auth for credits)
-router.get("/plans", authenticate, ctrl.getMembershipPlans);
-router.get("/credits", authenticate, ctrl.getCreditPackages);
-router.get("/methods", authenticate, ctrl.getPaymentMethods);
+router.get("/plans", ctrl.getMembershipPlans);
+router.get("/credits", ctrl.getCreditPackages);
+router.get("/methods", ctrl.getPaymentMethods);
 router.get("/my-credits", authenticate, ctrl.getMyContactCredits);
 
 module.exports = router;

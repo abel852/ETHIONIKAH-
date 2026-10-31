@@ -137,14 +137,20 @@ async function activatePayment(payment, adminId) {
       break;
     }
     case "boost": {
-      const endDate = getPlanEndDate(config.durationDays);
+      const durationDays = config.durationDays || 7;
+      const existingBoost = await prisma.boost.findFirst({
+        where: { userId, status: "active", endsAt: { gt: new Date() } },
+        orderBy: { endsAt: "desc" },
+      });
+      const startsAt = existingBoost?.endsAt ? existingBoost.endsAt : new Date();
+      const endsAt = new Date(startsAt.getTime() + durationDays * 24 * 60 * 60 * 1000);
       const boost = await prisma.boost.create({
         data: {
           userId,
           paymentId: payment.id,
           status: "active",
-          startsAt: new Date(),
-          endsAt: endDate,
+          startsAt: existingBoost ? startsAt : new Date(),
+          endsAt,
         },
       });
       activation.boostId = boost.id;
