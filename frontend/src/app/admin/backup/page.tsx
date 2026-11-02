@@ -66,10 +66,11 @@ export default function BackupPage() {
 
   const handleCreateBackup = async () => {
     setCreating(true);
+    toast.info("Creating database backup, please wait…", { duration: 3000 });
     try {
       const { data } = await api.post("/admin/backup/create");
       toast.success(`Database backup created (${data.sizeMB} MB)`);
-      fetchBackups();
+      await fetchBackups();
     } catch (err: any) {
       const errMsg = err?.response?.data?.error || "Failed to create backup";
       toast.error(errMsg);
@@ -80,10 +81,11 @@ export default function BackupPage() {
 
   const handleCreateFullBackup = async () => {
     setCreatingFull(true);
+    toast.info("Creating full backup (database & uploads), please wait…", { duration: 4000 });
     try {
       const { data } = await api.post("/admin/backup/create-full");
       toast.success(`Full backup created (${data.sizeMB} MB, ${data.fileCount} files)`);
-      fetchBackups();
+      await fetchBackups();
     } catch (err: any) {
       const errMsg = err?.response?.data?.error || "Failed to create full backup";
       toast.error(errMsg);
@@ -310,16 +312,34 @@ export default function BackupPage() {
                   onClick={handleCreateBackup}
                   disabled={creating || creatingFull}
                 >
-                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
-                  Database Only
+                  {creating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating Database…
+                    </>
+                  ) : (
+                    <>
+                      <Database className="w-4 h-4" />
+                      Database Backup
+                    </>
+                  )}
                 </Button>
                 <Button
                   variant="primary"
                   onClick={handleCreateFullBackup}
                   disabled={creating || creatingFull}
                 >
-                  {creatingFull ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
-                  Create Full Backup
+                  {creatingFull ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating Full Backup…
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="w-4 h-4" />
+                      Create Full Backup
+                    </>
+                  )}
                 </Button>
               </>
             )}
@@ -416,7 +436,7 @@ export default function BackupPage() {
         ) : backups.length === 0 ? (
           <div className="text-center py-12 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <Database className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-gray-400">No backups yet. Click &quot;Create Backup&quot; to get started.</p>
+            <p className="text-gray-500 dark:text-gray-400">No backups yet. Click &quot;Create Full Backup&quot; or &quot;Database Backup&quot; to get started.</p>
           </div>
         ) : (
           <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden overflow-x-auto">

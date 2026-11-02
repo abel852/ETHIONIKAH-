@@ -22,6 +22,10 @@ api.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {
     config.timeout = 180000; // 3 minutes for file uploads
   }
+  // Generous timeout for backup creation and restoration
+  if (config.url?.includes("/admin/backup/create") || config.url?.includes("/admin/backup/restore")) {
+    config.timeout = 300000; // 5 minutes for backup operations
+  }
   return config;
 });
 
