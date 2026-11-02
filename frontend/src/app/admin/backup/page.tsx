@@ -23,6 +23,7 @@ export default function BackupPage() {
   const [restoring, setRestoring] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [downloading, setDownloading] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ percent: number; speedMBps: number; uploadedMB: number; totalMB: number } | null>(null);
   const [uploadError, setUploadError] = useState(false);
   const [lastFile, setLastFile] = useState<File | null>(null);
@@ -91,22 +92,25 @@ export default function BackupPage() {
     }
   };
 
-  const handleDownload = async (filename: string) => {
+  const handleDownload = (filename: string) => {
     try {
-      const response = await api.get(`/admin/backup/download/${filename}`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      setDownloading(filename);
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : "";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      // Direct streaming native download — prevents 30s JS timeout and memory buffer limit
+      const downloadUrl = `${apiBase}/admin/backup/download/${encodeURIComponent(filename)}?token=${encodeURIComponent(token || "")}`;
       const link = document.createElement("a");
-      link.href = url;
+      link.href = downloadUrl;
       link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success("Backup downloaded");
-    } catch {
+      toast.success(`Download started for ${filename}`);
+      setTimeout(() => setDownloading(null), 3000);
+    } catch (err) {
+      console.error("Failed to start backup download:", err);
       toast.error("Failed to download backup");
+      setDownloading(null);
     }
   };
 
@@ -463,10 +467,15 @@ export default function BackupPage() {
                         {canView && (
                           <button
                             onClick={() => handleDownload(backup.filename)}
-                            className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                            disabled={downloading === backup.filename}
+                            className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50"
                             title="Download"
                           >
-                            <Download className="w-4 h-4" />
+                            {downloading === backup.filename ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
                           </button>
                         )}
 

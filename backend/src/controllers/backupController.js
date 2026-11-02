@@ -214,7 +214,12 @@ exports.downloadBackup = async (req, res) => {
       details: { filename },
     });
 
-    res.download(filepath, filename);
+    res.download(filepath, filename, (err) => {
+      if (err && !res.headersSent) {
+        console.error("Backup download error:", err);
+        res.status(500).json({ error: "Failed to download backup" });
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: "Failed to download backup" });
   }
