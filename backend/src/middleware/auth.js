@@ -48,7 +48,9 @@ const authenticate = async (req, res, next) => {
     req.user = verifyAccessToken(token);
     if (req.user.tokenVersion === undefined) return next();
 
-    const userId = req.user.userId;
+    const userId = req.user.userId || req.user.id;
+    if (!userId) return res.status(401).json({ error: "Invalid token payload: missing user identifier" });
+    req.user.userId = userId;
 
     // Try Redis cache first — avoids DB query on most requests
     const cached = await getCachedAuthData(userId);
