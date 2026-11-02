@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Shield, UserPlus, Star, Bell, Check, X } from "lucide-react";
 import { Button, Badge, NotificationSkeleton, IslamicPatternBackground } from "@/components/common";
 import { useNotificationStore } from "@/store/notifications";
@@ -16,9 +17,12 @@ const iconMap: Record<string, { icon: typeof Heart; color: string; bg: string }>
   admin: { icon: Bell, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-500/10" },
   conversation_permission_request: { icon: Shield, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10" },
   conversation_permission_response: { icon: Shield, color: "text-teal-500", bg: "bg-teal-50 dark:bg-teal-500/10" },
+  conversation_request: { icon: MessageCircle, color: "text-[#D4AF37]", bg: "bg-[#D4AF37]/10" },
+  conversation_request_response: { icon: MessageCircle, color: "text-emerald-500", bg: "bg-emerald-500/10" },
 };
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { notifications, isLoading, fetchNotifications, markAllAsRead, markAsRead } = useNotificationStore();
 
   useEffect(() => {
@@ -57,7 +61,12 @@ export default function NotificationsPage() {
                   key={notif.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  onClick={() => { if (!notif.read) markAsRead(notif.id); }}
+                  onClick={() => {
+                    if (!notif.read) markAsRead(notif.id);
+                    if (notif.type === "conversation_request" || notif.type === "conversation_request_response" || notif.type === "message") {
+                      router.push("/messages");
+                    }
+                  }}
                   className={`flex items-start gap-4 p-4 rounded-2xl transition-colors cursor-pointer ${
                     !notif.read ? "bg-accent/5 border border-accent/20" : "bg-white dark:bg-charcoal-800 border border-transparent dark:border-charcoal-700 hover:border-charcoal-100/50 dark:hover:border-charcoal-600"
                   }`}

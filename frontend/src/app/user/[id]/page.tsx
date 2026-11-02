@@ -21,7 +21,7 @@ export default function UserProfilePage() {
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [chatPartners, setChatPartners] = useState<any[]>([]);
-  const [requestStatus, setRequestStatus] = useState<{ sent: any; received: any } | null>(null);
+  const [requestStatus, setRequestStatus] = useState<{ sent: any; received: any; cooldownRemainingDays?: number } | null>(null);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [requestMessage, setRequestMessage] = useState("");
   const [sendingRequest, setSendingRequest] = useState(false);
@@ -323,20 +323,71 @@ export default function UserProfilePage() {
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Open Conversation
               </Button>
+            ) : requestStatus?.received?.status === "pending" ? (
+              <div className="w-full p-4 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-center space-y-3 shadow-lg">
+                <p className="text-sm font-semibold text-amber-300">
+                  {userData.firstName} sent you a conversation request!
+                </p>
+                {requestStatus.received.message && (
+                  <p className="text-xs text-amber-100/90 italic bg-black/30 p-2.5 rounded-xl border border-white/5">
+                    "{requestStatus.received.message}"
+                  </p>
+                )}
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await conversationRequestService.respond(requestStatus.received.id, "accepted");
+                        router.push(`/messages?user=${userData.id}`);
+                      } catch {
+                        setRequestToast("Failed to accept request");
+                        setTimeout(() => setRequestToast(null), 3000);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-semibold hover:opacity-90 shadow-md transition-opacity"
+                  >
+                    Accept & Chat
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await conversationRequestService.respond(requestStatus.received.id, "declined");
+                        conversationRequestService.checkStatus(params.id as string).then(({ data }) => setRequestStatus(data));
+                      } catch {
+                        setRequestToast("Failed to decline request");
+                        setTimeout(() => setRequestToast(null), 3000);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-medium hover:bg-red-500/30 transition-colors"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
             ) : requestStatus?.sent?.status === "pending" ? (
               <div className="w-full text-center py-3 px-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
                 <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">Conversation request pending</p>
                 <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-0.5">Waiting for {userData.firstName} to respond.</p>
               </div>
-            ) : requestStatus?.sent?.status === "declined" ? (
-              <div className="w-full text-center py-3 px-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
-                <p className="text-sm text-red-600 dark:text-red-400 font-medium">Conversation request declined</p>
+            ) : requestStatus?.sent?.status === "declined" && ((requestStatus?.cooldownRemainingDays || 0) > 0) ? (
+              <div className="w-full text-center py-3.5 px-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">Conversation request was declined</p>
+                <p className="text-xs text-red-500/80 dark:text-red-300/80 mt-1">
+                  You can send another chat request in <span className="font-bold text-amber-500 dark:text-amber-400">{requestStatus.cooldownRemainingDays} day(s)</span>.
+                </p>
               </div>
             ) : (
               <Button
                 variant="primary"
                 className="w-full"
-                onClick={() => setShowRequestDialog(true)}
+                onClick={() => {
+                  if (!user?.isVerified) {
+                    setRequestToast("Your account must be verified before starting a conversation.");
+                    setTimeout(() => setRequestToast(null), 4000);
+                    return;
+                  }
+                  setShowRequestDialog(true);
+                }}
               >
                 <Send className="w-4 h-4 mr-2" />
                 Start Conversation
@@ -385,7 +436,16 @@ export default function UserProfilePage() {
                           .then(({ data }) => setRequestStatus(data))
                           .catch(() => {});
                       } catch (err: any) {
-                        setRequestToast(err?.response?.data?.error || "Failed to send request");
+                        const errData = err?.response?.data;
+                        if (errData?.code === "PAYMENT_REQUIRED") {
+                          setRequestToast("You need an active Membership or Conversation Credits to start a conversation.");
+                          setTimeout(() => router.push("/membership"), 2000);
+                        } else if (errData?.code === "VERIFICATION_REQUIRED") {
+                          setRequestToast(errData.error || "Please verify your account first.");
+                          setTimeout(() => router.push("/verification"), 2000);
+                        } else {
+                          setRequestToast(errData?.error || "Failed to send request");
+                        }
                       } finally {
                         setSendingRequest(false);
                         setTimeout(() => setRequestToast(null), 4000);

@@ -203,11 +203,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!user || user.role !== "admin") return;
     if (isSuperAdmin) return;
+    // Don't redirect until permissions have loaded from backend
+    if (user.permissions === undefined) return;
+
     const requiredPerm = hrefToPerm[pathname];
     if (requiredPerm && !userPerms.has(requiredPerm)) {
-      router.replace("/admin");
+      // Find the first permitted page to redirect to
+      const firstAllowed = filteredNavItems[0]?.href;
+      if (firstAllowed && pathname !== firstAllowed) {
+        router.replace(firstAllowed);
+      }
     }
-  }, [pathname, user, isSuperAdmin, router]);
+  }, [pathname, user, isSuperAdmin, router, filteredNavItems]);
 
   const toggleSection = (label: string) => {
     setExpandedSections((prev) =>

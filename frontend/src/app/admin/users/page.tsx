@@ -7,9 +7,22 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { adminService } from "@/services/admin";
 import { formatDate, formatRelativeTime, cn } from "@/lib/utils";
 import { useI18n } from "@/context/I18nContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AdminUsersPage() {
+  const { user } = useAuth();
   const { t } = useI18n();
+
+  const isSuperAdmin = user?.adminRole === "super_admin";
+  const userPerms = new Set(user?.permissions || []);
+  const canView = isSuperAdmin || userPerms.has("users.view");
+  const canEdit = isSuperAdmin || userPerms.has("users.edit");
+  const canSuspend = isSuperAdmin || userPerms.has("users.suspend") || canEdit;
+  const canBan = isSuperAdmin || userPerms.has("users.ban") || canEdit;
+  const canDelete = isSuperAdmin || userPerms.has("users.delete") || canEdit;
+  const canVerify = isSuperAdmin || userPerms.has("users.verify") || canEdit;
+  const canBroadcast = isSuperAdmin || userPerms.has("notifications.send") || canEdit;
+
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -50,6 +63,10 @@ export default function AdminUsersPage() {
   };
 
   const fetchUsers = async () => {
+    if (!canView) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await adminService.getUsers({ limit: 500 });
@@ -58,15 +75,16 @@ export default function AdminUsersPage() {
       window.dispatchEvent(new CustomEvent("refresh-badge-counts"));
     } catch (e: any) {
       console.error("fetch users error:", e);
-      toast.error("Failed to load users");
+      toast.error(e?.response?.data?.error || "Failed to load users");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (canView) fetchUsers();
+    else if (user?.permissions !== undefined) setLoading(false);
+  }, [canView, user?.permissions]);
 
   const handleViewUser = async (user: any) => {
     setSelectedUser(user);
@@ -161,6 +179,20 @@ export default function AdminUsersPage() {
   const lockedCount = users.filter((u: any) => u.loginPermanentlyLocked || (u.loginLockedUntil && new Date(u.loginLockedUntil) > new Date())).length;
   const pinnedCount = users.filter((u: any) => u.adminPinned).length;
 
+  if (!canView && user?.permissions !== undefined) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h2>
+            <p className="text-gray-500 dark:text-gray-400">You do not have permission to view or manage users.</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="relative">
@@ -188,10 +220,12 @@ export default function AdminUsersPage() {
               <p className="text-sm text-charcoal-400 dark:text-charcoal-500 mt-0.5">{t('admin.users.subtitle')} — {users.length} {t('admin.total').toLowerCase()}</p>
             </div>
           </div>
-          <button onClick={() => setBroadcastOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 rounded-xl shadow-lg shadow-teal-500/20 transition-all">
-            <Megaphone className="w-4 h-4" /> Broadcast
-          </button>
+          {canBroadcast && (
+            <button onClick={() => setBroadcastOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 rounded-xl shadow-lg shadow-teal-500/20 transition-all">
+              <Megaphone className="w-4 h-4" /> Broadcast
+            </button>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -513,7 +547,7 @@ export default function AdminUsersPage() {
                       </div>
                       {/* Mobile actions — inline next to name */}
                       <div className="flex items-center gap-1 sm:hidden shrink-0" onClick={(e) => e.stopPropagation()}>
-                        {!user.isVerified && (user.verification?.idDocumentPath || user.verification?.selfiePath) && (
+                        {canVerify && !user.isVerified && (user.verification?.idDocumentPath || user.verification?.selfiePath) && (
                           <>
                             <button onClick={() => setConfirmAction({ id: user.id, type: "verify" })}
                               className="w-7 h-7 flex items-center justify-center text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
@@ -527,17 +561,21 @@ export default function AdminUsersPage() {
                             </button>
                           </>
                         )}
-                        <button onClick={() => setMessageModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
-                          className="w-7 h-7 flex items-center justify-center text-teal-600 bg-teal-50 dark:bg-teal-500/10 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-500/20 transition-colors"
-                          title="Send message">
-                          <MessageSquare className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setNotifyModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
-                          className="w-7 h-7 flex items-center justify-center text-purple-600 bg-purple-50 dark:bg-purple-500/10 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors"
-                          title="Send notification">
-                          <Bell className="w-3.5 h-3.5" />
-                        </button>
-                        {user.isActive ? (
+                        {canEdit && (
+                          <>
+                            <button onClick={() => setMessageModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
+                              className="w-7 h-7 flex items-center justify-center text-teal-600 bg-teal-50 dark:bg-teal-500/10 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-500/20 transition-colors"
+                              title="Send message">
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setNotifyModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
+                              className="w-7 h-7 flex items-center justify-center text-purple-600 bg-purple-50 dark:bg-purple-500/10 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors"
+                              title="Send notification">
+                              <Bell className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                        {canBan && (user.isActive ? (
                           <button onClick={() => { setConfirmAction({ id: user.id, type: "ban" }); setBanDuration(null); }}
                             className="w-7 h-7 flex items-center justify-center text-red-600 bg-red-50 dark:bg-red-500/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                             title="Ban user">
@@ -549,7 +587,7 @@ export default function AdminUsersPage() {
                             title="Unban user">
                             <Lock className="w-3.5 h-3.5" />
                           </button>
-                        )}
+                        ))}
                       </div>
                     </div>
                   </td>
@@ -613,7 +651,7 @@ export default function AdminUsersPage() {
                   <td className="py-3 px-3 hidden lg:table-cell text-xs text-charcoal-400 dark:text-charcoal-500">{formatDate(user.createdAt)}</td>
                   <td className="py-3 px-4 text-right max-sm:hidden" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1.5 max-sm:hidden">
-                      {!user.isVerified && (user.verification?.idDocumentPath || user.verification?.selfiePath) && (
+                      {canVerify && !user.isVerified && (user.verification?.idDocumentPath || user.verification?.selfiePath) && (
                         <>
                           <button onClick={() => setConfirmAction({ id: user.id, type: "verify" })}
                             className="w-8 h-8 flex items-center justify-center text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
@@ -627,17 +665,21 @@ export default function AdminUsersPage() {
                           </button>
                         </>
                       )}
-                      <button onClick={() => setMessageModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
-                        className="w-8 h-8 flex items-center justify-center text-teal-600 bg-teal-50 dark:bg-teal-500/10 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-500/20 transition-colors"
-                        title="Send message">
-                        <MessageSquare className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setNotifyModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
-                        className="w-8 h-8 flex items-center justify-center text-purple-600 bg-purple-50 dark:bg-purple-500/10 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors"
-                        title="Send notification">
-                        <Bell className="w-4 h-4" />
-                      </button>
-                      {user.isActive ? (
+                      {canEdit && (
+                        <>
+                          <button onClick={() => setMessageModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
+                            className="w-8 h-8 flex items-center justify-center text-teal-600 bg-teal-50 dark:bg-teal-500/10 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-500/20 transition-colors"
+                            title="Send message">
+                            <MessageSquare className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setNotifyModal({ id: user.id, name: `${user.firstName} ${user.lastName}` })}
+                            className="w-8 h-8 flex items-center justify-center text-purple-600 bg-purple-50 dark:bg-purple-500/10 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors"
+                            title="Send notification">
+                            <Bell className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      {canBan && (user.isActive ? (
                         <button onClick={() => { setConfirmAction({ id: user.id, type: "ban" }); setBanDuration(null); }}
                           className="w-8 h-8 flex items-center justify-center text-red-600 bg-red-50 dark:bg-red-500/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                           title="Ban user">
@@ -649,23 +691,23 @@ export default function AdminUsersPage() {
                           title="Unban user">
                           <Lock className="w-4 h-4" />
                         </button>
-                      )}
+                      ))}
                       {/* Lockout management actions */}
-                      {user.loginPermanentlyLocked && (
+                      {canEdit && user.loginPermanentlyLocked && (
                         <button onClick={() => setConfirmAction({ id: user.id, type: "unlock" })}
                           className="w-8 h-8 flex items-center justify-center text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
                           title="Unlock account">
                           <Lock className="w-4 h-4" />
                         </button>
                       )}
-                      {user.isFlaggedForReview && (
+                      {canEdit && user.isFlaggedForReview && (
                         <button onClick={() => setConfirmAction({ id: user.id, type: "clear-flag" })}
                           className="w-8 h-8 flex items-center justify-center text-orange-600 bg-orange-50 dark:bg-orange-500/10 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-colors"
                           title="Clear flag">
                           <AlertTriangle className="w-4 h-4" />
                         </button>
                       )}
-                      {user.adminPinned ? (
+                      {canEdit && (user.adminPinned ? (
                         <button onClick={() => setConfirmAction({ id: user.id, type: "unpin" })}
                           className="w-8 h-8 flex items-center justify-center text-blue-600 bg-blue-50 dark:bg-blue-500/10 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
                           title="Unpin user">
@@ -677,7 +719,7 @@ export default function AdminUsersPage() {
                           title="Pin user for review">
                           <Pin className="w-4 h-4" />
                         </button>
-                      )}
+                      ))}
                     </div>
                   </td>
                 </tr>

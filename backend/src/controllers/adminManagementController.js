@@ -2,9 +2,9 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const { authenticator } = require("otplib");
 const qrcode = require("qrcode");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../config/database");
 const { logAudit } = require("../utils/auditLogger");
+const { invalidateAuthCache } = require("../middleware/auth");
 
 // ============================================================
 // Verification code store — Redis-backed with in-memory fallback.
@@ -305,6 +305,8 @@ exports.updateAdminPermissions = async (req, res) => {
       });
     }
 
+    await invalidateAuthCache(id);
+
     await logAudit({
       adminId: req.user.userId,
       action: "update_admin_permissions",
@@ -390,6 +392,7 @@ exports.updateAdmin = async (req, res) => {
           skipDuplicates: true,
         });
       }
+      await invalidateAuthCache(id);
     }
 
     await logAudit({

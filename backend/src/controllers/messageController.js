@@ -2,7 +2,7 @@ const prisma = require("../config/database");
 const { emitNewMessage, emitMessageDeleted, emitMessageRead, emitMessageEdited, emitMessageReaction } = require("../utils/messageSocket");
 const { ensureContactCredits } = require("./membershipPlanController");
 const { uploadMulterFile, isR2Enabled } = require("../config/r2");
-const { hasFeature } = require("../utils/subscriptionHelper");
+const { hasFeature, getUserFeatures } = require("../utils/subscriptionHelper");
 
 // Send push notification for new message (fire-and-forget)
 function sendPushForMessage(message, receiverId) {
@@ -126,6 +126,18 @@ async function validateSender(senderId, receiverId) {
     return { ok: false, status: 403, error: "Your account has been suspended. You cannot send messages." };
   }
 
+  // Ensure receiver exists, is active, and is verified
+  const receiver = await prisma.user.findUnique({
+    where: { id: receiverId },
+    select: { isVerified: true, isActive: true, isDeleted: true },
+  });
+  if (!receiver || !receiver.isActive || receiver.isDeleted) {
+    return { ok: false, status: 404, error: "User not found or unavailable." };
+  }
+  if (!receiver.isVerified) {
+    return { ok: false, status: 403, error: "You can only message verified users." };
+  }
+
   const chatRestriction = await prisma.userRestriction.findFirst({
     where: {
       userId: senderId,
@@ -173,6 +185,38 @@ async function validateSender(senderId, receiverId) {
     }
   }
 
+  // Conversation Request check: if a conversation request exists between sender & receiver,
+  // it must be accepted before messages can be sent.
+  const convRequest = await prisma.conversationRequest.findFirst({
+    where: {
+      OR: [
+        { requesterId: senderId, receiverId },
+        { requesterId: receiverId, receiverId: senderId },
+      ],
+    },
+  });
+
+  if (convRequest) {
+    if (convRequest.status === "pending") {
+      return {
+        ok: false,
+        status: 403,
+        error: convRequest.receiverId === senderId
+          ? "Please accept the conversation request before sending messages."
+          : "Your conversation request is pending approval. You can start chatting once the recipient accepts.",
+        code: "REQUEST_PENDING",
+      };
+    }
+    if (convRequest.status === "declined") {
+      return {
+        ok: false,
+        status: 403,
+        error: "The conversation request with this user was declined.",
+        code: "REQUEST_DECLINED",
+      };
+    }
+  }
+
   return { ok: true };
 }
 
@@ -198,10 +242,23 @@ async function isNewConversation(senderId, receiverId) {
 async function checkAndDeductCredit(senderId, isNew) {
   if (!isNew) return { ok: true, creditsUsed: 0, creditsRemaining: null };
 
-  const hasActiveSub = await prisma.subscription.findFirst({
+  const activeSub = await prisma.subscription.findFirst({
     where: { userId: senderId, status: "active", endDate: { gt: new Date() } },
+    select: { planType: true },
   });
-  if (hasActiveSub) return { ok: true, creditsUsed: 0, creditsRemaining: null };
+  if (activeSub) {
+    if (["gold", "platinum"].includes(activeSub.planType)) {
+      return { ok: true, creditsUsed: 0, creditsRemaining: null };
+    }
+    const features = await getUserFeatures(senderId);
+    if (
+      features.includes("unlimited_messaging") ||
+      features.includes("no_credit_charges") ||
+      features.includes("instant_messaging")
+    ) {
+      return { ok: true, creditsUsed: 0, creditsRemaining: null };
+    }
+  }
 
   const creditRecord = await ensureContactCredits(senderId);
   if (creditRecord.credits <= 0) {
@@ -217,7 +274,7 @@ async function checkAndDeductCredit(senderId, isNew) {
     }
     return {
       ok: false, status: 403,
-      error: "You need contact credits to start a new conversation. Buy credits (1 credit = 1 new conversation) or upgrade to Gold/Platinum for unlimited messaging.",
+      error: "You cannot start a conversation unless you have an active Membership or Conversation Credits. Please purchase credits or upgrade your plan.",
     };
   }
 
@@ -304,8 +361,29 @@ const sendMessage = async (req, res) => {
       return res.status(convCheck.status).json({ error: convCheck.error });
     }
 
-    // Credits are now deducted when a ConversationRequest is accepted, not per message.
-    // No credit check needed here.
+    // Starting a conversation check: if this is a brand-new conversation,
+    // verify payment (active membership or conversation credit) or accepted conversation request
+    const isNew = await isNewConversation(senderId, receiverId);
+    if (isNew) {
+      const acceptedRequest = await prisma.conversationRequest.findFirst({
+        where: {
+          OR: [
+            { requesterId: senderId, receiverId, status: "accepted" },
+            { requesterId: receiverId, receiverId: senderId, status: "accepted" },
+          ],
+        },
+      });
+
+      if (!acceptedRequest) {
+        const creditResult = await checkAndDeductCredit(senderId, true);
+        if (!creditResult.ok) {
+          return res.status(creditResult.status).json({
+            error: creditResult.error || "You cannot start a conversation unless you have an active Membership or Conversation Credits.",
+            code: "PAYMENT_REQUIRED",
+          });
+        }
+      }
+    }
 
     const message = await prisma.message.create({
       data: {
@@ -396,8 +474,27 @@ const getConversation = async (req, res) => {
       select: { compatibilityScore: true },
     });
 
+    const convRequest = await prisma.conversationRequest.findFirst({
+      where: {
+        OR: [
+          { requesterId: userId, receiverId: otherUserId },
+          { requesterId: otherUserId, receiverId: userId },
+        ],
+      },
+      select: {
+        id: true,
+        requesterId: true,
+        receiverId: true,
+        status: true,
+        message: true,
+        createdAt: true,
+        respondedAt: true,
+      },
+    });
+
     res.json({
       messages,
+      conversationRequest: convRequest || null,
       matchReason: matchRecord?.compatibilityScore
         ? `Compatibility: ${Math.round(matchRecord.compatibilityScore)}%`
         : null,
@@ -486,6 +583,112 @@ const getConversations = async (req, res) => {
       }
     }
 
+    // Include conversation requests (pending & accepted)
+    const userSelectFields = {
+      id: true,
+      firstName: true,
+      lastName: true,
+      username: true,
+      role: true,
+      isVerified: true,
+      lastLoginAt: true,
+      profile: { select: { photos: true } },
+      subscriptions: { where: { status: "active", endDate: { gte: new Date() } }, select: { planType: true }, take: 1 },
+    };
+
+    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+    const convRequests = await prisma.conversationRequest.findMany({
+      where: {
+        OR: [
+          { receiverId: userId, status: { in: ["pending", "accepted"] } },
+          { requesterId: userId, status: { in: ["pending", "accepted"] } },
+          // Include recently declined requests within the 15-day cooldown so sender sees status
+          { requesterId: userId, status: "declined", respondedAt: { gte: fifteenDaysAgo } },
+        ],
+      },
+      include: {
+        requester: { select: userSelectFields },
+        receiver: { select: userSelectFields },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    for (const cr of convRequests) {
+      const isIncoming = cr.receiverId === userId;
+      const otherUser = isIncoming ? cr.requester : cr.receiver;
+      const otherUserId = isIncoming ? cr.requesterId : cr.receiverId;
+
+      if (!otherUser || otherUser.role === "admin") continue;
+
+      otherUserIds.add(otherUserId);
+
+      let cooldownRemainingDays = 0;
+      if (cr.status === "declined" && (cr.respondedAt || cr.createdAt)) {
+        const respondedAt = cr.respondedAt || cr.createdAt;
+        const msPassed = Date.now() - new Date(respondedAt).getTime();
+        const daysPassed = msPassed / (1000 * 60 * 60 * 24);
+        if (daysPassed < 15) {
+          cooldownRemainingDays = Math.ceil(15 - daysPassed);
+        }
+      }
+
+      let defaultText = "";
+      if (cr.status === "pending") {
+        defaultText = isIncoming
+          ? (cr.message || "Sent you a conversation request")
+          : (cr.message ? `Request sent: "${cr.message}"` : "Conversation request sent");
+      } else if (cr.status === "accepted") {
+        defaultText = isIncoming
+          ? "You accepted the request. Start chatting!"
+          : "Request accepted! You can now start chatting.";
+      } else if (cr.status === "declined") {
+        defaultText = cooldownRemainingDays > 0
+          ? `Request declined • ${cooldownRemainingDays}d cooldown`
+          : "Conversation request was declined";
+      }
+
+      if (!conversations[otherUserId]) {
+        const membershipPlan = otherUser.subscriptions?.length > 0 ? otherUser.subscriptions[0].planType : null;
+        delete otherUser.subscriptions;
+
+        conversations[otherUserId] = {
+          user: {
+            ...otherUser,
+            lastLoginAt: canSeeLastSeen ? (otherUser.lastLoginAt || undefined) : undefined,
+            membershipPlan,
+          },
+          lastMessage: {
+            id: `cr-${cr.id}`,
+            content: defaultText,
+            createdAt: cr.respondedAt || cr.createdAt,
+            senderId: cr.requesterId,
+            receiverId: cr.receiverId,
+            isRead: !isIncoming || cr.status !== "pending",
+          },
+          unreadCount: isIncoming && cr.status === "pending" ? 1 : 0,
+          isOnline: false,
+          isConversationRequest: true,
+          requestStatus: cr.status,
+          requestId: cr.id,
+          isIncomingRequest: isIncoming,
+          requestMessage: cr.message,
+          respondedAt: cr.respondedAt,
+          cooldownRemainingDays,
+        };
+      } else {
+        conversations[otherUserId].isConversationRequest = true;
+        conversations[otherUserId].requestStatus = cr.status;
+        conversations[otherUserId].requestId = cr.id;
+        conversations[otherUserId].isIncomingRequest = isIncoming;
+        conversations[otherUserId].requestMessage = cr.message;
+        conversations[otherUserId].respondedAt = cr.respondedAt;
+        conversations[otherUserId].cooldownRemainingDays = cooldownRemainingDays;
+        if (isIncoming && cr.status === "pending" && conversations[otherUserId].unreadCount === 0) {
+          conversations[otherUserId].unreadCount = 1;
+        }
+      }
+    }
+
     // Batch-fetch all match records in a single query (fixes N+1)
     if (otherUserIds.size > 0) {
       const matchRecords = await prisma.match.findMany({
@@ -510,7 +713,13 @@ const getConversations = async (req, res) => {
       }
     }
 
-    res.json({ conversations: Object.values(conversations) });
+    const sortedConversations = Object.values(conversations).sort((a, b) => {
+      const dateA = new Date(a.lastMessage?.createdAt || 0).getTime();
+      const dateB = new Date(b.lastMessage?.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
+
+    res.json({ conversations: sortedConversations });
   } catch (error) {
     console.error("=== GET CONVERSATIONS ERROR ===", error?.message, error?.stack);
     res.status(500).json({ error: "Failed to fetch conversations" });
@@ -522,15 +731,25 @@ const markAsRead = async (req, res) => {
     const userId = req.user.userId;
     const { messageId } = req.params;
 
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(messageId)) {
+      return res.json({ message: "Marked as read" });
+    }
+
     await prisma.message.updateMany({
-      where: { id: messageId, receiverId: userId },
+      where: {
+        OR: [
+          { id: messageId, receiverId: userId },
+          { senderId: messageId, receiverId: userId, isRead: false },
+        ],
+      },
       data: { isRead: true, readAt: new Date() },
     });
 
     const msg = await prisma.message.findUnique({
       where: { id: messageId },
       select: { senderId: true, receiverId: true },
-    });
+    }).catch(() => null);
     if (msg) {
       const otherId = msg.senderId === userId ? msg.receiverId : msg.senderId;
       emitMessageRead(messageId, otherId, msg.senderId);
@@ -548,6 +767,20 @@ const editMessage = async (req, res) => {
     const userId = req.user.userId;
     const { messageId } = req.params;
     const { content } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isVerified: true, isActive: true },
+    });
+    if (!user || !user.isActive) {
+      return res.status(403).json({ error: "Your account is not active." });
+    }
+    if (!user.isVerified) {
+      return res.status(403).json({
+        error: "Your account must be verified before you can edit messages. Please complete the verification process.",
+        code: "VERIFICATION_REQUIRED",
+      });
+    }
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: "Message content cannot be empty" });
@@ -813,11 +1046,27 @@ const sendImage = async (req, res) => {
       return res.status(convCheck.status).json({ error: convCheck.error });
     }
 
-    // Credit check: only deduct for brand-new conversations
+    // Credit check: only deduct for brand-new conversations if no accepted request
     const isNew = await isNewConversation(senderId, receiverId);
-    const creditResult = await checkAndDeductCredit(senderId, isNew);
-    if (!creditResult.ok) {
-      return res.status(creditResult.status).json({ error: creditResult.error });
+    let creditResult = { ok: true, creditsUsed: 0, creditsRemaining: null };
+    if (isNew) {
+      const acceptedRequest = await prisma.conversationRequest.findFirst({
+        where: {
+          OR: [
+            { requesterId: senderId, receiverId, status: "accepted" },
+            { requesterId: receiverId, receiverId: senderId, status: "accepted" },
+          ],
+        },
+      });
+      if (!acceptedRequest) {
+        creditResult = await checkAndDeductCredit(senderId, true);
+        if (!creditResult.ok) {
+          return res.status(creditResult.status).json({
+            error: creditResult.error || "You cannot start a conversation unless you have an active Membership or Conversation Credits.",
+            code: "PAYMENT_REQUIRED",
+          });
+        }
+      }
     }
 
     let imageUrl;
@@ -874,11 +1123,27 @@ const sendFile = async (req, res) => {
       return res.status(convCheck.status).json({ error: convCheck.error });
     }
 
-    // Credit check: only deduct for brand-new conversations
+    // Credit check: only deduct for brand-new conversations if no accepted request
     const isNew = await isNewConversation(senderId, receiverId);
-    const creditResult = await checkAndDeductCredit(senderId, isNew);
-    if (!creditResult.ok) {
-      return res.status(creditResult.status).json({ error: creditResult.error });
+    let creditResult = { ok: true, creditsUsed: 0, creditsRemaining: null };
+    if (isNew) {
+      const acceptedRequest = await prisma.conversationRequest.findFirst({
+        where: {
+          OR: [
+            { requesterId: senderId, receiverId, status: "accepted" },
+            { requesterId: receiverId, receiverId: senderId, status: "accepted" },
+          ],
+        },
+      });
+      if (!acceptedRequest) {
+        creditResult = await checkAndDeductCredit(senderId, true);
+        if (!creditResult.ok) {
+          return res.status(creditResult.status).json({
+            error: creditResult.error || "You cannot start a conversation unless you have an active Membership or Conversation Credits.",
+            code: "PAYMENT_REQUIRED",
+          });
+        }
+      }
     }
 
     let fileUrl;
@@ -1004,6 +1269,20 @@ const reactToMessage = async (req, res) => {
     const userId = req.user.userId;
     const { messageId } = req.params;
     const { reaction } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isVerified: true, isActive: true },
+    });
+    if (!user || !user.isActive) {
+      return res.status(403).json({ error: "Your account is not active." });
+    }
+    if (!user.isVerified) {
+      return res.status(403).json({
+        error: "Your account must be verified before you can react to messages. Please complete the verification process.",
+        code: "VERIFICATION_REQUIRED",
+      });
+    }
 
     const VALID_REACTIONS = ["❤️", "😂", "👍", "👎", "😢", "🤲"];
     if (!VALID_REACTIONS.includes(reaction)) {

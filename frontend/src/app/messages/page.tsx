@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User, BookOpen, Copy, Forward, Pin, Info, ArrowDown, AlertCircle } from "lucide-react";
+import { Search, Send, MoreVertical, ChevronLeft, ChevronRight, Reply, X, Trash2, Check, CheckCheck, Flag, Shield, ShieldOff, Paperclip, Smile, Heart, Crown, Gem, Sparkles, FileText, Download, Pencil, UserCheck, Lock, Mic, MessageCircle, Compass, User, BookOpen, Copy, Forward, Pin, Info, ArrowDown, AlertCircle, XCircle } from "lucide-react";
 import { Input, Button, Avatar, IslamicPatternBackground } from "@/components/common";
 import { useMessageStore } from "@/store/messages";
 import { useAuth } from "@/context/AuthContext";
@@ -47,7 +47,7 @@ function MessagesContent() {
   const blockedUsers = store.blockedUsers;
   const setActiveConversation = store.setActiveConversation;
   const markAsRead = store.markAsRead;
-  const { typingUsers, emitTyping } = useSocket();
+  const { socket, typingUsers, emitTyping } = useSocket();
 
   const [newMessage, setNewMessage] = useState("");
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
@@ -65,6 +65,7 @@ function MessagesContent() {
   const [reportReason, setReportReason] = useState("inappropriate");
   const [reportDescription, setReportDescription] = useState("");
   const [incomingConvRequests, setIncomingConvRequests] = useState<any[]>([]);
+  const [allPendingRequests, setAllPendingRequests] = useState<any[]>([]);
   const [partnership, setPartnership] = useState<any>(null);
   const [myPartnership, setMyPartnership] = useState<any>(null);
   const [partnershipStatus, setPartnershipStatus] = useState<any>(null);
@@ -148,6 +149,29 @@ function MessagesContent() {
     const id = setInterval(fetchConversations, 30000);
     return () => clearInterval(id);
   }, [fetchConversations]);
+
+  // Real-time listener for incoming conversation requests & responses
+  useEffect(() => {
+    if (!socket) return;
+    const handleNotif = (notif: any) => {
+      if (notif?.type === "conversation_request" || notif?.type === "conversation_request_response") {
+        fetchConversations();
+        conversationRequestService.getReceived("pending")
+          .then(({ data }) => setAllPendingRequests(data.requests || []))
+          .catch(() => setAllPendingRequests([]));
+        if (activeConversation) {
+          conversationRequestService.getReceived("pending").then(({ data }) => {
+            const relevant = (data.requests || []).filter((r: any) => r.requesterId === activeConversation);
+            setIncomingConvRequests(relevant);
+          }).catch(() => setIncomingConvRequests([]));
+        }
+      }
+    };
+    socket.on("new_notification", handleNotif);
+    return () => {
+      socket.off("new_notification", handleNotif);
+    };
+  }, [socket, fetchConversations, activeConversation]);
 
   // Fetch the user's global active exclusive partnership (not per-conversation)
   useEffect(() => {
@@ -453,7 +477,7 @@ function MessagesContent() {
     setNewMessage("");
     setReplyTo(null);
     if (activeConversation) {
-      try { localStorage.removeItem(`draft:${activeConversation}`); } catch {}
+      try { localStorage.removeItem(`draft:${activeConversation}`); } catch { }
     }
     emitTyping(activeConversation, false);
     try {
@@ -496,7 +520,7 @@ function MessagesContent() {
       } else {
         localStorage.removeItem(`draft:${activeConversation}`);
       }
-    } catch {}
+    } catch { }
     emitTyping(activeConversation, value.length > 0);
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => {
@@ -716,14 +740,14 @@ function MessagesContent() {
 
   // Emoji categories
   const EMOJI_CATEGORIES = [
-    { name: "Smileys & People", emojis: ["😊","🥰","😍","❤️","💕","😘","😇","😁","😂","🤗","😎","🥹","😅","😳","🤔","😢","😭","🥺","😌","🤩","🥳","😏","🙃","😋","🤤","😴","🤯","😱","🥶","🤠","🥸","😈","💀","👻","🤖","😀","😃","😄","😆","😉","😠","😡","🤬","😶","😐","😕","😯","😴","🤢","🤮","🤧","🥵","🥴","🤠","🥳","🥺","🤔","🤭","🤫","🤥","🙄","😬","😮‍💨","🥱","🤪","😩","😫","🥹","😇","🤓","🧐","😺","😸","😹","😻","😼","😽","🙀","😿","😾","🙈","🙉","🙊","💋","💌","💘","💝","💖","💗","💓","💞","💟","❣️","💔","❤️‍🔥","❤️‍🩹","💑","💏","👪","🤱","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","👵","👴","🧓","👼","👸","🤴","👰","🤵","🤰"] },
-    { name: "Gestures & Body", emojis: ["👍","👎","👌","✌️","🤝","🙏","👋","🫂","👏","🙌","🤲","💪","✊","🤞","🤟","🤙","👈","👉","👆","👇","☝️","✋","🤚","🖐️","🖖","🤜","🤛","🤘","🤞","✌️","🤟","🤘","🤙","👏","🙌","👐","🤲","🙏","🤝","💪","✊","🤞","🤟","🤘","🤙","🧠","🫀","🫁","🦷","🦴","👀","👁️","👅","👄","💋","🩷","🩵","🩶"] },
-    { name: "Islamic & Spiritual", emojis: ["🤲","🌙","⭐","🕌","📿","☪️","🌸","🌹","💐","✨","🤍","💚","💍","🎉","🕊️","🕋","🕌","🌅","🌄","🌠","🌟","💫","☁️","⛅","🌤️","☀️","🌛","🌜","🌸","🌺","🌻","🌼","🌷","🌱","🪴","🌲","🌳","🌴","🌵","🌾","🌿","☘️","🍀","🍁","🍂","🍃"] },
-    { name: "Hearts & Symbols", emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","❤️‍🔥","❤️‍🩹","💯","✅","❌","⚠️","🔔","💬","💭","📝","📌","🎯","🎁","🏆","✨","💫","⭐","🌟","💥","🔥","♦️","♠️","♣️","♥️","🆗","🆕","🆒","🆓","🆙","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔺","🔻","🔸","🔹","🔶","🔷"] },
-    { name: "Animals & Nature", emojis: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐽","🐸","🐵","🐔","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🕷️","🕸️","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🐃","🐂","🐄","🐎","🐖","🐏","🐑","🐐","🦌","🐕","🐈","🐈‍⬛","🪶","🐓","🦃","🦚","🦜","🦢","🦩","🕊️","🐇","🦝","🦨","🦡","🦫","🦦","🐁","🐀","🐿️","🦔"] },
-    { name: "Food & Drink", emojis: ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🥬","🥒","🌶️","🌽","🥕","🫒","🧄","🧅","🥔","🍠","🥐","🥯","🍞","🥖","🥨","🧀","🥚","🍳","🧈","🥞","🧇","🥓","🥩","🍗","🍖","🌭","🍔","🍟","🍕","🥪","🥙","🧆","🌮","🌯","🥗","🥘","🍝","🍜","🍲","🍛","🍣","🍱","🥟","🍤","🍙","🍚","🍘","🍥","🥠","🍢","🍡","🍧","🍨","🍦","🥧","🧁","🍰","🎂","🍮","🍭","🍬","🍫","🍿","🍩","🍪","🌰","🥜","🍯","🥛","🍼","🫖","☕","🍵","🧃","🥤","🧋","🍶","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🍾","🧊"] },
-    { name: "Activities & Travel", emojis: ["⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏸","🏒","🏑","🥍","🏏","🥅","⛳","🪁","🏹","🎣","🤿","🥊","🥋","🎽","🛹","🛼","🛷","⛸️","🥌","🎿","⛷️","🏂","🪂","🏋️","🤼","🤸","🤺","⛹️","🤾","🏌️","🏇","🧘","🏄","🏊","🤽","🚣","🧗","🚵","🚴","🏆","🥇","🥈","🥉","🏅","🎖️","🏵️","🎗️","🎫","🎟️","🎪","🤹","🎭","🩰","🎨","🎬","🎤","🎧","🎼","🎹","🥁","🎷","🎺","🎸","🪕","🎻","🎲","♟️","🎯","🎳","🎮","🎰","🧩","🚗","🚕","🚙","🚌","🏎️","🚓","🚑","🚒","🚐","🚚","🚛","🚜","🛴","🚲","🛵","🏍️","🚨","🚔","🚍","🚘","🚖","🚡","🚠","🚟","🚃","🚋","🚞","🚝","🚄","🚅","🚈","🚂","🚆","🚇","🚊","🚉","✈️","🛫","🛬","🛩️","💺","🛰️","🚀","🛸","🚁","🛶","⛵","🚤","🛥️","🛳️","⛴️","🚢","⚓","⛽","🚧","🚦","🚥","🚏","🗺️","🗿","🗽","🗼","🏰","🏯","🏟️","🎡","🎢","🎠","⛲","⛱️","🏖️","🏝️","🏜️","🌋","⛰️","🏔️","🗻","🏕️","⛺","🏠","🏡","🏘️","🏚️","🏗️","🏭","🏢","🏬","🏣","🏤","🏥","🏦","🏨","🏪","🏫","🏩","💒","🏛️","⛪","🕌","🕍","🛕","🕋","⛩️","🛤️","🛣️","🗾","🎑","🏞️","🌅","🌄","🌠","🎇","🎆","🌇","🌆","🏙️","🌃","🌌","🌉"] },
-    { name: "Objects", emojis: ["⌚","📱","📲","💻","⌨️","🖥️","🖨️","🖱️","🖲️","🕹️","🗜️","💽","💾","💿","📀","📼","📷","📸","📹","🎥","📽️","🎞️","📞","☎️","📟","📠","📺","📻","🎙️","🎚️","🎛️","🧭","⏱️","⏲️","⏰","🕰️","⌛","⏳","📡","🔋","🔌","💡","🔦","🕯️","🪔","🧯","🛢️","💸","💵","💴","💶","💷","💰","💳","💎","⚖️","🪜","🧰","🪛","🔧","🔨","⚒️","🛠️","⛏️","🪚","🔩","⚙️","🪤","🧱","⛓️","🧲","🔫","💣","🧨","🪓","🔪","🗡️","⚔️","🛡️","🚬","⚰️","🪦","⚱️","🏺","🔮","📿","🧿","💈","⚗️","🔭","🔬","🕳️","🩹","🩺","💊","💉","🩸","🧬","🦠","🧫","🌡️","🧪"] },
+    { name: "Smileys & People", emojis: ["😊", "🥰", "😍", "❤️", "💕", "😘", "😇", "😁", "😂", "🤗", "😎", "🥹", "😅", "😳", "🤔", "😢", "😭", "🥺", "😌", "🤩", "🥳", "😏", "🙃", "😋", "🤤", "😴", "🤯", "😱", "🥶", "🤠", "🥸", "😈", "💀", "👻", "🤖", "😀", "😃", "😄", "😆", "😉", "😠", "😡", "🤬", "😶", "😐", "😕", "😯", "😴", "🤢", "🤮", "🤧", "🥵", "🥴", "🤠", "🥳", "🥺", "🤔", "🤭", "🤫", "🤥", "🙄", "😬", "😮‍💨", "🥱", "🤪", "😩", "😫", "🥹", "😇", "🤓", "🧐", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "🙈", "🙉", "🙊", "💋", "💌", "💘", "💝", "💖", "💗", "💓", "💞", "💟", "❣️", "💔", "❤️‍🔥", "❤️‍🩹", "💑", "💏", "👪", "🤱", "👶", "🧒", "👦", "👧", "🧑", "👱", "👨", "🧔", "👩", "👵", "👴", "🧓", "👼", "👸", "🤴", "👰", "🤵", "🤰"] },
+    { name: "Gestures & Body", emojis: ["👍", "👎", "👌", "✌️", "🤝", "🙏", "👋", "🫂", "👏", "🙌", "🤲", "💪", "✊", "🤞", "🤟", "🤙", "👈", "👉", "👆", "👇", "☝️", "✋", "🤚", "🖐️", "🖖", "🤜", "🤛", "🤘", "🤞", "✌️", "🤟", "🤘", "🤙", "👏", "🙌", "👐", "🤲", "🙏", "🤝", "💪", "✊", "🤞", "🤟", "🤘", "🤙", "🧠", "🫀", "🫁", "🦷", "🦴", "👀", "👁️", "👅", "👄", "💋", "🩷", "🩵", "🩶"] },
+    { name: "Islamic & Spiritual", emojis: ["🤲", "🌙", "⭐", "🕌", "📿", "☪️", "🌸", "🌹", "💐", "✨", "🤍", "💚", "💍", "🎉", "🕊️", "🕋", "🕌", "🌅", "🌄", "🌠", "🌟", "💫", "☁️", "⛅", "🌤️", "☀️", "🌛", "🌜", "🌸", "🌺", "🌻", "🌼", "🌷", "🌱", "🪴", "🌲", "🌳", "🌴", "🌵", "🌾", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃"] },
+    { name: "Hearts & Symbols", emojis: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "❤️‍🔥", "❤️‍🩹", "💯", "✅", "❌", "⚠️", "🔔", "💬", "💭", "📝", "📌", "🎯", "🎁", "🏆", "✨", "💫", "⭐", "🌟", "💥", "🔥", "♦️", "♠️", "♣️", "♥️", "🆗", "🆕", "🆒", "🆓", "🆙", "🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪", "🟤", "🔺", "🔻", "🔸", "🔹", "🔶", "🔷"] },
+    { name: "Animals & Nature", emojis: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🕷️", "🕸️", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🐐", "🦌", "🐕", "🐈", "🐈‍⬛", "🪶", "🐓", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🐇", "🦝", "🦨", "🦡", "🦫", "🦦", "🐁", "🐀", "🐿️", "🦔"] },
+    { name: "Food & Drink", emojis: ["🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥬", "🥒", "🌶️", "🌽", "🥕", "🫒", "🧄", "🧅", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🧈", "🥞", "🧇", "🥓", "🥩", "🍗", "🍖", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🧆", "🌮", "🌯", "🥗", "🥘", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰", "🎂", "🍮", "🍭", "🍬", "🍫", "🍿", "🍩", "🍪", "🌰", "🥜", "🍯", "🥛", "🍼", "🫖", "☕", "🍵", "🧃", "🥤", "🧋", "🍶", "🍺", "🍻", "🥂", "🍷", "🥃", "🍸", "🍹", "🍾", "🧊"] },
+    { name: "Activities & Travel", emojis: ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏉", "🎱", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂", "🏋️", "🤼", "🤸", "🤺", "⛹️", "🤾", "🏌️", "🏇", "🧘", "🏄", "🏊", "🤽", "🚣", "🧗", "🚵", "🚴", "🏆", "🥇", "🥈", "🥉", "🏅", "🎖️", "🏵️", "🎗️", "🎫", "🎟️", "🎪", "🤹", "🎭", "🩰", "🎨", "🎬", "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🪕", "🎻", "🎲", "♟️", "🎯", "🎳", "🎮", "🎰", "🧩", "🚗", "🚕", "🚙", "🚌", "🏎️", "🚓", "🚑", "🚒", "🚐", "🚚", "🚛", "🚜", "🛴", "🚲", "🛵", "🏍️", "🚨", "🚔", "🚍", "🚘", "🚖", "🚡", "🚠", "🚟", "🚃", "🚋", "🚞", "🚝", "🚄", "🚅", "🚈", "🚂", "🚆", "🚇", "🚊", "🚉", "✈️", "🛫", "🛬", "🛩️", "💺", "🛰️", "🚀", "🛸", "🚁", "🛶", "⛵", "🚤", "🛥️", "🛳️", "⛴️", "🚢", "⚓", "⛽", "🚧", "🚦", "🚥", "🚏", "🗺️", "🗿", "🗽", "🗼", "🏰", "🏯", "🏟️", "🎡", "🎢", "🎠", "⛲", "⛱️", "🏖️", "🏝️", "🏜️", "🌋", "⛰️", "🏔️", "🗻", "🏕️", "⛺", "🏠", "🏡", "🏘️", "🏚️", "🏗️", "🏭", "🏢", "🏬", "🏣", "🏤", "🏥", "🏦", "🏨", "🏪", "🏫", "🏩", "💒", "🏛️", "⛪", "🕌", "🕍", "🛕", "🕋", "⛩️", "🛤️", "🛣️", "🗾", "🎑", "🏞️", "🌅", "🌄", "🌠", "🎇", "🎆", "🌇", "🌆", "🏙️", "🌃", "🌌", "🌉"] },
+    { name: "Objects", emojis: ["⌚", "📱", "📲", "💻", "⌨️", "🖥️", "🖨️", "🖱️", "🖲️", "🕹️", "🗜️", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥", "📽️", "🎞️", "📞", "☎️", "📟", "📠", "📺", "📻", "🎙️", "🎚️", "🎛️", "🧭", "⏱️", "⏲️", "⏰", "🕰️", "⌛", "⏳", "📡", "🔋", "🔌", "💡", "🔦", "🕯️", "🪔", "🧯", "🛢️", "💸", "💵", "💴", "💶", "💷", "💰", "💳", "💎", "⚖️", "🪜", "🧰", "🪛", "🔧", "🔨", "⚒️", "🛠️", "⛏️", "🪚", "🔩", "⚙️", "🪤", "🧱", "⛓️", "🧲", "🔫", "💣", "🧨", "🪓", "🔪", "🗡️", "⚔️", "🛡️", "🚬", "⚰️", "🪦", "⚱️", "🏺", "🔮", "📿", "🧿", "💈", "⚗️", "🔭", "🔬", "🕳️", "🩹", "🩺", "💊", "💉", "🩸", "🧬", "🦠", "🧫", "🌡️", "🧪"] },
   ];
 
   // Emoji picker — categorized, no search
@@ -763,7 +787,7 @@ function MessagesContent() {
       setToastError(false);
       setToast("Copied to clipboard");
       setTimeout(() => setToast(null), 2000);
-    }).catch(() => {});
+    }).catch(() => { });
     setMenuMsgId(null);
     setMenuPosition(null);
   }, []);
@@ -830,96 +854,130 @@ function MessagesContent() {
 
           {/* Conversation List — with IslamicPatternBackground */}
           <IslamicPatternBackground>
-          <div className={`w-full lg:w-80 xl:w-96 border-r border-[#2D2D2D] bg-[#181818]/40 backdrop-blur-sm flex flex-col min-w-0 ${mobileThreadOpen ? "hidden lg:flex" : "flex"}`}>
-            <div className="p-4 border-b border-[#2D2D2D]">
-              <h1 className="text-lg lg:text-xl font-bold text-white tracking-tight">{t('messages.title')}</h1>
-              <div className="mt-3 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B8B]" />
-                <input
-                  placeholder={t('messages.search')}
-                  className="w-full pl-9 pr-4 h-10 rounded-xl bg-[#222222] border border-[#2D2D2D] text-sm text-white placeholder-[#8B8B8B] outline-none focus:border-[#D4AF37]/40 transition-colors"
-                />
+            <div className={`w-full lg:w-80 xl:w-96 border-r border-[#2D2D2D] bg-[#181818]/40 backdrop-blur-sm flex flex-col min-w-0 ${mobileThreadOpen ? "hidden lg:flex" : "flex"}`}>
+              <div className="p-4 border-b border-[#2D2D2D]">
+                <h1 className="text-lg lg:text-xl font-bold text-white tracking-tight">{t('messages.title')}</h1>
+                <div className="mt-3 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B8B8B]" />
+                  <input
+                    placeholder={t('messages.search')}
+                    className="w-full pl-9 pr-4 h-10 rounded-xl bg-[#222222] border border-[#2D2D2D] text-sm text-white placeholder-[#8B8B8B] outline-none focus:border-[#D4AF37]/40 transition-colors"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {isLoading && conversations.length === 0 ? (
-                <div className="p-4 text-center text-sm text-[#8B8B8B]">{t('common.loading')}</div>
-              ) : conversations.length === 0 ? (
-                <div className="p-4 text-center text-sm text-[#8B8B8B]">{t('messages.noConversations')}</div>
-              ) : (
-                conversations.map((conv) => (
-                  <div key={conv.id} className="relative group">
-                    <button
-                      onClick={() => { setActiveConversation(conv.id); setMobileThreadOpen(true); markAsRead(conv.id); }}
-                      className={`w-full text-left p-3 lg:p-4 transition-colors ${activeConversation === conv.id ? "bg-[#222222]" : "hover:bg-[#1E1E1E]"}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative shrink-0">
-                          <Avatar
-                            size="sm"
-                            firstName={conv.name?.split(" ")[0] || conv.name || ""}
-                            lastName={conv.name?.split(" ").slice(1).join(" ") || ""}
-                            src={mediaUrl(conv.avatar)}
-                            membershipPlan={conv.membershipPlan || null}
-                            isVerified={conv.isVerified}
-                            className="shrink-0"
-                          />
-                          {conv.unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 leading-none bg-[#D4AF37] text-black shadow-md border-2 border-[#181818]">
-                              {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
-                            </span>
+              <div className="flex-1 overflow-y-auto">
+                {isLoading && conversations.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-[#8B8B8B]">{t('common.loading')}</div>
+                ) : conversations.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-[#8B8B8B]">{t('messages.noConversations')}</div>
+                ) : (
+                  conversations.map((conv) => (
+                    <div key={conv.id} className="relative group">
+                      <button
+                        onClick={() => { setActiveConversation(conv.id); setMobileThreadOpen(true); markAsRead(conv.id); }}
+                        className={`w-full text-left p-3 lg:p-4 transition-colors ${activeConversation === conv.id ? "bg-[#222222]" : "hover:bg-[#1E1E1E]"}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            <Avatar
+                              size="sm"
+                              firstName={conv.name?.split(" ")[0] || conv.name || ""}
+                              lastName={conv.name?.split(" ").slice(1).join(" ") || ""}
+                              src={mediaUrl(conv.avatar)}
+                              membershipPlan={conv.membershipPlan || null}
+                              isVerified={conv.isVerified}
+                              className="shrink-0"
+                            />
+                            {conv.unreadCount > 0 && (
+                              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 leading-none bg-[#D4AF37] text-black shadow-md border-2 border-[#181818]">
+                                {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium text-sm text-white truncate">{conv.name || t('messages.userFallback')}</span>
+                              <span className="text-xs text-[#8B8B8B] shrink-0">{conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ""}</span>
+                            </div>
+                            {conv.username && <p className="text-[11px] text-[#D4AF37] font-medium truncate">@{conv.username}</p>}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {conv.isConversationRequest && conv.requestStatus === "pending" ? (
+                                conv.isIncomingRequest ? (
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-amber-300 font-medium truncate">
+                                    <span className="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold tracking-wide shrink-0">
+                                      Request
+                                    </span>
+                                    <span className="truncate italic text-amber-200/90">{conv.lastMessage || "Wants to chat with you"}</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-[#8B8B8B] truncate">
+                                    <span className="px-1.5 py-0.5 rounded-md bg-[#2D2D2D] text-[#8B8B8B] text-[10px] font-medium shrink-0">
+                                      Pending
+                                    </span>
+                                    <span className="truncate">{conv.lastMessage || "Conversation request sent"}</span>
+                                  </span>
+                                )
+                              ) : conv.isConversationRequest && conv.requestStatus === "declined" ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-red-400 font-medium truncate">
+                                  <span className="px-1.5 py-0.5 rounded-md bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-medium shrink-0">
+                                    Declined
+                                  </span>
+                                  <span className="truncate text-red-300/80">
+                                    {conv.cooldownRemainingDays ? `Cooldown: ${conv.cooldownRemainingDays}d` : "Request declined"}
+                                  </span>
+                                </span>
+                              ) : conv.isConversationRequest && conv.requestStatus === "accepted" && (!conv.lastMessage || conv.lastMessage.startsWith("Request accepted")) ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-300 font-medium truncate">
+                                  <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold shrink-0">
+                                    Accepted
+                                  </span>
+                                  <span className="truncate">{conv.isIncomingRequest ? "Request accepted" : "Start chatting now!"}</span>
+                                </span>
+                              ) : (
+                                <p className="text-xs text-[#C8C8C8] truncate">{conv.lastMessage || ""}</p>
+                              )}
+                              {blockedUsers.includes(conv.id) && <span className="text-[10px] text-red-500 font-medium shrink-0">Blocked</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConvMenuId(convMenuId === conv.id ? null : conv.id); }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-[#2D2D2D]"
+                      >
+                        <MoreVertical className="w-4 h-4 text-[#8B8B8B]" />
+                      </button>
+                      {convMenuId === conv.id && (
+                        <div ref={convMenuRef} className="absolute right-2 top-12 z-50 bg-[#222222] rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[180px] overflow-hidden">
+                          <button onClick={() => {
+                            setConvMenuId(null);
+                            setDeleteConfirm({ otherUserId: conv.id, name: conv.name || t('messages.thisUser') });
+                          }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                            <Trash2 className="w-4 h-4 shrink-0" /> {t('common.delete')}
+                          </button>
+                          <div className="border-t border-[#2D2D2D] my-1" />
+                          {blockedUsers.includes(conv.id) ? (
+                            <button onClick={() => {
+                              setConvMenuId(null);
+                              unblockUser(conv.id);
+                            }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                              <ShieldOff className="w-4 h-4 shrink-0" /> {t('messages.unblock')}
+                            </button>
+                          ) : (
+                            <button onClick={() => {
+                              setConvMenuId(null);
+                              setBlockConfirm({ otherUserId: conv.id, name: conv.name || t('messages.thisUser') });
+                            }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                              <ShieldOff className="w-4 h-4 shrink-0" /> {t('messages.blockUser')}
+                            </button>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-medium text-sm text-white truncate">{conv.name || t('messages.userFallback')}</span>
-                            <span className="text-xs text-[#8B8B8B] shrink-0">{conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : ""}</span>
-                          </div>
-                          {conv.username && <p className="text-[11px] text-[#D4AF37] font-medium truncate">@{conv.username}</p>}
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-xs text-[#C8C8C8] truncate">{conv.lastMessage || ""}</p>
-                            {blockedUsers.includes(conv.id) && <span className="text-[10px] text-red-500 font-medium shrink-0">Blocked</span>}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConvMenuId(convMenuId === conv.id ? null : conv.id); }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-[#2D2D2D]"
-                    >
-                      <MoreVertical className="w-4 h-4 text-[#8B8B8B]" />
-                    </button>
-                    {convMenuId === conv.id && (
-                      <div ref={convMenuRef} className="absolute right-2 top-12 z-50 bg-[#222222] rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[180px] overflow-hidden">
-                        <button onClick={() => {
-                          setConvMenuId(null);
-                          setDeleteConfirm({ otherUserId: conv.id, name: conv.name || t('messages.thisUser') });
-                        }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
-                          <Trash2 className="w-4 h-4 shrink-0" /> {t('common.delete')}
-                        </button>
-                        <div className="border-t border-[#2D2D2D] my-1" />
-                        {blockedUsers.includes(conv.id) ? (
-                          <button onClick={() => {
-                            setConvMenuId(null);
-                            unblockUser(conv.id);
-                          }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                            <ShieldOff className="w-4 h-4 shrink-0" /> {t('messages.unblock')}
-                          </button>
-                        ) : (
-                          <button onClick={() => {
-                            setConvMenuId(null);
-                            setBlockConfirm({ otherUserId: conv.id, name: conv.name || t('messages.thisUser') });
-                          }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
-                            <ShieldOff className="w-4 h-4 shrink-0" /> {t('messages.blockUser')}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
           </IslamicPatternBackground>
 
           {/* Message Thread — solid #111827 background */}
@@ -1116,8 +1174,8 @@ function MessagesContent() {
                         <UserCheck className={`w-4 h-4 shrink-0 ${waliStatus?.status === "active" ? "text-[#D4AF37]" : "text-[#8B8B8B]"}`} />
                         <span className="text-xs font-medium text-[#D1D5DB] hidden sm:inline truncate max-w-[100px]">
                           {waliStatus?.status === "active" ? `Wali: ${waliStatus.wali?.name} (Active)` :
-                           waliStatus?.status === "pending_approval" ? "Wali: Pending" :
-                           partnership?.status === "active" ? "Wali: None" : "Wali: —"}
+                            waliStatus?.status === "pending_approval" ? "Wali: Pending" :
+                              partnership?.status === "active" ? "Wali: None" : "Wali: —"}
                         </span>
                         <span className="text-xs font-medium text-[#D1D5DB] sm:hidden">Wali</span>
                         <ChevronRight className={`w-3.5 h-3.5 text-[#8B8B8B] transition-transform shrink-0 ${showWaliDetails ? "rotate-90" : ""}`} />
@@ -1201,7 +1259,7 @@ function MessagesContent() {
                                       try {
                                         await waliService.approve(partnership.id);
                                         setToastError(false); setToast("Wali approved."); setTimeout(() => setToast(null), 4000);
-                                        waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => {});
+                                        waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => { });
                                       } catch (err: any) {
                                         setToastError(true); setToast(err?.response?.data?.error || "Failed"); setTimeout(() => { setToast(null); setToastError(false); }, 5000);
                                       }
@@ -1213,7 +1271,7 @@ function MessagesContent() {
                                       try {
                                         await waliService.decline(partnership.id);
                                         setToastError(false); setToast("Wali declined."); setTimeout(() => setToast(null), 4000);
-                                        waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => {});
+                                        waliService.getStatus(partnership.id).then(({ data }) => setWaliStatus(data.invitation)).catch(() => { });
                                       } catch (err: any) {
                                         setToastError(true); setToast(err?.response?.data?.error || "Failed"); setTimeout(() => { setToast(null); setToastError(false); }, 5000);
                                       }
@@ -1251,43 +1309,213 @@ function MessagesContent() {
                   {isLoading && messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-sm text-[#8B8B8B]">Loading messages...</div>
                   ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                      {/* Empty state illustration: two chat bubbles with gold glow */}
-                      <div className="relative mb-6">
-                        <div className="absolute inset-0 blur-3xl bg-[#D4AF37]/10 rounded-full" />
-                        <div className="relative flex flex-col gap-2">
-                          <div className="w-16 h-16 rounded-2xl rounded-br-md bg-[#222222] border border-[#2D2D2D] flex items-center justify-center shadow-lg">
-                            <svg className="w-7 h-7 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a.75.75 0 01.722-.102 9.75 9.75 0 005.46.484c2.026-.384 3.542-2.084 3.542-4.146V6.75c0-1.6-1.123-2.994-2.707-3.227A24.5 24.5 0 0012 3c-2.392 0-4.744.175-7.043.523C3.373 3.756 2.25 5.15 2.25 6.75v6.01z" />
-                            </svg>
+                    activeConv?.isConversationRequest && activeConv?.requestStatus === "pending" ? (
+                      activeConv.isIncomingRequest ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center p-6 max-w-md mx-auto">
+                          <div className="relative mb-4">
+                            <Avatar
+                              size="lg"
+                              firstName={activeConv.name?.split(" ")[0] || ""}
+                              lastName={activeConv.name?.split(" ").slice(1).join(" ") || ""}
+                              src={mediaUrl(activeConv.avatar)}
+                              isVerified={activeConv.isVerified}
+                              membershipPlan={activeConv.membershipPlan}
+                            />
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shadow-md">
+                              <Send className="w-3.5 h-3.5 text-black" />
+                            </div>
                           </div>
-                          <div className="w-16 h-16 rounded-2xl rounded-bl-md bg-gradient-to-br from-[#D4AF37] to-[#F2D675] flex items-center justify-center shadow-lg shadow-[#D4AF37]/20 self-end">
-                            <svg className="w-7 h-7 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a.75.75 0 01.722-.102 9.75 9.75 0 005.46.484c2.026-.384 3.542-2.084 3.542-4.146V6.75c0-1.6-1.123-2.994-2.707-3.227A24.5 24.5 0 0012 3c-2.392 0-4.744.175-7.043.523C3.373 3.756 2.25 5.15 2.25 6.75v6.01z" />
-                            </svg>
+                          <h3 className="text-lg font-bold text-white">{activeConv.name}</h3>
+                          {activeConv.username && <p className="text-xs text-[#D4AF37] font-medium mt-0.5">@{activeConv.username}</p>}
+                          <p className="text-sm text-[#C8C8C8] mt-2">
+                            {activeConv.name} sent you a conversation request to connect for chat.
+                          </p>
+                          {(activeConv.requestMessage || activeConv.lastMessage) && (
+                            <div className="mt-4 p-4 rounded-2xl bg-[#1E1E28] border border-[#D4AF37]/30 text-amber-100 text-sm italic w-full text-left shadow-inner">
+                              "{activeConv.requestMessage || activeConv.lastMessage}"
+                            </div>
+                          )}
+                          <div className="flex items-center gap-3 mt-6 w-full">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  if (activeConv.requestId) {
+                                    await conversationRequestService.respond(activeConv.requestId, "accepted");
+                                  }
+                                  setIncomingConvRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  setAllPendingRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  await fetchConversations();
+                                  setToast("Request accepted! You can now chat.");
+                                  setTimeout(() => setToast(null), 3000);
+                                } catch {
+                                  setToastError(true);
+                                  setToast("Failed to accept request");
+                                  setTimeout(() => { setToast(null); setToastError(false); }, 3000);
+                                }
+                              }}
+                              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs shadow-lg transition-all"
+                            >
+                              Accept & Chat
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  if (activeConv.requestId) {
+                                    await conversationRequestService.respond(activeConv.requestId, "declined");
+                                  }
+                                  setIncomingConvRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  setAllPendingRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  await fetchConversations();
+                                  setToast("Request declined");
+                                  setTimeout(() => setToast(null), 3000);
+                                } catch {
+                                  setToastError(true);
+                                  setToast("Failed to decline request");
+                                  setTimeout(() => { setToast(null); setToastError(false); }, 3000);
+                                }
+                              }}
+                              className="flex-1 py-2.5 px-4 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 font-medium text-xs transition-all"
+                            >
+                              Decline
+                            </button>
                           </div>
                         </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-center p-6 max-w-md mx-auto">
+                          <Avatar
+                            size="lg"
+                            firstName={activeConv.name?.split(" ")[0] || ""}
+                            lastName={activeConv.name?.split(" ").slice(1).join(" ") || ""}
+                            src={mediaUrl(activeConv.avatar)}
+                            isVerified={activeConv.isVerified}
+                            membershipPlan={activeConv.membershipPlan}
+                            className="mb-4"
+                          />
+                          <h3 className="text-lg font-bold text-white">Conversation Request Sent</h3>
+                          <p className="text-sm text-[#8B8B8B] mt-2">
+                            Waiting for <span className="text-white font-semibold">{activeConv.name}</span> to respond. You will be able to message once they accept.
+                          </p>
+                          {(activeConv.requestMessage || activeConv.lastMessage) && (
+                            <div className="mt-4 p-4 rounded-2xl bg-[#1E1E28] border border-white/10 text-[#C8C8C8] text-xs italic w-full text-left">
+                              Your message: "{activeConv.requestMessage || activeConv.lastMessage}"
+                            </div>
+                          )}
+                        </div>
+                      )
+                    ) : activeConv?.isConversationRequest && activeConv?.requestStatus === "declined" ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center p-6 max-w-md mx-auto">
+                        <Avatar
+                          size="lg"
+                          firstName={activeConv.name?.split(" ")[0] || ""}
+                          lastName={activeConv.name?.split(" ").slice(1).join(" ") || ""}
+                          src={mediaUrl(activeConv.avatar)}
+                          isVerified={activeConv.isVerified}
+                          membershipPlan={activeConv.membershipPlan}
+                          className="mb-4 opacity-75 grayscale"
+                        />
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold mb-2">
+                          <XCircle className="w-3.5 h-3.5" /> Request Declined
+                        </div>
+                        <h3 className="text-lg font-bold text-white">Conversation Request Declined</h3>
+                        <p className="text-sm text-[#C8C8C8] mt-2">
+                          {activeConv.name} declined your conversation request.
+                        </p>
+                        <div className="mt-4 p-4 rounded-2xl bg-[#1E1E28] border border-red-500/20 text-[#8B8B8B] text-xs w-full text-center">
+                          {activeConv.cooldownRemainingDays ? (
+                            <span>
+                              You cannot send another chat request to this user for 15 days.{" "}
+                              <strong className="text-amber-300">{activeConv.cooldownRemainingDays} day(s)</strong> remaining.
+                            </span>
+                          ) : (
+                            <span>You cannot send another chat request to this recipient for 15 days from the decline date.</span>
+                          )}
+                        </div>
                       </div>
-                      <h3 className="text-lg font-bold text-white">Start your conversation 👋</h3>
-                      <p className="text-sm text-[#8B8B8B] mt-1.5 max-w-xs">Send a respectful greeting and begin getting to know each other.</p>
-                      {/* Quick Reply Chips */}
-                      <div className="flex flex-wrap gap-2 justify-center mt-6 max-w-sm">
-                        {[
-                          { emoji: "👋", text: "Assalamu Alaikum" },
-                          { emoji: "❤️", text: "Hello" },
-                          { emoji: "🤍", text: "Nice to meet you" },
-                          { emoji: "😊", text: "How are you?" },
-                        ].map((chip) => (
-                          <button
-                            key={chip.text}
-                            onClick={() => { setNewMessage(`${chip.emoji} ${chip.text}`); }}
-                            className="px-4 py-2 rounded-full border border-[#D4AF37]/40 bg-transparent text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all hover:scale-105 active:scale-95"
-                          >
-                            {chip.emoji} {chip.text}
-                          </button>
-                        ))}
+                    ) : activeConv?.isConversationRequest && activeConv?.requestStatus === "accepted" ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center p-6 max-w-md mx-auto">
+                        <div className="relative mb-4">
+                          <Avatar
+                            size="lg"
+                            firstName={activeConv.name?.split(" ")[0] || ""}
+                            lastName={activeConv.name?.split(" ").slice(1).join(" ") || ""}
+                            src={mediaUrl(activeConv.avatar)}
+                            isVerified={activeConv.isVerified}
+                            membershipPlan={activeConv.membershipPlan}
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
+                            <Check className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        </div>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-2">
+                          <Check className="w-3.5 h-3.5" /> Connected
+                        </div>
+                        <h3 className="text-lg font-bold text-white">
+                          {activeConv.isIncomingRequest
+                            ? "Conversation Started"
+                            : `${activeConv.name} accepted your request!`}
+                        </h3>
+                        <p className="text-sm text-[#C8C8C8] mt-1.5">
+                          {activeConv.isIncomingRequest
+                            ? `You accepted ${activeConv.name}'s conversation request. Start chatting below!`
+                            : "Your conversation request was accepted. Send a respectful greeting to begin getting to know each other."}
+                        </p>
+                        {/* Quick Reply Chips */}
+                        <div className="flex flex-wrap gap-2 justify-center mt-6 max-w-sm">
+                          {[
+                            { emoji: "👋", text: "Assalamu Alaikum" },
+                            { emoji: "😊", text: "Thank you for accepting!" },
+                            { emoji: "🤍", text: "Nice to connect with you" },
+                            { emoji: "🌸", text: "How is your day going?" },
+                          ].map((chip) => (
+                            <button
+                              key={chip.text}
+                              onClick={() => { setNewMessage(`${chip.emoji} ${chip.text}`); }}
+                              className="px-4 py-2 rounded-full border border-[#D4AF37]/40 bg-transparent text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all hover:scale-105 active:scale-95"
+                            >
+                              {chip.emoji} {chip.text}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        {/* Empty state illustration: two chat bubbles with gold glow */}
+                        <div className="relative mb-6">
+                          <div className="absolute inset-0 blur-3xl bg-[#D4AF37]/10 rounded-full" />
+                          <div className="relative flex flex-col gap-2">
+                            <div className="w-16 h-16 rounded-2xl rounded-br-md bg-[#222222] border border-[#2D2D2D] flex items-center justify-center shadow-lg">
+                              <svg className="w-7 h-7 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a.75.75 0 01.722-.102 9.75 9.75 0 005.46.484c2.026-.384 3.542-2.084 3.542-4.146V6.75c0-1.6-1.123-2.994-2.707-3.227A24.5 24.5 0 0012 3c-2.392 0-4.744.175-7.043.523C3.373 3.756 2.25 5.15 2.25 6.75v6.01z" />
+                              </svg>
+                            </div>
+                            <div className="w-16 h-16 rounded-2xl rounded-bl-md bg-gradient-to-br from-[#D4AF37] to-[#F2D675] flex items-center justify-center shadow-lg shadow-[#D4AF37]/20 self-end">
+                              <svg className="w-7 h-7 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a.75.75 0 01.722-.102 9.75 9.75 0 005.46.484c2.026-.384 3.542-2.084 3.542-4.146V6.75c0-1.6-1.123-2.994-2.707-3.227A24.5 24.5 0 0012 3c-2.392 0-4.744.175-7.043.523C3.373 3.756 2.25 5.15 2.25 6.75v6.01z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-white">Start your conversation 👋</h3>
+                        <p className="text-sm text-[#8B8B8B] mt-1.5 max-w-xs">Send a respectful greeting and begin getting to know each other.</p>
+                        {/* Quick Reply Chips */}
+                        <div className="flex flex-wrap gap-2 justify-center mt-6 max-w-sm">
+                          {[
+                            { emoji: "👋", text: "Assalamu Alaikum" },
+                            { emoji: "❤️", text: "Hello" },
+                            { emoji: "🤍", text: "Nice to meet you" },
+                            { emoji: "😊", text: "How are you?" },
+                          ].map((chip) => (
+                            <button
+                              key={chip.text}
+                              onClick={() => { setNewMessage(`${chip.emoji} ${chip.text}`); }}
+                              className="px-4 py-2 rounded-full border border-[#D4AF37]/40 bg-transparent text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all hover:scale-105 active:scale-95"
+                            >
+                              {chip.emoji} {chip.text}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   ) : (
                     [...messages].map((msg, idx) => {
                       const otherId = activeConversation;
@@ -1326,250 +1554,250 @@ function MessagesContent() {
                               <div className="flex-1 h-px bg-[#D4AF37]/30" />
                             </div>
                           )}
-                        <div
-                          ref={(el) => { messageRefs.current[msg.id] = el; }}
-                          className={`relative group flex items-end mb-1.5 px-6 rounded-2xl transition-all duration-300 ${isOwn ? "justify-end" : "justify-start"} ${highlightMsgId === msg.id ? "bg-[#D4AF37]/10 ring-2 ring-[#D4AF37]/30" : ""} ${isFailed ? "opacity-90" : ""}`}
-                          onTouchStart={(e) => handleMsgTouchStart(e, msg)}
-                          onTouchMove={(e) => handleMsgTouchMove(e, msg)}
-                          onTouchEnd={handleMsgTouchEnd}
-                          onContextMenu={(e) => { e.preventDefault(); setMenuMsgId(msg.id); setReactionMsgId(msg.id); }}
-                        >
-                          {/* 3-dots menu button - absolutely positioned so it doesn't affect alignment */}
-                          <button
-                            onClick={(e) => {
-                              if (menuMsgId === msg.id) {
-                                setMenuMsgId(null);
-                                setReactionMsgId(null);
-                                setMenuPosition(null);
-                              } else {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                const viewportH = window.innerHeight;
-                                const openUpward = rect.top > viewportH / 2;
-                                setMenuPosition({ x: rect.right, y: openUpward ? rect.top : rect.bottom, openUpward });
-                                setMenuMsgId(msg.id);
-                                setReactionMsgId(null);
-                              }
-                            }}
-                            className={`absolute top-1/2 -translate-y-1/2 z-30 shrink-0 p-1.5 rounded-full transition-all ${menuMsgId === msg.id ? "opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"} ${isOwn ? "right-0" : "left-0"} hover:bg-[#2D2D2D]`}
-                            title="More"
+                          <div
+                            ref={(el) => { messageRefs.current[msg.id] = el; }}
+                            className={`relative group flex items-end mb-1.5 px-6 rounded-2xl transition-all duration-300 ${isOwn ? "justify-end" : "justify-start"} ${highlightMsgId === msg.id ? "bg-[#D4AF37]/10 ring-2 ring-[#D4AF37]/30" : ""} ${isFailed ? "opacity-90" : ""}`}
+                            onTouchStart={(e) => handleMsgTouchStart(e, msg)}
+                            onTouchMove={(e) => handleMsgTouchMove(e, msg)}
+                            onTouchEnd={handleMsgTouchEnd}
+                            onContextMenu={(e) => { e.preventDefault(); setMenuMsgId(msg.id); setReactionMsgId(msg.id); }}
                           >
-                            <MoreVertical className="w-4 h-4 text-[#8B8B8B]" />
-                          </button>
+                            {/* 3-dots menu button - absolutely positioned so it doesn't affect alignment */}
+                            <button
+                              onClick={(e) => {
+                                if (menuMsgId === msg.id) {
+                                  setMenuMsgId(null);
+                                  setReactionMsgId(null);
+                                  setMenuPosition(null);
+                                } else {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const viewportH = window.innerHeight;
+                                  const openUpward = rect.top > viewportH / 2;
+                                  setMenuPosition({ x: rect.right, y: openUpward ? rect.top : rect.bottom, openUpward });
+                                  setMenuMsgId(msg.id);
+                                  setReactionMsgId(null);
+                                }
+                              }}
+                              className={`absolute top-1/2 -translate-y-1/2 z-30 shrink-0 p-1.5 rounded-full transition-all ${menuMsgId === msg.id ? "opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"} ${isOwn ? "right-0" : "left-0"} hover:bg-[#2D2D2D]`}
+                              title="More"
+                            >
+                              <MoreVertical className="w-4 h-4 text-[#8B8B8B]" />
+                            </button>
 
-                          {/* Reaction bar — shows on long press / right click */}
-                          {reactionMsgId === msg.id && (
-                            <div ref={menuRef} className={`absolute z-50 flex items-center gap-0.5 rounded-full bg-[#1A1A24] border border-[#2D2D2D] shadow-2xl px-1.5 py-1 ${isNearBottom ? "bottom-8" : "-top-10"} ${isOwn ? "right-6" : "left-6"}`}>
-                              {REACTIONS.map((emoji) => (
-                                <button
-                                  key={emoji}
-                                  onClick={async () => {
-                                    setReactionMsgId(null);
-                                    setMenuMsgId(null);
-                                    try {
-                                      await messageService.reactToMessage(msg.id, emoji);
-                                      useMessageStore.getState().setMessageReaction(msg.id, emoji, myId || "");
-                                    } catch {
-                                      setToastError(true);
-                                      setToast("Failed to react");
-                                      setTimeout(() => { setToast(null); setToastError(false); }, 3000);
-                                    }
-                                  }}
-                                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#2D2D2D] hover:scale-125 transition-all text-base"
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          )}
+                            {/* Reaction bar — shows on long press / right click */}
+                            {reactionMsgId === msg.id && (
+                              <div ref={menuRef} className={`absolute z-50 flex items-center gap-0.5 rounded-full bg-[#1A1A24] border border-[#2D2D2D] shadow-2xl px-1.5 py-1 ${isNearBottom ? "bottom-8" : "-top-10"} ${isOwn ? "right-6" : "left-6"}`}>
+                                {REACTIONS.map((emoji) => (
+                                  <button
+                                    key={emoji}
+                                    onClick={async () => {
+                                      setReactionMsgId(null);
+                                      setMenuMsgId(null);
+                                      try {
+                                        await messageService.reactToMessage(msg.id, emoji);
+                                        useMessageStore.getState().setMessageReaction(msg.id, emoji, myId || "");
+                                      } catch {
+                                        setToastError(true);
+                                        setToast("Failed to react");
+                                        setTimeout(() => { setToast(null); setToastError(false); }, 3000);
+                                      }
+                                    }}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#2D2D2D] hover:scale-125 transition-all text-base"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
 
-                          {/* Context menu — fixed position to avoid clipping by overflow container */}
-                          {menuMsgId === msg.id && reactionMsgId !== msg.id && menuPosition && (
-                            <div ref={menuRef} className="fixed z-[100] rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[175px] overflow-hidden bg-[#222222]" style={{ left: isOwn ? Math.max(8, menuPosition.x - 175) : Math.min(menuPosition.x, window.innerWidth - 185), top: menuPosition.openUpward ? Math.max(8, menuPosition.y - 280) : menuPosition.y }}>
-                              <button onClick={() => { setReplyTo(msg); setMenuMsgId(null); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                                <Reply className="w-4 h-4 shrink-0" /> Reply
-                              </button>
-                              {!msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
-                                <button onClick={() => handleCopyMessage(msg.content)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                                  <Copy className="w-4 h-4 shrink-0" /> Copy
+                            {/* Context menu — fixed position to avoid clipping by overflow container */}
+                            {menuMsgId === msg.id && reactionMsgId !== msg.id && menuPosition && (
+                              <div ref={menuRef} className="fixed z-[100] rounded-2xl shadow-2xl border border-[#2D2D2D] py-1.5 min-w-[175px] overflow-hidden bg-[#222222]" style={{ left: isOwn ? Math.max(8, menuPosition.x - 175) : Math.min(menuPosition.x, window.innerWidth - 185), top: menuPosition.openUpward ? Math.max(8, menuPosition.y - 280) : menuPosition.y }}>
+                                <button onClick={() => { setReplyTo(msg); setMenuMsgId(null); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                  <Reply className="w-4 h-4 shrink-0" /> Reply
                                 </button>
-                              )}
-                              {!msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
-                                <button onClick={() => handleForwardMessage(msg.content)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                                  <Forward className="w-4 h-4 shrink-0" /> Forward
+                                {!msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
+                                  <button onClick={() => handleCopyMessage(msg.content)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                    <Copy className="w-4 h-4 shrink-0" /> Copy
+                                  </button>
+                                )}
+                                {!msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
+                                  <button onClick={() => handleForwardMessage(msg.content)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                    <Forward className="w-4 h-4 shrink-0" /> Forward
+                                  </button>
+                                )}
+                                {isOwn && !msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
+                                  <button onClick={() => handleEditClick(msg)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                    <Pencil className="w-4 h-4 shrink-0" /> Edit
+                                  </button>
+                                )}
+                                <button onClick={() => handlePinMessage(msg.id)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                  <Pin className="w-4 h-4 shrink-0" /> {pinnedMsgId === msg.id ? "Unpin" : "Pin"}
                                 </button>
-                              )}
-                              {isOwn && !msg.content?.startsWith("IMG:") && !msg.content?.startsWith("FILE:") && (
-                                <button onClick={() => handleEditClick(msg)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                                  <Pencil className="w-4 h-4 shrink-0" /> Edit
+                                <button onClick={() => { setMenuMsgId(null); setMenuPosition(null); setToastError(false); setToast(`Sent at ${new Date(msg.createdAt).toLocaleString()}`); setTimeout(() => setToast(null), 3000); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                  <Info className="w-4 h-4 shrink-0" /> Info
                                 </button>
-                              )}
-                              <button onClick={() => handlePinMessage(msg.id)} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                                <Pin className="w-4 h-4 shrink-0" /> {pinnedMsgId === msg.id ? "Unpin" : "Pin"}
-                              </button>
-                              <button onClick={() => { setMenuMsgId(null); setMenuPosition(null); setToastError(false); setToast(`Sent at ${new Date(msg.createdAt).toLocaleString()}`); setTimeout(() => setToast(null), 3000); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                                <Info className="w-4 h-4 shrink-0" /> Info
-                              </button>
-                              <div className="border-t border-[#2D2D2D] my-1" />
-                              <button onClick={() => handleDelete(msg.id, "me")} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
-                                <Trash2 className="w-4 h-4 shrink-0" /> Delete for me
-                              </button>
-                              {isOwn && (
-                                <button onClick={() => handleDelete(msg.id, "both")} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
-                                  <Trash2 className="w-4 h-4 shrink-0" /> Delete for everyone
+                                <div className="border-t border-[#2D2D2D] my-1" />
+                                <button onClick={() => handleDelete(msg.id, "me")} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#C8C8C8] hover:bg-[#2D2D2D] transition-colors">
+                                  <Trash2 className="w-4 h-4 shrink-0" /> Delete for me
                                 </button>
-                              )}
-                            </div>
-                          )}
+                                {isOwn && (
+                                  <button onClick={() => handleDelete(msg.id, "both")} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-500/15 transition-colors">
+                                    <Trash2 className="w-4 h-4 shrink-0" /> Delete for everyone
+                                  </button>
+                                )}
+                              </div>
+                            )}
 
-                          {/* Swipe-left reply indicator */}
-                          {swipeMsgId === msg.id && (
-                            <div className={`absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none ${isOwn ? "right-10" : "left-10"}`}>
-                              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#D4AF37]/80 shadow-lg">
-                                <Reply className="w-4 h-4 text-white" />
+                            {/* Swipe-left reply indicator */}
+                            {swipeMsgId === msg.id && (
+                              <div className={`absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none ${isOwn ? "right-10" : "left-10"}`}>
+                                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#D4AF37]/80 shadow-lg">
+                                  <Reply className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Message bubble */}
+                            <div
+                              className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[80%] lg:max-w-[65%] transition-transform duration-200 ${swipeMsgId === msg.id ? (isOwn ? "translate-x-8" : "-translate-x-8") : ""}`}
+                            >
+                              <div className={`overflow-hidden transition-all hover:shadow-lg msg-anim ${isFailed ? "!bg-red-900/40 !border-red-500/40" : isOwn ? ownBubble : otherBubble}`} style={{ fontSize: "clamp(0.75rem, 3.5vw, 0.875rem)", overflowWrap: "anywhere", wordBreak: "break-word" }}>
+                                {msg.replyTo && (
+                                  <div
+                                    onClick={() => msg.replyTo?.id && scrollToMessage(msg.replyTo.id)}
+                                    className={`px-3 pt-2 pb-1.5 cursor-pointer rounded-t-2xl transition-colors hover:brightness-95 ${isOwn ? "bg-black/10 border-l-2 border-black/40" : "bg-[#D4AF37]/10 border-l-2 border-[#D4AF37]/60"}`}
+                                  >
+                                    <p className={`text-xs font-bold ${isOwn ? "text-black" : "text-[#D4AF37]"}`}>
+                                      {msg.replyTo.senderId === myId ? t('messages.you') : (msg.replyTo.sender?.firstName || "User")}
+                                    </p>
+                                    <p className={`text-xs truncate font-medium ${isOwn ? "text-black/70" : "text-[#C8C8C8]"}`}>{formatReplyContent(msg.replyTo.content)}</p>
+                                  </div>
+                                )}
+                                {(() => {
+                                  const imgSrc = msg.content?.startsWith("IMG:") ? msg.content.split("|")[0].slice(4) : msg.imageUrl || null;
+                                  const capText = msg.content?.startsWith("IMG:") && msg.content.includes("|") ? msg.content.split("|")[1] : null;
+                                  const fileMatch = msg.content?.startsWith("FILE:") ? msg.content.slice(5).split("|") : null;
+                                  const fileUrl = fileMatch?.[0];
+                                  const fileName = fileMatch?.[1] || "File";
+                                  const fileSize = fileMatch?.[2] ? parseInt(fileMatch[2]) : 0;
+                                  const fileCap = fileMatch?.[3];
+                                  const fileExt = fileName.split(".").pop()?.toLowerCase() || "";
+                                  const fileIcon = fileExt === "pdf" ? "📕" : fileExt === "doc" || fileExt === "docx" ? "📘" : fileExt === "xls" || fileExt === "xlsx" ? "📗" : fileExt === "ppt" || fileExt === "pptx" ? "📙" : fileExt === "zip" ? "🗜️" : "📄";
+                                  return fileMatch ? (
+                                    <div className="max-w-[240px]">
+                                      <a
+                                        href={fileUrl && fileUrl !== "pending" ? mediaUrl(fileUrl) : undefined}
+                                        download={fileName}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isPending ? "opacity-60 pointer-events-none" : "hover:bg-black/10"}`}
+                                      >
+                                        <div className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center text-xl ${isOwn ? "bg-black/10" : "bg-[#0F0F10]"}`}>
+                                          {fileIcon}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className={`text-sm font-semibold truncate ${isOwn ? "text-black" : "text-white"}`}>{fileName}</p>
+                                          <p className={`text-[10px] ${isOwn ? "text-black/60" : "text-[#8B8B8B]"}`}>
+                                            {fileSize > 0 ? `${(fileSize / 1024).toFixed(1)} KB` : ""}
+                                          </p>
+                                        </div>
+                                        {!isPending && (
+                                          <Download className={`w-4 h-4 shrink-0 ${isOwn ? "text-black/60" : "text-[#D4AF37]"}`} />
+                                        )}
+                                      </a>
+                                      {fileCap && <p className={`px-3 pt-1 pb-1 text-sm break-words whitespace-pre-wrap ${isPending ? "opacity-60" : ""}`}>{fileCap}</p>}
+                                      {isPending && (
+                                        <div className="flex items-center justify-center py-1">
+                                          <div className="bg-black/50 text-white text-[11px] font-medium px-3 py-1 rounded-full">{t('messages.sending')}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : imgSrc ? (
+                                    <div className="max-w-[200px] relative">
+                                      <div className={`px-2 pt-2 ${isPending ? "opacity-60" : ""}`}>
+                                        <img src={mediaUrl(imgSrc)} alt="Shared image" className="w-full rounded-2xl cursor-pointer hover:opacity-90 transition-opacity pointer-events-auto" loading="lazy" onClick={() => setPreviewImage(mediaUrl(imgSrc) || null)} />
+                                      </div>
+                                      {capText && <p className={`px-3 pt-1 pb-1 text-sm break-words whitespace-pre-wrap ${isPending ? "opacity-60" : ""}`}>{capText}</p>}
+                                      {isPending && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <div className="bg-black/50 text-white text-[11px] font-medium px-3 py-1 rounded-full">{t('messages.sending')}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : msg.content ? (
+                                    editingMsgId === msg.id ? (
+                                      <div className="px-3 pt-2.5 pb-2 min-w-[200px]">
+                                        <textarea
+                                          autoFocus
+                                          value={editText}
+                                          onChange={(e) => setEditText(e.target.value)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditSubmit(); }
+                                            if (e.key === "Escape") handleEditCancel();
+                                          }}
+                                          className="w-full resize-none rounded-xl px-3 py-2 text-sm outline-none border-2 bg-black/20 text-white border-[#D4AF37]/50 focus:border-[#D4AF37]"
+                                          rows={2}
+                                        />
+                                        <div className="flex items-center justify-end gap-2 mt-1.5">
+                                          <button onClick={handleEditCancel} className="text-xs px-2.5 py-1 rounded-lg text-[#C8C8C8] hover:bg-[#2D2D2D]">
+                                            Cancel
+                                          </button>
+                                          <button onClick={handleEditSubmit} className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-[#D4AF37] text-black hover:bg-[#F2D675]">
+                                            Save
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <p className="px-4 pt-2.5 pb-1 leading-relaxed font-medium break-words whitespace-pre-wrap">{msg.content}</p>
+                                    )
+                                  ) : null;
+                                })()}
+                                {/* Reaction display */}
+                                {msg.reaction && (
+                                  <div className={`px-3 pb-1 ${isOwn ? "text-right" : "text-left"}`}>
+                                    <span className="inline-block text-base bg-[#1A1A24] rounded-full px-1.5 py-0.5 border border-[#2D2D2D]">
+                                      {msg.reaction}
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Failed message actions */}
+                                {isFailed ? (
+                                  <div className="flex items-center gap-2 px-4 pb-2">
+                                    <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                                    <span className="text-[10px] text-red-400 font-medium">Failed</span>
+                                    <button onClick={() => handleRetryFailed(msg.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-[#D4AF37] text-black font-medium hover:bg-[#F2D675] transition-colors">
+                                      Retry
+                                    </button>
+                                    <button onClick={() => handleDeleteFailed(msg.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 font-medium hover:bg-red-500/30 transition-colors">
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
+                                    {msg.isEdited && (
+                                      <span className={`text-[10px] italic ${isOwn ? "text-black/50" : "text-[#8B8B8B]"}`}>edited</span>
+                                    )}
+                                    {isPending && (
+                                      <span className="text-[10px] text-white/40 animate-pulse">sending…</span>
+                                    )}
+                                    <p className="font-semibold" style={{ fontSize: "clamp(0.625rem, 2.5vw, 0.75rem)", color: isOwn ? "#D1D5DB" : "#8B8B8B" }}>
+                                      {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                                    </p>
+                                    {isOwn && !isPending && (
+                                      msg.readAt ? (
+                                        <CheckCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+                                      ) : msg.deliveredAt ? (
+                                        <CheckCheck className="w-3.5 h-3.5 text-white/50" />
+                                      ) : (
+                                        <Check className="w-3.5 h-3.5 text-white/40" />
+                                      )
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          )}
-
-                          {/* Message bubble */}
-                          <div
-                            className={`flex flex-col ${isOwn ? "items-end" : "items-start"} max-w-[80%] lg:max-w-[65%] transition-transform duration-200 ${swipeMsgId === msg.id ? (isOwn ? "translate-x-8" : "-translate-x-8") : ""}`}
-                          >
-                            <div className={`overflow-hidden transition-all hover:shadow-lg msg-anim ${isFailed ? "!bg-red-900/40 !border-red-500/40" : isOwn ? ownBubble : otherBubble}`} style={{ fontSize: "clamp(0.75rem, 3.5vw, 0.875rem)", overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                              {msg.replyTo && (
-                                <div
-                                  onClick={() => msg.replyTo?.id && scrollToMessage(msg.replyTo.id)}
-                                  className={`px-3 pt-2 pb-1.5 cursor-pointer rounded-t-2xl transition-colors hover:brightness-95 ${isOwn ? "bg-black/10 border-l-2 border-black/40" : "bg-[#D4AF37]/10 border-l-2 border-[#D4AF37]/60"}`}
-                                >
-                                  <p className={`text-xs font-bold ${isOwn ? "text-black" : "text-[#D4AF37]"}`}>
-                                    {msg.replyTo.senderId === myId ? t('messages.you') : (msg.replyTo.sender?.firstName || "User")}
-                                  </p>
-                                  <p className={`text-xs truncate font-medium ${isOwn ? "text-black/70" : "text-[#C8C8C8]"}`}>{formatReplyContent(msg.replyTo.content)}</p>
-                                </div>
-                              )}
-                              {(() => {
-                                const imgSrc = msg.content?.startsWith("IMG:") ? msg.content.split("|")[0].slice(4) : msg.imageUrl || null;
-                                const capText = msg.content?.startsWith("IMG:") && msg.content.includes("|") ? msg.content.split("|")[1] : null;
-                                 const fileMatch = msg.content?.startsWith("FILE:") ? msg.content.slice(5).split("|") : null;
-                                 const fileUrl = fileMatch?.[0];
-                                 const fileName = fileMatch?.[1] || "File";
-                                 const fileSize = fileMatch?.[2] ? parseInt(fileMatch[2]) : 0;
-                                 const fileCap = fileMatch?.[3];
-                                 const fileExt = fileName.split(".").pop()?.toLowerCase() || "";
-                                 const fileIcon = fileExt === "pdf" ? "📕" : fileExt === "doc" || fileExt === "docx" ? "📘" : fileExt === "xls" || fileExt === "xlsx" ? "📗" : fileExt === "ppt" || fileExt === "pptx" ? "📙" : fileExt === "zip" ? "🗜️" : "📄";
-                                 return fileMatch ? (
-                                   <div className="max-w-[240px]">
-                                     <a
-                                       href={fileUrl && fileUrl !== "pending" ? mediaUrl(fileUrl) : undefined}
-                                       download={fileName}
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isPending ? "opacity-60 pointer-events-none" : "hover:bg-black/10"}`}
-                                     >
-                                       <div className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center text-xl ${isOwn ? "bg-black/10" : "bg-[#0F0F10]"}`}>
-                                         {fileIcon}
-                                       </div>
-                                       <div className="flex-1 min-w-0">
-                                         <p className={`text-sm font-semibold truncate ${isOwn ? "text-black" : "text-white"}`}>{fileName}</p>
-                                         <p className={`text-[10px] ${isOwn ? "text-black/60" : "text-[#8B8B8B]"}`}>
-                                           {fileSize > 0 ? `${(fileSize / 1024).toFixed(1)} KB` : ""}
-                                         </p>
-                                       </div>
-                                       {!isPending && (
-                                         <Download className={`w-4 h-4 shrink-0 ${isOwn ? "text-black/60" : "text-[#D4AF37]"}`} />
-                                       )}
-                                     </a>
-                                     {fileCap && <p className={`px-3 pt-1 pb-1 text-sm break-words whitespace-pre-wrap ${isPending ? "opacity-60" : ""}`}>{fileCap}</p>}
-                                     {isPending && (
-                                       <div className="flex items-center justify-center py-1">
-                                         <div className="bg-black/50 text-white text-[11px] font-medium px-3 py-1 rounded-full">{t('messages.sending')}</div>
-                                       </div>
-                                     )}
-                                   </div>
-                                ) : imgSrc ? (
-                                   <div className="max-w-[200px] relative">
-                                     <div className={`px-2 pt-2 ${isPending ? "opacity-60" : ""}`}>
-                                        <img src={mediaUrl(imgSrc)} alt="Shared image" className="w-full rounded-2xl cursor-pointer hover:opacity-90 transition-opacity pointer-events-auto" loading="lazy" onClick={() => setPreviewImage(mediaUrl(imgSrc) || null)} />
-                                     </div>
-                                     {capText && <p className={`px-3 pt-1 pb-1 text-sm break-words whitespace-pre-wrap ${isPending ? "opacity-60" : ""}`}>{capText}</p>}
-                                     {isPending && (
-                                       <div className="absolute inset-0 flex items-center justify-center">
-                                         <div className="bg-black/50 text-white text-[11px] font-medium px-3 py-1 rounded-full">{t('messages.sending')}</div>
-                                       </div>
-                                     )}
-                                   </div>
-                                ) : msg.content ? (
-                                  editingMsgId === msg.id ? (
-                                    <div className="px-3 pt-2.5 pb-2 min-w-[200px]">
-                                      <textarea
-                                        autoFocus
-                                        value={editText}
-                                        onChange={(e) => setEditText(e.target.value)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditSubmit(); }
-                                          if (e.key === "Escape") handleEditCancel();
-                                        }}
-                                        className="w-full resize-none rounded-xl px-3 py-2 text-sm outline-none border-2 bg-black/20 text-white border-[#D4AF37]/50 focus:border-[#D4AF37]"
-                                        rows={2}
-                                      />
-                                      <div className="flex items-center justify-end gap-2 mt-1.5">
-                                        <button onClick={handleEditCancel} className="text-xs px-2.5 py-1 rounded-lg text-[#C8C8C8] hover:bg-[#2D2D2D]">
-                                          Cancel
-                                        </button>
-                                        <button onClick={handleEditSubmit} className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-[#D4AF37] text-black hover:bg-[#F2D675]">
-                                          Save
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <p className="px-4 pt-2.5 pb-1 leading-relaxed font-medium break-words whitespace-pre-wrap">{msg.content}</p>
-                                  )
-                                ) : null;
-                              })()}
-                              {/* Reaction display */}
-                              {msg.reaction && (
-                                <div className={`px-3 pb-1 ${isOwn ? "text-right" : "text-left"}`}>
-                                  <span className="inline-block text-base bg-[#1A1A24] rounded-full px-1.5 py-0.5 border border-[#2D2D2D]">
-                                    {msg.reaction}
-                                  </span>
-                                </div>
-                              )}
-                              {/* Failed message actions */}
-                              {isFailed ? (
-                                <div className="flex items-center gap-2 px-4 pb-2">
-                                  <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-                                  <span className="text-[10px] text-red-400 font-medium">Failed</span>
-                                  <button onClick={() => handleRetryFailed(msg.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-[#D4AF37] text-black font-medium hover:bg-[#F2D675] transition-colors">
-                                    Retry
-                                  </button>
-                                  <button onClick={() => handleDeleteFailed(msg.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 font-medium hover:bg-red-500/30 transition-colors">
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-end gap-1.5 px-4 pb-2">
-                                  {msg.isEdited && (
-                                    <span className={`text-[10px] italic ${isOwn ? "text-black/50" : "text-[#8B8B8B]"}`}>edited</span>
-                                  )}
-                                  {isPending && (
-                                    <span className="text-[10px] text-white/40 animate-pulse">sending…</span>
-                                  )}
-                                  <p className="font-semibold" style={{ fontSize: "clamp(0.625rem, 2.5vw, 0.75rem)", color: isOwn ? "#D1D5DB" : "#8B8B8B" }}>
-                                    {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
-                                  </p>
-                                  {isOwn && !isPending && (
-                                    msg.readAt ? (
-                                      <CheckCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                                    ) : msg.deliveredAt ? (
-                                      <CheckCheck className="w-3.5 h-3.5 text-white/50" />
-                                    ) : (
-                                      <Check className="w-3.5 h-3.5 text-white/40" />
-                                    )
-                                  )}
-                                </div>
-                              )}
-                            </div>
                           </div>
-                        </div>
                         </div>
                       );
                     })
@@ -1712,52 +1940,137 @@ function MessagesContent() {
                         </div>
                       )}
                       {/* Floating input bar — premium pill, auto-growing textarea, gold send with glow */}
-                      <div className="relative">
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-4 rounded-full bg-[#D4AF37]/20 blur-xl pointer-events-none" />
-                      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex items-end gap-1.5 min-h-[60px] rounded-[30px] bg-[#1A1A24] border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2.5 py-2 w-full box-border overflow-hidden">
-                        {/* Emoji button */}
-                        <button
-                          type="button"
-                          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                          disabled={serverBusy}
-                          className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 disabled:opacity-40 disabled:hover:scale-100 hover:bg-[#2D2D2D]"
-                        >
-                          <Smile className="w-5 h-5 text-[#D4AF37]" />
-                        </button>
-                        {/* Attachment button */}
-                        <label className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 cursor-pointer ${serverBusy ? "opacity-40 pointer-events-none" : "hover:bg-[#2D2D2D]"}`}>
-                          <Paperclip className="w-5 h-5 text-[#D4AF37]" />
-                          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" className="hidden" onChange={handleImageSelect} disabled={serverBusy} />
-                        </label>
-                        {/* Auto-growing textarea */}
-                        <textarea
-                          ref={textareaRef}
-                          value={newMessage}
-                          onChange={(e) => { handleInputChange(e.target.value); autoGrowTextarea(); }}
-                          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                          onInput={autoGrowTextarea}
-                          placeholder={serverBusy ? "Busy…" : "Message…"}
-                          disabled={uploading || serverBusy}
-                          rows={1}
-                          className="flex-1 min-w-0 max-h-[120px] bg-white/15 rounded-2xl text-sm font-medium text-white placeholder-[#8B8B8B] outline-none border-none px-4 py-2.5 resize-none overflow-y-auto leading-relaxed transition-all"
-                          style={{ height: "40px" }}
-                        />
-                        {/* Send button — gold circular with soft glow */}
-                        <button
-                          type="submit"
-                          disabled={(!newMessage.trim() && !imagePreview) || uploading || serverBusy}
-                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 disabled:opacity-40 disabled:hover:scale-100 shrink-0 shadow-lg shadow-[#D4AF37]/30 ${serverBusy ? "bg-[#D4AF37]/50" : sendBtn}`}
-                        >
-                          {serverBusy ? (
-                            <span className="text-[10px] font-bold text-white">{busyCountdown}s</span>
-                          ) : uploading ? (
-                            <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                          ) : (
-                            <Send className="w-5 h-5" />
-                          )}
-                        </button>
-                      </form>
-                      </div>
+                      {!user?.isVerified ? (
+                        <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-center flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+                          <div className="flex items-center gap-2.5 text-left">
+                            <Shield className="w-5 h-5 text-[#D4AF37] shrink-0" />
+                            <span className="text-xs text-amber-200">
+                              Your account must be verified before you can send messages or reactions.
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => router.push("/verification")}
+                            className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F2D675] text-black text-xs font-bold hover:opacity-90 shrink-0 transition-opacity"
+                          >
+                            Verify Account
+                          </button>
+                        </div>
+                      ) : activeConv?.isConversationRequest && activeConv?.requestStatus === "pending" && activeConv?.isIncomingRequest ? (
+                        <div className="rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#1A1A24] to-emerald-500/10 border border-amber-500/30 p-3 text-center flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+                          <div className="flex items-center gap-2.5 text-left min-w-0">
+                            <Send className="w-5 h-5 text-[#D4AF37] shrink-0" />
+                            <span className="text-xs text-amber-200 truncate">
+                              {activeConv.name} sent you a conversation request. Accept to start chatting!
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  if (activeConv.requestId) {
+                                    await conversationRequestService.respond(activeConv.requestId, "accepted");
+                                  }
+                                  setIncomingConvRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  setAllPendingRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  await fetchConversations();
+                                  setToast("Request accepted! You can now chat.");
+                                  setTimeout(() => setToast(null), 3000);
+                                } catch {
+                                  setToastError(true);
+                                  setToast("Failed to accept request");
+                                  setTimeout(() => { setToast(null); setToastError(false); }, 3000);
+                                }
+                              }}
+                              className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold hover:opacity-90 transition-opacity"
+                            >
+                              Accept & Chat
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  if (activeConv.requestId) {
+                                    await conversationRequestService.respond(activeConv.requestId, "declined");
+                                  }
+                                  setIncomingConvRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  setAllPendingRequests((prev: any[]) => prev.filter((r: any) => r.id !== activeConv.requestId));
+                                  await fetchConversations();
+                                  setToast("Request declined");
+                                  setTimeout(() => setToast(null), 3000);
+                                } catch {
+                                  setToastError(true);
+                                  setToast("Failed to decline request");
+                                  setTimeout(() => { setToast(null); setToastError(false); }, 3000);
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-red-500/15 text-red-300 border border-red-500/30 text-xs font-medium hover:bg-red-500/25 transition-colors"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        </div>
+                      ) : activeConv?.isConversationRequest && activeConv?.requestStatus === "pending" && !activeConv?.isIncomingRequest ? (
+                        <div className="rounded-2xl bg-[#1A1A24] border border-[#2D2D2D] p-3.5 text-center flex items-center justify-center gap-2.5 text-xs text-[#8B8B8B]">
+                          <Send className="w-4 h-4 text-[#D4AF37]" />
+                          <span>Conversation request sent. Waiting for <strong className="text-white">{activeConv.name}</strong> to accept...</span>
+                        </div>
+                      ) : activeConv?.isConversationRequest && activeConv?.requestStatus === "declined" ? (
+                        <div className="rounded-2xl bg-[#1A1A24] border border-red-500/20 p-3.5 text-center flex items-center justify-center gap-2.5 text-xs text-red-300">
+                          <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                          <span>
+                            Conversation request was declined. {activeConv.cooldownRemainingDays ? `You can send another request in ${activeConv.cooldownRemainingDays} day(s).` : "Messaging is disabled."}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[80%] h-4 rounded-full bg-[#D4AF37]/20 blur-xl pointer-events-none" />
+                          <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex items-end gap-1.5 min-h-[60px] rounded-[30px] bg-[#1A1A24] border border-[#2D2D2D]/60 shadow-lg shadow-black/30 px-2.5 py-2 w-full box-border overflow-hidden">
+                            {/* Emoji button */}
+                            <button
+                              type="button"
+                              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                              disabled={serverBusy}
+                              className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 disabled:opacity-40 disabled:hover:scale-100 hover:bg-[#2D2D2D]"
+                            >
+                              <Smile className="w-5 h-5 text-[#D4AF37]" />
+                            </button>
+                            {/* Attachment button */}
+                            <label className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 shrink-0 cursor-pointer ${serverBusy ? "opacity-40 pointer-events-none" : "hover:bg-[#2D2D2D]"}`}>
+                              <Paperclip className="w-5 h-5 text-[#D4AF37]" />
+                              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" className="hidden" onChange={handleImageSelect} disabled={serverBusy} />
+                            </label>
+                            {/* Auto-growing textarea */}
+                            <textarea
+                              ref={textareaRef}
+                              value={newMessage}
+                              onChange={(e) => { handleInputChange(e.target.value); autoGrowTextarea(); }}
+                              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                              onInput={autoGrowTextarea}
+                              placeholder={serverBusy ? "Busy…" : "Message…"}
+                              disabled={uploading || serverBusy}
+                              rows={1}
+                              className="flex-1 min-w-0 max-h-[120px] bg-white/15 rounded-2xl text-sm font-medium text-white placeholder-[#8B8B8B] outline-none border-none px-4 py-2.5 resize-none overflow-y-auto leading-relaxed transition-all"
+                              style={{ height: "40px" }}
+                            />
+                            {/* Send button — gold circular with soft glow */}
+                            <button
+                              type="submit"
+                              disabled={(!newMessage.trim() && !imagePreview) || uploading || serverBusy}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 disabled:opacity-40 disabled:hover:scale-100 shrink-0 shadow-lg shadow-[#D4AF37]/30 ${serverBusy ? "bg-[#D4AF37]/50" : sendBtn}`}
+                            >
+                              {serverBusy ? (
+                                <span className="text-[10px] font-bold text-white">{busyCountdown}s</span>
+                              ) : uploading ? (
+                                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                              ) : (
+                                <Send className="w-5 h-5" />
+                              )}
+                            </button>
+                          </form>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : activeConversation && blockedUsers.includes(activeConversation) ? (
@@ -1840,7 +2153,7 @@ function MessagesContent() {
             exclusivePartnershipService.checkStatus(activeConversation).then(({ data }) => {
               setPartnershipStatus(data);
               setPartnership(data.partnership);
-            }).catch(() => {});
+            }).catch(() => { });
           }
         }}
       />
@@ -2165,7 +2478,7 @@ function MessagesContent() {
                     setConfirmPassword("");
                     waliService.getStatus(partnership.id).then(({ data }) => {
                       setWaliStatus(data.invitation);
-                    }).catch(() => {});
+                    }).catch(() => { });
                   } catch (err: any) {
                     if (err?.response?.status === 401) {
                       setPasswordError("Invalid password");
@@ -2244,13 +2557,11 @@ function MessagesContent() {
 
       {/* Success/Error Toast */}
       <div
-        className={`fixed inset-0 z-[100] flex items-center justify-center pointer-events-none transition-all duration-300 ${
-          toast ? "opacity-100" : "opacity-0"
-        }`}
+        className={`fixed inset-0 z-[100] flex items-center justify-center pointer-events-none transition-all duration-300 ${toast ? "opacity-100" : "opacity-0"
+          }`}
       >
-        <div className={`bg-[#222222] rounded-2xl shadow-2xl border ${toastError ? "border-red-900" : "border-[#2D2D2D]"} px-6 py-4 transform transition-all duration-300 ${
-          toast ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
-        }`}>
+        <div className={`bg-[#222222] rounded-2xl shadow-2xl border ${toastError ? "border-red-900" : "border-[#2D2D2D]"} px-6 py-4 transform transition-all duration-300 ${toast ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
+          }`}>
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${toastError ? "bg-red-900/20" : "bg-[#D4AF37]/10"}`}>
               {toastError ? (

@@ -41,6 +41,11 @@ export default function BackupPage() {
   const restorePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isSuperAdmin = user?.adminRole === "super_admin";
+  const userPerms = new Set(user?.permissions || []);
+  const canView = isSuperAdmin || userPerms.has("backup.view");
+  const canCreate = isSuperAdmin || userPerms.has("backup.create");
+  const canRestore = isSuperAdmin || userPerms.has("backup.restore");
+  const canDelete = isSuperAdmin || userPerms.has("backup.delete");
 
   const fetchBackups = async () => {
     try {
@@ -54,9 +59,9 @@ export default function BackupPage() {
   };
 
   useEffect(() => {
-    if (isSuperAdmin) fetchBackups();
+    if (canView) fetchBackups();
     else setLoading(false);
-  }, [isSuperAdmin]);
+  }, [canView]);
 
   const handleCreateBackup = async () => {
     setCreating(true);
@@ -250,14 +255,14 @@ export default function BackupPage() {
     if (lastFile) startUpload(lastFile);
   };
 
-  if (!isSuperAdmin) {
+  if (!canView) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h2>
-            <p className="text-gray-500 dark:text-gray-400">Only Super Admins can access the backup system.</p>
+            <p className="text-gray-500 dark:text-gray-400">You do not have permission to view or manage backups.</p>
           </div>
         </div>
       </AdminLayout>
@@ -275,7 +280,7 @@ export default function BackupPage() {
               Backup &amp; Restore
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Create, download, upload, and restore full backups (database + files). Super admin only.
+              Create, download, upload, and restore backups (database and files).
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -286,30 +291,34 @@ export default function BackupPage() {
               className="hidden"
               onChange={handleUpload}
             />
-            <Button
-              variant="ghost"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              Upload Backup
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleCreateBackup}
-              disabled={creating || creatingFull}
-            >
-              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
-              Database Only
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreateFullBackup}
-              disabled={creating || creatingFull}
-            >
-              {creatingFull ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
-              Create Full Backup
-            </Button>
+            {canCreate && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  Upload Backup
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleCreateBackup}
+                  disabled={creating || creatingFull}
+                >
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+                  Database Only
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleCreateFullBackup}
+                  disabled={creating || creatingFull}
+                >
+                  {creatingFull ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+                  Create Full Backup
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -451,15 +460,17 @@ export default function BackupPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleDownload(backup.filename)}
-                          className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                          title="Download"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
+                        {canView && (
+                          <button
+                            onClick={() => handleDownload(backup.filename)}
+                            className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        )}
 
-                        {confirmRestore === backup.filename ? (
+                        {canRestore && (confirmRestore === backup.filename ? (
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleRestore(backup.filename)}
@@ -485,9 +496,9 @@ export default function BackupPage() {
                           >
                             <RefreshCw className="w-4 h-4" />
                           </button>
-                        )}
+                        ))}
 
-                        {confirmDelete === backup.filename ? (
+                        {canDelete && (confirmDelete === backup.filename ? (
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleDelete(backup.filename)}
@@ -512,7 +523,7 @@ export default function BackupPage() {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
+                        ))}
                       </div>
                     </td>
                   </tr>

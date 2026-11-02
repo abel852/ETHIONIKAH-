@@ -1,5 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../config/database");
 
 const PERMISSIONS = {
   // Overview
@@ -71,21 +70,38 @@ const PERMISSIONS = {
   "books.manage": "Upload, edit, and delete books",
 };
 
-async function requirePermission(permission) {
+function requirePermission(permission) {
+  const permissions = Array.isArray(permission) ? permission : [permission];
   return async (req, res, next) => {
     try {
-      if (req.user.role !== "admin") {
+      if (!req.user || req.user.role !== "admin") {
         return res.status(403).json({ error: "Access denied" });
       }
+      if (req.user.adminRole === "super_admin") {
+        return next();
+      }
       const adminId = req.user.userId || req.user.id;
-      const perm = await prisma.adminPermission.findUnique({
-        where: { adminId_permission: { adminId, permission } },
-      });
-      if (!perm) {
-        return res.status(403).json({ error: `Missing permission: ${permission}` });
+      if (permissions.length === 1) {
+        const perm = await prisma.adminPermission.findUnique({
+          where: { adminId_permission: { adminId, permission: permissions[0] } },
+        });
+        if (!perm) {
+          return res.status(403).json({ error: `Missing permission: ${permissions[0]}` });
+        }
+      } else {
+        const perm = await prisma.adminPermission.findFirst({
+          where: {
+            adminId,
+            permission: { in: permissions },
+          },
+        });
+        if (!perm) {
+          return res.status(403).json({ error: `Missing permission: ${permissions.join(" or ")}` });
+        }
       }
       next();
     } catch (error) {
+      console.error("Permission check failed:", error);
       res.status(500).json({ error: "Permission check failed" });
     }
   };

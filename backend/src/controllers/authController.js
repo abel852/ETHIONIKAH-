@@ -314,6 +314,8 @@ const login = async (req, res) => {
       const { passwordHash, ...userWithoutPassword } = user;
 
       if (user.role === "admin") {
+        const perms = await prisma.adminPermission.findMany({ where: { adminId: user.id } });
+        userWithoutPassword.permissions = perms.map((p) => p.permission);
         logAudit({ actorId: user.id, actorType: "ADMIN", action: "admin_login", resource: "auth", details: { email: user.email } });
       }
 
@@ -422,6 +424,8 @@ const loginWithPhone = async (req, res) => {
       const { passwordHash, ...userWithoutPassword } = user;
 
       if (user.role === "admin") {
+        const perms = await prisma.adminPermission.findMany({ where: { adminId: user.id } });
+        userWithoutPassword.permissions = perms.map((p) => p.permission);
         logAudit({ actorId: user.id, actorType: "ADMIN", action: "admin_login", resource: "auth", details: { phone: user.phone } });
       }
 

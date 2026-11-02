@@ -19,6 +19,13 @@ interface Conversation {
   isOnline: boolean;
   lastLoginAt?: string;
   compatibilityReason?: string;
+  isConversationRequest?: boolean;
+  requestStatus?: string;
+  requestId?: string;
+  isIncomingRequest?: boolean;
+  requestMessage?: string;
+  respondedAt?: string;
+  cooldownRemainingDays?: number;
 }
 
 interface MessageState {
@@ -81,6 +88,13 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         isOnline: c.isOnline || false,
         lastLoginAt: c.user?.lastLoginAt || undefined,
         compatibilityReason: c.compatibilityReason || undefined,
+        isConversationRequest: c.isConversationRequest || false,
+        requestStatus: c.requestStatus || undefined,
+        requestId: c.requestId || undefined,
+        isIncomingRequest: c.isIncomingRequest || false,
+        requestMessage: c.requestMessage || undefined,
+        respondedAt: c.respondedAt || undefined,
+        cooldownRemainingDays: c.cooldownRemainingDays || undefined,
       }));
       set({ conversations: mapped });
       cacheSet(STORES.CONVERSATIONS, "all", mapped, CACHE_TTL.CONVERSATIONS);

@@ -4,32 +4,33 @@ const ctrl = require("../controllers/adminController");
 const twoFactorCtrl = require("../controllers/twoFactorController");
 const { authenticate, authorize, requireAdmin2FA } = require("../middleware/auth");
 const { cacheResponse } = require("../middleware/cache");
+const { requirePermission } = require("../middleware/rbac");
 const auth = [authenticate, authorize("admin"), requireAdmin2FA];
 
 // Users
-router.post("/users/mark-viewed", ...auth, ctrl.markUsersViewed);
-router.get("/users", ...auth, ctrl.getAllUsers);
-router.get("/users/:id", ...auth, ctrl.getUserById);
-router.get("/users/:id/stats", ...auth, ctrl.getUserStats);
-router.post("/users/:id/suspend", ...auth, ctrl.suspendUser);
-router.post("/users/:id/activate", ...auth, ctrl.activateUser);
-router.delete("/users/:id", ...auth, ctrl.deleteUser);
-router.post("/users/:id/reset-password", ...auth, ctrl.resetUserPassword);
-router.post("/users/:id/restrict-chat", ...auth, ctrl.restrictUserChat);
-router.post("/users/:id/ban", ...auth, ctrl.restrictUserBan);
-router.post("/users/:id/unban", ...auth, ctrl.unbanUser);
-router.post("/users/:id/remove-restriction", ...auth, ctrl.removeUserRestriction);
-router.get("/users/:id/restrictions", ...auth, ctrl.getUserRestrictions);
-router.post("/users/:id/verify", ...auth, ctrl.verifyUser);
-router.post("/users/:id/reject-verification", ...auth, ctrl.rejectUserVerification);
-router.post("/users/:id/reset-2fa", ...auth, twoFactorCtrl.adminReset2FA);
-router.post("/users/:id/mark-viewed", ...auth, ctrl.markUsersViewed);
+router.post("/users/mark-viewed", ...auth, requirePermission("users.view"), ctrl.markUsersViewed);
+router.get("/users", ...auth, requirePermission("users.view"), ctrl.getAllUsers);
+router.get("/users/:id", ...auth, requirePermission("users.view"), ctrl.getUserById);
+router.get("/users/:id/stats", ...auth, requirePermission("users.view"), ctrl.getUserStats);
+router.post("/users/:id/suspend", ...auth, requirePermission(["users.suspend", "users.edit"]), ctrl.suspendUser);
+router.post("/users/:id/activate", ...auth, requirePermission(["users.suspend", "users.edit"]), ctrl.activateUser);
+router.delete("/users/:id", ...auth, requirePermission(["users.delete", "users.edit"]), ctrl.deleteUser);
+router.post("/users/:id/reset-password", ...auth, requirePermission(["users.reset_password", "users.edit"]), ctrl.resetUserPassword);
+router.post("/users/:id/restrict-chat", ...auth, requirePermission(["users.restrict_chat", "users.edit"]), ctrl.restrictUserChat);
+router.post("/users/:id/ban", ...auth, requirePermission(["users.ban", "users.edit"]), ctrl.restrictUserBan);
+router.post("/users/:id/unban", ...auth, requirePermission(["users.ban", "users.edit"]), ctrl.unbanUser);
+router.post("/users/:id/remove-restriction", ...auth, requirePermission(["users.restrict_chat", "users.ban", "users.edit"]), ctrl.removeUserRestriction);
+router.get("/users/:id/restrictions", ...auth, requirePermission("users.view"), ctrl.getUserRestrictions);
+router.post("/users/:id/verify", ...auth, requirePermission(["users.verify", "users.edit"]), ctrl.verifyUser);
+router.post("/users/:id/reject-verification", ...auth, requirePermission(["users.verify", "users.edit"]), ctrl.rejectUserVerification);
+router.post("/users/:id/reset-2fa", ...auth, requirePermission(["users.reset_password", "users.edit"]), twoFactorCtrl.adminReset2FA);
+router.post("/users/:id/mark-viewed", ...auth, requirePermission("users.view"), ctrl.markUsersViewed);
 
 // Lockout Management
-router.post("/users/:id/pin", ...auth, ctrl.pinUser);
-router.post("/users/:id/unpin", ...auth, ctrl.unpinUser);
-router.post("/users/:id/unlock", ...auth, ctrl.unlockUser);
-router.post("/users/:id/clear-flag", ...auth, ctrl.clearFlag);
+router.post("/users/:id/pin", ...auth, requirePermission(["users.edit", "users.view"]), ctrl.pinUser);
+router.post("/users/:id/unpin", ...auth, requirePermission(["users.edit", "users.view"]), ctrl.unpinUser);
+router.post("/users/:id/unlock", ...auth, requirePermission(["users.edit", "users.view"]), ctrl.unlockUser);
+router.post("/users/:id/clear-flag", ...auth, requirePermission(["users.edit", "users.view"]), ctrl.clearFlag);
 
 // Dashboard & Analytics
 router.get("/dashboard", ...auth, cacheResponse(60), ctrl.getDashboardData);
@@ -84,11 +85,11 @@ router.post("/seed", ...auth, ctrl.seedDefaults);
 router.get("/activities", ...auth, cacheResponse(30), ctrl.getActivities);
 
 // Admin Messaging
-router.post("/users/:id/message", ...auth, ctrl.sendUserMessage);
-router.post("/users/:id/notify", ...auth, ctrl.notifyUser);
+router.post("/users/:id/message", ...auth, requirePermission(["users.edit", "users.view"]), ctrl.sendUserMessage);
+router.post("/users/:id/notify", ...auth, requirePermission(["users.edit", "users.view"]), ctrl.notifyUser);
 
 // Broadcast
-router.post("/notifications/broadcast", ...auth, ctrl.broadcastNotification);
+router.post("/notifications/broadcast", ...auth, requirePermission(["notifications.send", "users.edit"]), ctrl.broadcastNotification);
 
 // 2FA Security Reminders
 router.post("/notifications/2fa-reminders", ...auth, async (req, res) => {
@@ -108,9 +109,9 @@ router.get("/badge-counts", ...auth, ctrl.getBadgeCounts);
 router.post("/mark-viewed/:type", ...auth, ctrl.markAsViewed);
 
 // Recycle bin (soft-deleted accounts)
-router.get("/deleted-users", ...auth, ctrl.getDeletedUsers);
-router.post("/deleted-users/:id/restore", ...auth, ctrl.restoreDeletedUser);
-router.post("/deleted-users/purge", ...auth, ctrl.purgeDeletedUsers);
+router.get("/deleted-users", ...auth, requirePermission(["recycle_bin.view", "users.restore"]), ctrl.getDeletedUsers);
+router.post("/deleted-users/:id/restore", ...auth, requirePermission(["recycle_bin.restore", "users.restore"]), ctrl.restoreDeletedUser);
+router.post("/deleted-users/purge", ...auth, requirePermission(["recycle_bin.purge", "users.delete"]), ctrl.purgeDeletedUsers);
 
 // R2 Storage monitoring
 router.get("/storage-usage", ...auth, async (req, res) => {

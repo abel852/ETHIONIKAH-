@@ -14,7 +14,7 @@ router.delete("/admin/subscriptions/:id", ...adminAuth, subscriptionController.c
 
 // User routes
 router.get("/my", authenticate, requireActive, subscriptionController.getUserSubscription);
-router.post("/", authenticate, requireActive, subscriptionController.createSubscription);
+router.post("/", ...adminAuth, subscriptionController.createSubscription);
 router.put("/:id", authenticate, requireActive, subscriptionController.updateSubscription);
 router.delete("/:id", authenticate, requireActive, subscriptionController.cancelSubscription);
 

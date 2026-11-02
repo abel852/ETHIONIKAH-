@@ -36,8 +36,9 @@ async function checkMembershipOrCredits(userId) {
   return {
     ok: false,
     status: 403,
+    code: "MEMBERSHIP_OR_CREDITS_REQUIRED",
     error:
-      "You need an active Membership with messaging privileges or at least one Conversation Credit to start a conversation.",
+      "You cannot start a conversation unless you have an active Membership or Conversation Credits. Please purchase credits or upgrade your plan.",
   };
 }
 
@@ -62,6 +63,21 @@ const createConversationRequest = async (req, res) => {
     }
     if (requesterId === receiverId) {
       return res.status(400).json({ error: "You cannot start a conversation with yourself" });
+    }
+
+    // Verify requester exists, is verified, and active
+    const requester = await prisma.user.findUnique({
+      where: { id: requesterId },
+      select: { id: true, firstName: true, lastName: true, isVerified: true, isActive: true, isDeleted: true },
+    });
+    if (!requester || !requester.isActive || requester.isDeleted) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (!requester.isVerified) {
+      return res.status(403).json({
+        error: "Your account must be verified before you can start a conversation. Please complete the verification process.",
+        code: "VERIFICATION_REQUIRED",
+      });
     }
 
     // Verify receiver exists, is verified, and not deleted
@@ -113,7 +129,10 @@ const createConversationRequest = async (req, res) => {
     // Stage 2: Membership / Credit validation
     const validation = await checkMembershipOrCredits(requesterId);
     if (!validation.ok) {
-      return res.status(validation.status).json({ error: validation.error });
+      return res.status(validation.status).json({
+        error: validation.error,
+        code: validation.code || "MEMBERSHIP_OR_CREDITS_REQUIRED",
+      });
     }
 
     // Check for existing request between these two users
@@ -126,10 +145,30 @@ const createConversationRequest = async (req, res) => {
     if (existing && existing.status === "pending") {
       return res.status(409).json({ error: "A conversation request is already pending.", request: existing });
     }
-    // If there's a declined or expired request, allow re-requesting by upserting
+    // If request was declined, block another request for 15 days
+    if (existing && existing.status === "declined") {
+      const respondedAt = existing.respondedAt || existing.createdAt;
+      const msPassed = Date.now() - new Date(respondedAt).getTime();
+      const daysPassed = msPassed / (1000 * 60 * 60 * 24);
+      if (daysPassed < 15) {
+        const remainingDays = Math.ceil(15 - daysPassed);
+        return res.status(403).json({
+          error: `Your previous conversation request to this user was declined. You can send another request in ${remainingDays} day${remainingDays === 1 ? "" : "s"}.`,
+          code: "DECLINED_COOLDOWN",
+          remainingDays,
+        });
+      }
+    }
+
+    // If there's an expired or 15+ days declined request, allow re-requesting by upserting
     const request = await prisma.conversationRequest.upsert({
       where: { requesterId_receiverId: { requesterId, receiverId } },
-      update: { status: "pending", message: message || null, respondedAt: null },
+      update: {
+        status: "pending",
+        message: message || null,
+        createdAt: new Date(),
+        respondedAt: null,
+      },
       create: {
         requesterId,
         receiverId,
@@ -137,19 +176,35 @@ const createConversationRequest = async (req, res) => {
       },
     });
 
+    // Deduct credit if user is using conversation credits
+    if (validation.usingCredits) {
+      await deductConversationCredit(requesterId);
+    }
+
     // Notify the receiver
-    const requester = await prisma.user.findUnique({
-      where: { id: requesterId },
-      select: { firstName: true, lastName: true },
-    });
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId: receiverId,
         type: "conversation_request",
         title: "New Conversation Request",
-        body: `${requester?.firstName} ${requester?.lastName} would like to start a conversation with you.`,
+        body: `${requester?.firstName} ${requester?.lastName} sent you a conversation request to connect for chat.`,
       },
     });
+
+    try {
+      const { emitNotification } = require("../utils/messageSocket");
+      emitNotification(receiverId, notification);
+    } catch (_e) {}
+
+    try {
+      const { sendPushToUser } = require("../utils/pushService");
+      sendPushToUser(receiverId, {
+        title: "New Conversation Request",
+        body: `${requester?.firstName} ${requester?.lastName} sent you a conversation request to connect for chat.`,
+        type: "conversation_request",
+        data: { url: "/messages" },
+      });
+    } catch (_e) {}
 
     res.status(201).json({ message: "Conversation request sent", request });
   } catch (error) {
@@ -183,6 +238,30 @@ const respondToConversationRequest = async (req, res) => {
     }
     if (request.status !== "pending") {
       return res.status(400).json({ error: "This request has already been responded to" });
+    }
+
+    // Verify receiver is verified and active
+    const receiver = await prisma.user.findUnique({
+      where: { id: receiverId },
+      select: { id: true, firstName: true, lastName: true, isVerified: true, isActive: true },
+    });
+    if (!receiver || !receiver.isActive) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    if (!receiver.isVerified) {
+      return res.status(403).json({
+        error: "Your account must be verified before you can respond to conversation requests.",
+        code: "VERIFICATION_REQUIRED",
+      });
+    }
+
+    // Verify requester is still verified and active
+    const requester = await prisma.user.findUnique({
+      where: { id: request.requesterId },
+      select: { isVerified: true, isActive: true },
+    });
+    if (!requester || !requester.isActive || !requester.isVerified) {
+      return res.status(403).json({ error: "The requester is no longer verified or active." });
     }
 
     // --- Exclusive Partnership enforcement ---
@@ -238,23 +317,51 @@ const respondToConversationRequest = async (req, res) => {
     if (status === "accepted") {
       // Deduct credit ONLY if the requester is using credits (not Gold/Platinum)
       const validation = await checkMembershipOrCredits(request.requesterId);
-      if (validation.ok && validation.usingCredits) {
+      if (!validation.ok) {
+        return res.status(403).json({
+          error: "The requester no longer has an active Membership or Conversation Credits to start this conversation.",
+          code: "PAYMENT_REQUIRED",
+        });
+      }
+      if (validation.usingCredits) {
         await deductConversationCredit(request.requesterId);
       }
     }
 
+    const receiverName = receiver?.firstName
+      ? `${receiver.firstName} ${receiver.lastName || ""}`.trim()
+      : "The recipient";
+
     // Notify the requester
-    await prisma.notification.create({
+    const responseNotif = await prisma.notification.create({
       data: {
         userId: request.requesterId,
         type: "conversation_request_response",
         title: status === "accepted" ? "Conversation Request Accepted" : "Conversation Request Declined",
         body:
           status === "accepted"
-            ? "Your conversation request has been accepted. You can now start messaging."
-            : "Your conversation request has been declined.",
+            ? `${receiverName} accepted your conversation request. You can now start chatting!`
+            : `${receiverName} declined your conversation request. You can send another request in 15 days.`,
       },
     });
+
+    try {
+      const { emitNotification } = require("../utils/messageSocket");
+      emitNotification(request.requesterId, responseNotif);
+    } catch (_e) {}
+
+    try {
+      const { sendPushToUser } = require("../utils/pushService");
+      sendPushToUser(request.requesterId, {
+        title: status === "accepted" ? "Conversation Request Accepted" : "Conversation Request Declined",
+        body:
+          status === "accepted"
+            ? `${receiverName} accepted your conversation request. You can now start chatting!`
+            : `${receiverName} declined your conversation request. You can send another request in 15 days.`,
+        type: "conversation_request_response",
+        data: { url: "/messages" },
+      });
+    } catch (_e) {}
 
     res.json({ message: `Conversation request ${status}`, request: updated });
   } catch (error) {
@@ -346,7 +453,17 @@ const checkRequestStatus = async (req, res) => {
       where: { requesterId_receiverId: { requesterId: targetUserId, receiverId: userId } },
     });
 
-    res.json({ sent, received });
+    let cooldownRemainingDays = 0;
+    if (sent && sent.status === "declined" && (sent.respondedAt || sent.createdAt)) {
+      const respondedAt = sent.respondedAt || sent.createdAt;
+      const msPassed = Date.now() - new Date(respondedAt).getTime();
+      const daysPassed = msPassed / (1000 * 60 * 60 * 24);
+      if (daysPassed < 15) {
+        cooldownRemainingDays = Math.ceil(15 - daysPassed);
+      }
+    }
+
+    res.json({ sent, received, cooldownRemainingDays });
   } catch (error) {
     console.error("Check request status error:", error);
     res.status(500).json({ error: "Failed to check request status" });

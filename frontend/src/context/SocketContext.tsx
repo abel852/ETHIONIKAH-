@@ -205,12 +205,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     // --- Real-time notifications ---
     socket.on("new_notification", (notification) => {
       fetchUnreadCountRef.current();
+      if (notification?.type === "conversation_request" || notification?.type === "conversation_request_response") {
+        useMessageStore.getState().fetchConversations();
+      }
       if (notification?.type !== "message") {
         pushNotif({
           name: notification?.title || "New notification",
           content: notification?.body || "",
           type: notification?.type || "system",
-          url: notification?.type === "match" ? "/matches" : notification?.type === "interest" ? "/liked-interest" : "/notifications",
+          url:
+            notification?.type === "match"
+              ? "/matches"
+              : notification?.type === "interest"
+              ? "/liked-interest"
+              : notification?.type === "conversation_request" || notification?.type === "conversation_request_response"
+              ? "/messages"
+              : "/notifications",
         });
       }
     });

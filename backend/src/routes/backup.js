@@ -5,13 +5,9 @@ const path = require("path");
 const fs = require("fs");
 const backupController = require("../controllers/backupController");
 const { authenticate, authorize, requireAdmin2FA } = require("../middleware/auth");
+const { requirePermission } = require("../middleware/rbac");
 
-const superAdmin = [authenticate, authorize("admin"), requireAdmin2FA, async (req, res, next) => {
-  if (req.user.adminRole !== "super_admin") {
-    return res.status(403).json({ error: "Super admin access required" });
-  }
-  next();
-}];
+const baseAdmin = [authenticate, authorize("admin"), requireAdmin2FA];
 
 const BACKUP_DIR = path.join(__dirname, "..", "..", "backups");
 if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
@@ -35,9 +31,9 @@ const uploadBackup = multer({
   },
 });
 
-router.post("/backup/create", ...superAdmin, backupController.createBackup);
-router.post("/backup/create-full", ...superAdmin, backupController.createFullBackup);
-router.post("/backup/auto-trigger", ...superAdmin, async (req, res) => {
+router.post("/backup/create", ...baseAdmin, requirePermission("backup.create"), backupController.createBackup);
+router.post("/backup/create-full", ...baseAdmin, requirePermission("backup.create"), backupController.createFullBackup);
+router.post("/backup/auto-trigger", ...baseAdmin, requirePermission("backup.create"), async (req, res) => {
   try {
     const { createAutoBackup } = require("../utils/autoBackup");
     const result = await createAutoBackup();
@@ -50,11 +46,11 @@ router.post("/backup/auto-trigger", ...superAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to trigger auto backup" });
   }
 });
-router.get("/backup/list", ...superAdmin, backupController.listBackups);
-router.get("/backup/download/:filename", ...superAdmin, backupController.downloadBackup);
-router.post("/backup/restore", ...superAdmin, backupController.restoreBackup);
-router.get("/backup/restore-progress", ...superAdmin, backupController.getRestoreProgress);
-router.delete("/backup/:filename", ...superAdmin, backupController.deleteBackup);
-router.post("/backup/upload", ...superAdmin, uploadBackup.single("backupFile"), backupController.uploadBackup);
+router.get("/backup/list", ...baseAdmin, requirePermission("backup.view"), backupController.listBackups);
+router.get("/backup/download/:filename", ...baseAdmin, requirePermission("backup.view"), backupController.downloadBackup);
+router.post("/backup/restore", ...baseAdmin, requirePermission("backup.restore"), backupController.restoreBackup);
+router.get("/backup/restore-progress", ...baseAdmin, requirePermission("backup.restore"), backupController.getRestoreProgress);
+router.delete("/backup/:filename", ...baseAdmin, requirePermission("backup.delete"), backupController.deleteBackup);
+router.post("/backup/upload", ...baseAdmin, requirePermission("backup.create"), uploadBackup.single("backupFile"), backupController.uploadBackup);
 
 module.exports = router;

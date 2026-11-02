@@ -251,6 +251,8 @@ exports.verify2FALogin = async (req, res) => {
     }
 
     if (user.role === "admin") {
+      const perms = await prisma.adminPermission.findMany({ where: { adminId: user.id } });
+      userWithoutPassword.permissions = perms.map((p) => p.permission);
       const { logAudit } = require("../utils/auditLogger");
       logAudit({ actorId: user.id, actorType: "ADMIN", action: "admin_login", resource: "auth", details: { email: user.email, method: "2fa" } });
     }

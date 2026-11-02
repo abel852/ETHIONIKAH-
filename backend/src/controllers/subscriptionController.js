@@ -165,10 +165,11 @@ const updateSubscription = async (req, res) => {
       }
     }
 
+    const allowedStatusUpdate = isAdmin ? status : undefined;
     const subscription = await prisma.subscription.update({
       where: { id },
       data: {
-        ...(status && { status }),
+        ...(allowedStatusUpdate && { status: allowedStatusUpdate }),
         ...(autoRenew !== undefined && { autoRenew }),
       },
       include: { payments: true },

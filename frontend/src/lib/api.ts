@@ -140,12 +140,18 @@ api.interceptors.response.use(
       }
       return Promise.reject(error);
     } else if (status === 403) {
-      // Suspended/deleted account or insufficient permissions — clear auth and redirect
+      if (error.response?.data?.code === "ADMIN_2FA_REQUIRED") {
+        if (serverMsg && !suppressToast) {
+          toast.error(serverMsg, { duration: 3000 });
+        }
+        return Promise.reject(error);
+      }
+      // Suspended/deleted account or unauthorized role — clear auth and redirect
       if (
         serverMsg?.includes("suspended") ||
         serverMsg?.includes("deleted") ||
         serverMsg?.includes("Insufficient permissions") ||
-        error.response.data?.code === "ACCOUNT_DELETED"
+        error.response?.data?.code === "ACCOUNT_DELETED"
       ) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");

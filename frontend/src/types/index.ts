@@ -143,7 +143,7 @@ export interface Conversation {
 export interface Notification {
   id: string;
   userId: string;
-  type: "match" | "interest" | "message" | "verification" | "system" | "admin";
+  type: "match" | "interest" | "message" | "verification" | "system" | "admin" | "conversation_request" | "conversation_request_response";
   title: string;
   body: string;
   read: boolean;
