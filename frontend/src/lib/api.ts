@@ -5,7 +5,7 @@ const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
   headers: { "Accept": "application/json" },
   withCredentials: true,
-  timeout: 30000, // 30s default — generous for slow connections
+  timeout: 60000, // 60s default — generous for slow connections
 });
 
 // --- Client-side GET cache (short TTL, stale-while-revalidate) ---
@@ -99,14 +99,19 @@ api.interceptors.response.use(
       }
     }
 
+    const isBackgroundPoll = original?.url?.includes("/notifications") || original?.url?.includes("/badge-counts") || original?.url?.includes("/restore-progress");
+    const suppressToast = original?._noToast || original?.headers?.["X-No-Toast"] || isBackgroundPoll;
+
     // Network / connection errors
     if (!error.response) {
-      if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
-        toast.error("No internet connection. Check your network.", { id: networkToast.id, duration: 4000 });
-      } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
-        toast.error("Connection timed out. Please try again.", { id: networkToast.id, duration: 4000 });
-      } else {
-        toast.error("Network error. Please try again.", { id: networkToast.id, duration: 4000 });
+      if (!suppressToast) {
+        if (error.code === "ERR_NETWORK" || error.message?.includes("Network Error")) {
+          toast.error("No internet connection. Check your network.", { id: networkToast.id, duration: 4000 });
+        } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+          toast.error("Connection timed out. Please try again.", { id: networkToast.id, duration: 4000 });
+        } else {
+          toast.error("Network error. Please try again.", { id: networkToast.id, duration: 4000 });
+        }
       }
       return Promise.reject(error);
     }
@@ -114,7 +119,6 @@ api.interceptors.response.use(
     // Server errors
     const status = error.response.status;
     const serverMsg = error.response.data?.error || error.response.data?.message || "";
-    const suppressToast = original._noToast || original.headers?.["X-No-Toast"];
 
     // Catch-all: any 401 that wasn't handled above — redirect to login
     if (status === 401) {
