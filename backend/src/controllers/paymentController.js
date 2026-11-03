@@ -225,14 +225,9 @@ const createPaymentRequest = async (req, res) => {
     );
 
     if (!matchedMethod && !["telebirr", "cbe_birr", "bank_transfer"].includes(normalizedInput)) {
-
-
-
-
       return res.status(400).json({ error: "Invalid or inactive payment method" });
     }
     const resolvedPaymentMethod = matchedMethod ? matchedMethod.key : paymentMethod;
-    }
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: "Amount must be greater than 0" });
     }
