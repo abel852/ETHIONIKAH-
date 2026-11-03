@@ -210,7 +210,8 @@ exports.createAdmin = async (req, res) => {
     await deleteVerificationData(email);
 
     await logAudit({
-      adminId: req.user.userId,
+      actorId: req.user.userId || req.user.id,
+      actorType: "ADMIN",
       action: "create_admin",
       resource: "admin",
       resourceId: user.id,
@@ -308,7 +309,8 @@ exports.updateAdminPermissions = async (req, res) => {
     await invalidateAuthCache(id);
 
     await logAudit({
-      adminId: req.user.userId,
+      actorId: req.user.userId || req.user.id,
+      actorType: "ADMIN",
       action: "update_admin_permissions",
       resource: "admin",
       resourceId: id,
@@ -353,7 +355,8 @@ exports.deleteAdmin = async (req, res) => {
     await prisma.user.delete({ where: { id } });
 
     await logAudit({
-      adminId: req.user.userId,
+      actorId: req.user.userId || req.user.id,
+      actorType: "ADMIN",
       action: "delete_admin",
       resource: "admin",
       resourceId: id,
@@ -396,7 +399,8 @@ exports.updateAdmin = async (req, res) => {
     }
 
     await logAudit({
-      adminId: req.user.userId,
+      actorId: req.user.userId || req.user.id,
+      actorType: "ADMIN",
       action: "update_admin",
       resource: "admin",
       resourceId: id,

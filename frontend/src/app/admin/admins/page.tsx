@@ -95,6 +95,30 @@ export default function AdminsPage() {
     }));
   };
 
+  const toggleEditGroupPerms = (perms: { key: string; label: string }[]) => {
+    const allSelected = perms.every((p) => editForm.selectedPerms.includes(p.key));
+    if (allSelected) {
+      setEditForm((prev) => ({
+        ...prev,
+        selectedPerms: prev.selectedPerms.filter((p) => !perms.some((perm) => perm.key === p)),
+      }));
+    } else {
+      setEditForm((prev) => ({
+        ...prev,
+        selectedPerms: [...new Set([...prev.selectedPerms, ...perms.map((p) => p.key)])],
+      }));
+    }
+  };
+
+  const selectAllEditPerms = () => {
+    const allKeys = permGroups.flatMap((g) => g.permissions.map((p) => p.key));
+    setEditForm((prev) => ({ ...prev, selectedPerms: allKeys }));
+  };
+
+  const deselectAllEditPerms = () => {
+    setEditForm((prev) => ({ ...prev, selectedPerms: [] }));
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleteError("");
@@ -205,22 +229,53 @@ export default function AdminsPage() {
                         </div>
 
                         <div>
-                          <p className="text-xs font-medium text-gray-500 dark:text-white mb-2">Permissions</p>
-                          <div className="max-h-60 overflow-y-auto space-y-3 rounded-xl bg-gray-50 dark:bg-white/5 p-3 border border-gray-200 dark:border-gray-700">
-                            {permGroups.map((g) => (
-                              <div key={g.group}>
-                                <p className="text-xs font-semibold text-gray-700 dark:text-white uppercase tracking-wider mb-1">{g.group}</p>
-                                <div className="space-y-1 pl-1">
-                                  {g.permissions.map((p) => (
-                                    <label key={p.key} className="flex items-center gap-2 py-0.5 cursor-pointer">
-                                      <input type="checkbox" checked={editForm.selectedPerms.includes(p.key)} onChange={() => toggleEditPerm(p.key)}
-                                        className="w-3.5 h-3.5 rounded border-gray-300 dark:border-gray-600 text-[#1a1a2e] focus:ring-[#1a1a2e]/30" />
-                                      <span className="text-xs text-gray-600 dark:text-white">{p.label}</span>
-                                    </label>
-                                  ))}
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-medium text-gray-500 dark:text-white">Permissions</p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={selectAllEditPerms}
+                                className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                              >
+                                Grant All
+                              </button>
+                              <span className="text-gray-300 dark:text-gray-600 text-xs">|</span>
+                              <button
+                                type="button"
+                                onClick={deselectAllEditPerms}
+                                className="text-[11px] text-gray-500 dark:text-gray-400 hover:underline"
+                              >
+                                Revoke All
+                              </button>
+                            </div>
+                          </div>
+                          <div className="max-h-80 overflow-y-auto space-y-3 rounded-xl bg-gray-50 dark:bg-white/5 p-3 border border-gray-200 dark:border-gray-700">
+                            {permGroups.map((g) => {
+                              const groupAllSelected = g.permissions.every((p) => editForm.selectedPerms.includes(p.key));
+                              return (
+                                <div key={g.group} className="p-2.5 rounded-lg border border-gray-100 dark:border-gray-700/60 bg-white/70 dark:bg-white/[0.02]">
+                                  <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-gray-100 dark:border-gray-800">
+                                    <p className="text-xs font-semibold text-gray-700 dark:text-white uppercase tracking-wider">{g.group}</p>
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleEditGroupPerms(g.permissions)}
+                                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
+                                    >
+                                      {groupAllSelected ? "Deselect Group" : "Select Group"}
+                                    </button>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pl-1">
+                                    {g.permissions.map((p) => (
+                                      <label key={p.key} className="flex items-center gap-2 py-0.5 cursor-pointer">
+                                        <input type="checkbox" checked={editForm.selectedPerms.includes(p.key)} onChange={() => toggleEditPerm(p.key)}
+                                          className="w-3.5 h-3.5 rounded border-gray-300 dark:border-gray-600 text-[#1a1a2e] focus:ring-[#1a1a2e]/30" />
+                                        <span className="text-xs text-gray-600 dark:text-white">{p.label}</span>
+                                      </label>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                           <p className="text-[10px] text-gray-500 dark:text-white mt-1">{editForm.selectedPerms.length} permissions selected</p>
                         </div>
@@ -579,7 +634,7 @@ function CreateAdminForm({ onDone }: { onDone: () => void }) {
                     >Verify & Continue</button>
                   </div>
                   <button onClick={nextStep} className="mt-3 text-xs text-gray-400 dark:text-white hover:text-gray-600 dark:hover:text-white transition-colors">
-                    Skip 2FA for now →
+                    Skip 2FA for now â†’
                   </button>
                 </div>
               </div>
@@ -627,7 +682,7 @@ function CreateAdminForm({ onDone }: { onDone: () => void }) {
             <p className="text-sm text-gray-500 dark:text-white mb-4">{form.firstName} {form.lastName} ({form.email}) can now log in with their credentials.</p>
             <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-white mb-6">
               <Shield className="w-3.5 h-3.5" /> {selectedPerms.length} permissions granted
-              <span className="text-gray-300 dark:text-gray-500">·</span>
+              <span className="text-gray-300 dark:text-gray-500">Â·</span>
               {qrUri ? <><Smartphone className="w-3.5 h-3.5" /> 2FA enabled</> : <><Smartphone className="w-3.5 h-3.5" /> 2FA not set up</>}
             </div>
             <button onClick={onDone}

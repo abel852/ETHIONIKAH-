@@ -29,6 +29,7 @@ interface AuthContextType {
   register: (data: Record<string, unknown>) => Promise<void>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const defaultAuthContext: AuthContextType = {
@@ -40,6 +41,7 @@ const defaultAuthContext: AuthContextType = {
   register: async () => {},
   logout: () => {},
   updateUser: () => {},
+  refreshUser: async () => {},
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
@@ -183,8 +185,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    if (!token) return;
+    try {
+      const res = await api.get("/auth/me", { _noRedirect: true } as any);
+      const u = mapVerificationStatus(res.data.user);
+      setUser(u);
+      setConnectionError(null);
+      cacheSet(STORES.PROFILE, "me", u, CACHE_TTL.PROFILE);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      refreshUser();
+    };
+    window.addEventListener("refresh-auth-user", handleRefresh);
+    window.addEventListener("focus", handleRefresh);
+    return () => {
+      window.removeEventListener("refresh-auth-user", handleRefresh);
+      window.removeEventListener("focus", handleRefresh);
+    };
+  }, [refreshUser]);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, connectionError, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, connectionError, login, register, logout, updateUser, refreshUser }}>
       {connectionError === "server_down" && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-4 bg-white dark:bg-charcoal-800 rounded-2xl px-10 py-8 shadow-2xl">
