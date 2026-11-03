@@ -278,7 +278,8 @@ export default function MembershipPage() {
       setPlans([...dbPlans.map(dbPlanToPlan), ...creditPkgPlans.map(dbPlanToPlan)]);
       setCreditPackages(activeCredits);
       if (methodsRes.status === "fulfilled") {
-        setPaymentMethods(methodsRes.value.data?.data || []);
+        const methods: any[] = methodsRes.value.data?.data || [];
+        setPaymentMethods(methods.filter((m: any) => m.isActive !== false));
       }
     } catch { /* ignore */ }
   };

@@ -222,7 +222,9 @@ const deleteCreditPackage = async (req, res) => {
 const getPaymentMethods = async (req, res) => {
   try {
     const { activeOnly } = req.query;
-    const where = activeOnly === "true" ? { isActive: true } : {};
+    // Default to activeOnly=true for public checkout (/methods) or when activeOnly query is explicitly true
+    const isPublicRoute = req.path === "/methods" || !req.user || req.user.role !== "admin";
+    const where = (activeOnly === "true" || (isPublicRoute && activeOnly !== "false")) ? { isActive: true } : {};
     const methods = await prisma.paymentMethod.findMany({
       where,
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],

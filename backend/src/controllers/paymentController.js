@@ -73,8 +73,18 @@ async function getPlanConfig(planType) {
 }
 
 // Fetch valid payment method keys from DB
+async function getActivePaymentMethods() {
+  const dbMethods = await prisma.paymentMethod.findMany({ where: { isActive: true } });
+  if (dbMethods.length > 0) return dbMethods;
+  return [
+    { key: "telebirr", name: "Telebirr" },
+    { key: "cbe_birr", name: "CBE Birr" },
+    { key: "bank_transfer", name: "Bank Transfer" },
+  ];
+}
+
 async function getValidPaymentMethodKeys() {
-  const methods = await prisma.paymentMethod.findMany({ where: { isActive: true } });
+  const methods = await getActivePaymentMethods();
   if (methods.length > 0) return methods.map((m) => m.key);
   return ["telebirr", "cbe_birr", "bank_transfer"];
 }
@@ -206,10 +216,18 @@ const createPaymentRequest = async (req, res) => {
     if (!config) {
       return res.status(400).json({ error: "Invalid plan type" });
     }
-    const validMethods = await getValidPaymentMethodKeys();
-    if (!validMethods.includes(paymentMethod)) {
+    const activeMethods = await getActivePaymentMethods();
+    const normalizedInput = (paymentMethod || "").trim().toLowerCase();
+    const matchedMethod = activeMethods.find(
+      (m) => (m.key && m.key.toLowerCase() === normalizedInput) ||
+             (m.id && m.id.toLowerCase() === normalizedInput) ||
+             (m.name && m.name.toLowerCase() === normalizedInput)
+    );
+
+    if (!matchedMethod && !["telebirr", "cbe_birr", "bank_transfer"].includes(normalizedInput)) {
       return res.status(400).json({ error: "Invalid or inactive payment method" });
     }
+    const resolvedPaymentMethod = matchedMethod ? matchedMethod.key : paymentMethod;
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: "Amount must be greater than 0" });
     }
@@ -277,7 +295,7 @@ const createPaymentRequest = async (req, res) => {
         userId,
         planType,
         amount: Number(amount),
-        paymentMethod,
+        paymentMethod: resolvedPaymentMethod,
         transactionId: transactionId || null,
         referenceNumber: referenceNumber.trim(),
         receiptUrl: receiptUrl || null,
